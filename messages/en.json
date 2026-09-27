@@ -1,0 +1,1223 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"example_message": "Hello world {username}",
+	"BookingPage": {
+		"title": "Plan your booking",
+		"loading": "Loading your stay",
+		"BookingHeader": {
+			"back": "Back to accommodation",
+			"title": "Make it your next stay.",
+			"preview": "Request to book",
+			"description": "Choose your dates, add your details and review your stay before sending your booking request."
+		},
+		"BookingSummary": {
+			"title": "Your stay, at a glance",
+			"nightlyRate": "Nightly rate",
+			"nights": "Nights",
+			"guests": "Guests",
+			"fees": "Taxes and additional fees",
+			"unconfirmed": "To be confirmed",
+			"estimate": "Accommodation estimate",
+			"breakdown": "Nightly rate × {nights} nights",
+			"chooseDates": "Choose valid dates and guest counts to see your estimate.",
+			"disclaimer": "This estimate covers accommodation only. Availability, fees and the final total have not been confirmed.",
+			"previewNotice": "Your details are sent only when you submit the booking request. No payment is taken now."
+		},
+		"BookingCheckout": {
+			"trip": "Your trip",
+			"tripHint": "Check your dates and who's coming. All fields in this section are required.",
+			"checkOutTime": "Before {time}, local property time",
+			"adults": "Adults",
+			"children": "Children",
+			"limits": "Minimum stay: {minimum} night(s). This property accommodates up to {guests} guests.",
+			"guestDetails": "Your details",
+			"guestHint": "Details for the lead guest. These fields are required; no account is needed to book.",
+			"firstName": "First name",
+			"firstNamePlaceholder": "John",
+			"lastName": "Last name",
+			"lastNamePlaceholder": "Doe",
+			"email": "Email address",
+			"emailPlaceholder": "you@example.com",
+			"emailHint": "The address the property will use for booking updates.",
+			"phone": "Phone number",
+			"phonePlaceholder": "+381 60 123 4567",
+			"phoneHint": "Include your country code. This would be used for arrival arrangements.",
+			"requests": "Add a special request (optional)",
+			"requestsLabel": "Special requests (optional)",
+			"requestsHint": "For example, an arrival time or accessibility requirement. Requests need host confirmation.",
+			"cancellation": "Cancellation policy.",
+			"cancellationHint": "Terms have not been provided for this property yet.",
+			"payment": "Payment terms.",
+			"paymentHint": "The payment method and amount due have not been confirmed. No payment is taken now.",
+			"confirm": "Send booking request",
+			"booked": "Booking request sent"
+		},
+		"BookingConfirmation": {
+			"stay": "Accommodation",
+			"dates": "Dates",
+			"bookedHint": "We saved your request for this stay. The property will confirm availability and payment details.",
+			"notFound": "We couldn't find this booking request",
+			"notFoundHint": "The link may be incomplete or no longer valid. Return home to keep planning."
+		}
+	},
+	"AccommodationPage": {
+		"title": "Accommodation details",
+		"loading": "Loading accommodation details",
+		"error": "We could not load this accommodation. Please try again.",
+		"notFound": "This stay is no longer available",
+		"notFoundHint": "Return to search to find another place for your trip.",
+		"priceDetails": "Price details",
+		"AccommodationHeader": {
+			"back": "Back to search",
+			"entire": "Entire property",
+			"private": "Private room",
+			"shared": "Shared room",
+			"share": "Link"
+		},
+		"AccommodationGallery": {
+			"photos": "Property photos",
+			"noPhotos": "Photos have not been added yet."
+		},
+		"AccommodationGalleryDialogTrigger": {
+			"photoAlt": "{name}, photo {number}",
+			"showPhotos": "View photos ({count})"
+		},
+		"AccommodationGalleryDialog": {
+			"close": "Close photos"
+		},
+		"AccommodationNavigation": {
+			"label": "Explore this accommodation",
+			"overview": "Overview",
+			"amenities": "Amenities",
+			"location": "Location",
+			"rules": "House rules"
+		},
+		"AccommodationDetailsOverview": {
+			"overview": "Your stay at a glance"
+		},
+		"AccommodationDetailsAmenities": {
+			"amenities": "What this place offers",
+			"moreAmenities": "Show {count} more amenities",
+			"noAmenities": "The host has not listed any amenities yet."
+		},
+		"AccommodationDetailsLocation": {
+			"location": "Where you will stay",
+			"mapLoading": "Loading the location map…",
+			"mapError": "The map could not load. You can still open this location in Google Maps.",
+			"openMap": "Open in Google Maps"
+		},
+		"AccommodationDetailsRules": {
+			"rules": "Things to know",
+			"arrival": "Arrival and departure",
+			"checkIn": "Check-in",
+			"checkOut": "Check-out by",
+			"localTime": "All times are local to the property.",
+			"houseRules": "House rules",
+			"petsAllowed": "Pets allowed",
+			"noPets": "No pets",
+			"smokingAllowed": "Smoking allowed",
+			"noSmoking": "No smoking",
+			"partiesAllowed": "Parties and events allowed",
+			"noParties": "No parties or events",
+			"cancellation": "Cancellation policy",
+			"cancellationHint": "A cancellation policy has not been provided. Confirm the terms before making a booking."
+		},
+		"AccommodationSummary": {
+			"title": "Plan your stay",
+			"listedRate": "Listed nightly rate",
+			"minimum": "Minimum stay",
+			"maximum": "Maximum stay",
+			"night": "night",
+			"nights": "nights",
+			"capacity": "Maximum guests",
+			"bookingUnavailable": "Online reservations are not available for this stay yet.",
+			"reviewRules": "Review stay requirements",
+			"planBooking": "Plan your booking",
+			"priceHint": "This is the listed rate, not a confirmed trip total. Availability, additional fees and cancellation terms must be confirmed before booking."
+		}
+	},
+	"AuthFeature": {
+		"AuthData": {
+			"indefinitely": "Indefinitely",
+			"oneDay": "1 day",
+			"sevenDays": "7 days",
+			"thirtyDays": "30 days"
+		},
+		"AuthDialog": {
+			"title": "Sign in or create an account",
+			"close": "Close"
+		},
+		"ForgotPasswordForm": {
+			"forgotYourPassword": "Forgot your password?",
+			"emailResetDescription": "Enter your email and we'll send you a code to reset your password.",
+			"setNewPassword": "Set a new password",
+			"resetCodeDescription": "Enter the code we emailed you, then choose a new password.",
+			"email": "Email",
+			"verificationCode": "Verification code",
+			"newPassword": "New password",
+			"confirmPassword": "Confirm password",
+			"sendResetCode": "Send reset code",
+			"resetPassword": "Reset password",
+			"backToSignIn": "Back to sign in"
+		},
+		"LogoutButton": {
+			"signedOutSuccessfully": "Signed out successfully",
+			"signingOut": "Signing out",
+			"signingOutEllipsis": "Signing out..."
+		},
+		"SignInForm": {
+			"welcomeBack": "Welcome back",
+			"loginDescription": "Enter your email below to login to your account",
+			"email": "Email",
+			"password": "Password",
+			"rememberSession": "Remember your session.",
+			"forgotYourPassword": "Forgot your password?",
+			"signIn": "Sign In",
+			"continueWithGoogle": "Continue with Google",
+			"noAccount": "Don't have an account?",
+			"signUp": "Sign up"
+		},
+		"SignUpForm": {
+			"createAccount": "Create an account",
+			"createAccountDescription": "Enter your information below to create your account",
+			"fullName": "Full Name",
+			"fullNamePlaceholder": "John Doe",
+			"email": "Email",
+			"emailDescription": "We'll use this to contact you. We will not share your email with anyone else.",
+			"password": "Password",
+			"confirmPassword": "Confirm Password",
+			"confirmPasswordDescription": "Please confirm your password.",
+			"continueWithGoogle": "Continue with Google",
+			"alreadyHaveAccount": "Already have an account?",
+			"signIn": "Sign in",
+			"verificationCodeToast": "Check your email for a verification code."
+		},
+		"VerifyEmailForm": {
+			"verifyYourEmail": "Verify your email",
+			"verifyEmailDescription": "We sent a 6-digit code to your inbox. Enter it below to finish signing up.",
+			"email": "Email",
+			"emailPlaceholder": "m@example.com",
+			"verificationCode": "Verification code",
+			"verifyEmail": "Verify email",
+			"didntReceiveCode": "Didn't receive the code?",
+			"resendCodeIn": "Resend code in {seconds}s",
+			"resendCode": "Resend code",
+			"anotherVerificationCode": "We sent you another verification code.",
+			"backToSignIn": "Back to sign in"
+		}
+	},
+	"SearchFeature": {
+		"SearchInput": {
+			"searchPlaceholder": "Search...",
+			"clearSearch": "Clear search"
+		}
+	},
+	"NewslettersFeature": {
+		"NewslettersSection": {
+			"title": "Join our newsletter",
+			"description": "Be first to hear about new places to stay, exclusive offers, and news.",
+			"emailLabel": "Email address",
+			"emailPlaceholder": "you@example.com",
+			"subscribe": "Subscribe",
+			"subscribed": "If this email exists, we've subscribed it to our newsletter.",
+			"subscribeError": "We couldn't subscribe you right now. Please try again.",
+			"privacyHint": "No spam. Unsubscribe at any time."
+		}
+	},
+	"FeedbacksFeature": {
+		"type": {
+			"bug": "Bug report",
+			"question": "Question"
+		},
+		"category": {
+			"booking": "Booking",
+			"payment": "Payment",
+			"account": "Account",
+			"accommodation": "Accommodation",
+			"other": "Something else"
+		}
+	},
+	"FeedbackPage": {
+		"pageTitle": "Feedback",
+		"title": "Send feedback",
+		"description": "Found a bug or have a question? Tell us what happened and we'll take a look.",
+		"FeedbackForm": {
+			"type": "What is this about?",
+			"category": "Area",
+			"title": "Summary",
+			"titlePlaceholder": "Short summary",
+			"message": "Details",
+			"messagePlaceholder": "What happened, and what did you expect?",
+			"email": "Email",
+			"emailPlaceholder": "you@example.com",
+			"emailHint": "So we can reply if needed.",
+			"submit": "Send feedback",
+			"signedInHint": "We'll reply to {email}."
+		},
+		"successTitle": "Thanks for the feedback",
+		"successDescription": "We received it and will take a look.",
+		"sendAnother": "Send another",
+		"error": "We couldn't send your feedback. Please try again."
+	},
+	"UploadFileFeature": {
+		"UploadFileDropzone": {
+			"clickOrDragAndDrop": "Click or drag & drop",
+			"addOneOrMoreImages": "Add one or more images",
+			"addOneImage": "Add one image"
+		},
+		"UploadFilePreviewItem": {
+			"uploadedImage": "Uploaded image",
+			"coverImage": "Cover image",
+			"setAsCover": "Set as cover",
+			"cover": "Cover",
+			"remove": "Remove",
+			"moveLeft": "Move left",
+			"moveRight": "Move right"
+		}
+	},
+	"AccommodationsFeature": {
+		"AccommodationAmenities": {
+			"wifi": "Wi-Fi",
+			"parking": "Parking",
+			"kitchen": "Kitchen",
+			"air-conditioning": "Air conditioning",
+			"heating": "Heating",
+			"towels": "Towels",
+			"washer": "Washing machine",
+			"tv": "TV",
+			"workspace": "Workspace",
+			"elevator": "Elevator",
+			"garden": "Garden",
+			"pool": "Pool",
+			"selected": "{count} selected",
+			"popular": "Popular amenities",
+			"additional": "+{count} more selected"
+		},
+		"AccommodationAmenitiesGroupItem": {
+			"selected": "{count} selected"
+		},
+		"AccommodationAmenitiesDialog": {
+			"essentials": "Everyday essentials",
+			"work": "Work & entertainment",
+			"outdoors": "Building & outdoors",
+			"edit": "Edit amenities",
+			"addMore": "Add more amenities",
+			"results": "{count} amenities found"
+		},
+		"AccommodationAmenitiesDialogHeader": {
+			"close": "Close amenities",
+			"search": "Search amenities",
+			"selected": "{count} selected",
+			"viewSelected": "View selected",
+			"viewAll": "View all amenities"
+		},
+		"AccommodationAmenitiesDialogEmpty": {
+			"noMatches": "No matching amenities",
+			"noneSelected": "No amenities selected yet",
+			"emptyHint": "View all amenities or try a different search.",
+			"viewAll": "View all amenities"
+		},
+		"AccommodationAmenitiesDialogFooter": {
+			"cancel": "Cancel",
+			"save": "Save amenities"
+		},
+		"AccommodationCard": {
+			"guest": "guest",
+			"guests": "guests",
+			"bedroom": "bedroom",
+			"bedrooms": "bedrooms",
+			"bed": "bed",
+			"beds": "beds",
+			"bathroom": "bathroom",
+			"bathrooms": "bathrooms",
+			"night": "per night"
+		},
+		"AccommodationRuleCard": {
+			"enabled": "Enabled",
+			"disabled": "Disabled"
+		}
+	},
+	"BookingsFeature": {
+		"BookingStayDates": {
+			"stayDates": "Stay dates",
+			"checkIn": "Check-in",
+			"checkOut": "Check-out",
+			"selectDates": "Select your dates"
+		}
+	},
+	"FavoritesFeature": {
+		"FavoriteButton": {
+			"save": "Add {name} to favorites",
+			"remove": "Remove {name} from favorites"
+		},
+		"FavoriteFeedback": {
+			"added": "Added to favorites",
+			"removed": "Removed from favorites",
+			"undo": "Undo"
+		}
+	},
+	"FavoritesPage": {
+		"pageTitle": "Saved stays",
+		"findStay": "Find a stay",
+		"emptyTitle": "No saved stays yet",
+		"emptyDescription": "Tap the heart on a stay you like and it will be saved here for later.",
+		"FavoritesHeader": {
+			"guestLabel": "Guest",
+			"description": "Pick up where you left off and review the stays you saved."
+		}
+	},
+	"AuthErrorPage": {
+		"accountBannedTitle": "Account banned",
+		"authenticationErrorTitle": "Authentication error",
+		"accessBlocked": "Access blocked",
+		"yourAccountIsBanned": "Your account is banned",
+		"bannedDescription": "You have been banned from this application. Please contact support if you believe this is an error.",
+		"remaining": "Remaining: {time}.",
+		"banEnds": "Ban ends: {date}.",
+		"banDoesNotExpire": "This ban does not expire.",
+		"tryAgain": "Try again",
+		"goHome": "Go home"
+	},
+	"ErrorPage": {
+		"tryAgain": "Try again",
+		"goHome": "Go home"
+	},
+	"SearchPage": {
+		"staysIn": "Stays in {destination}",
+		"chooseDestination": "Search a destination",
+		"chooseDestinationHint": "Enter where you want to stay, then pick your dates and guests.",
+		"error": "We couldn't load stays right now. Try again with your current search.",
+		"empty": "No stays found in this destination",
+		"emptyHint": "Try another destination or change your dates and guests.",
+		"map": "Show map",
+		"list": "Show list",
+		"mapTitle": "Google Map of {destination}",
+		"mapLoading": "Loading the map…",
+		"mapError": "We couldn't load the map.",
+		"SearchFilters": {
+			"rating": "Guest rating",
+			"distance": "Distance from centre",
+			"cancellation": "Free cancellation",
+			"filters": "Filters",
+			"price": "Nightly price",
+			"minPrice": "Minimum ({currency})",
+			"maxPrice": "Maximum ({currency})",
+			"type": "Property type",
+			"bedrooms": "Bedrooms",
+			"beds": "Beds",
+			"bathrooms": "Bathrooms",
+			"amenities": "Amenities",
+			"pets": "Pets allowed",
+			"any": "Any",
+			"clear": "Clear all",
+			"show": "Show results",
+			"close": "Close filters",
+			"remove": "Remove {filter}",
+			"sort": "Sort by",
+			"recommended": "Recommended",
+			"priceAsc": "Price: low to high",
+			"priceDesc": "Price: high to low",
+			"invalid": "Maximum price must be at least the minimum price."
+		},
+		"SearchStay": {
+			"save": "Save {name}",
+			"bedroom": "bedroom",
+			"bedrooms": "bedrooms",
+			"bed": "bed",
+			"beds": "beds",
+			"bathroom": "bathroom",
+			"bathrooms": "bathrooms",
+			"guest": "guest",
+			"guests": "guests",
+			"total": "total",
+			"night": "per night",
+			"nights": "{count} nights",
+			"previous": "Previous photo",
+			"next": "Next photo",
+			"photo": "{name}, photo {number}",
+			"noPhoto": "Photo coming soon",
+			"details": "View stay",
+			"close": "Close stay details",
+			"rules": "House rules",
+			"checkIn": "Check-in: {start}–{end}",
+			"checkOut": "Check-out: {time}",
+			"minimum": "Minimum stay: {count} nights"
+		},
+		"pageTitle": "Search"
+	},
+	"AdminFeedbackPage": {
+		"pageTitle": "Feedback | Admin",
+		"searchPlaceholder": "Search feedback...",
+		"clearFilters": "Clear filters ({count})",
+		"typeColumn": "Type",
+		"feedbackColumn": "Feedback",
+		"categoryColumn": "Area",
+		"fromColumn": "From",
+		"submittedColumn": "Submitted",
+		"actionColumn": "Action",
+		"noMatching": "No matching feedback",
+		"noneYet": "No feedback yet",
+		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"filtersEmptyDescription": "Nothing matches these filters.",
+		"emptyDescription": "Feedback sent from the feedback page will appear here.",
+		"loadError": "We couldn't load feedback. Please try again.",
+		"AdminFeedbackHeader": {
+			"adminLabel": "Support",
+			"itemsFound": "Feedback - {count} found",
+			"itemsLabel": "Feedback",
+			"filteredLabel": "Feedback - Filtered",
+			"description": "Bugs and questions sent from the feedback page."
+		},
+		"AdminFeedbackTableItem": {
+			"guest": "Guest",
+			"resolved": "Resolved"
+		},
+		"ResolveFeedbackDialog": {
+			"resolve": "Resolve",
+			"title": "Resolve this feedback?",
+			"description": "It will be marked as resolved. You can still see it in the list.",
+			"cancel": "Cancel",
+			"resolved": "Feedback marked as resolved."
+		},
+		"FeedbackMessageDialog": {
+			"close": "Close"
+		}
+	},
+	"AdminNewslettersPage": {
+		"pageTitle": "Newsletters | Admin",
+		"searchPlaceholder": "Search by email...",
+		"emailColumn": "Email",
+		"statusColumn": "Status",
+		"subscribedColumn": "Subscribed",
+		"unsubscribedColumn": "Unsubscribed",
+		"loadError": "We couldn't load newsletter subscribers. Please try again.",
+		"noMatchingSubscribers": "No matching subscribers",
+		"noSubscribersYet": "No subscribers yet",
+		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"emptyDescription": "Signups from the homepage newsletter form will appear here.",
+		"AdminNewslettersHeader": {
+			"adminLabel": "Marketing",
+			"subscribersFound": "Subscribers - {count} found",
+			"subscribersLabel": "Subscribers",
+			"filteredLabel": "Subscribers - Search results",
+			"description": "Every email collected from the homepage newsletter signup."
+		},
+		"AdminNewslettersTableItem": {
+			"subscribed": "Subscribed",
+			"unsubscribed": "Unsubscribed"
+		}
+	},
+	"AdminUsersPage": {
+		"pageTitle": "Users | Admin",
+		"searchPlaceholder": "Search names or emails...",
+		"clearFilters": "Clear filters ({count})",
+		"userColumn": "User",
+		"roleColumn": "Role",
+		"statusColumn": "Status",
+		"joinedColumn": "Joined",
+		"noMatchingUsers": "No matching users",
+		"noUsersYet": "No users yet",
+		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"filtersEmptyDescription": "Nothing matches these filters.",
+		"emptyDescription": "There are no accounts to display.",
+		"AdminUsersHeader": {
+			"adminLabel": "Admin",
+			"usersFound": "Users - {count} found",
+			"usersLabel": "Users",
+			"foundLabel": "found",
+			"filteredLabel": "Users - Filtered",
+			"description": "Review accounts, roles, and verification status."
+		},
+		"AdminUsersTableItem": {
+			"suspended": "Suspended",
+			"verified": "Verified",
+			"unverified": "Unverified"
+		}
+	},
+	"AdminUserPage": {
+		"pageTitle": "User | Admin",
+		"AdminUserHeader": {
+			"backToUsers": "Back to users"
+		},
+		"AdminUserTabs": {
+			"userDetails": "User details",
+			"profile": "Profile",
+			"settings": "Settings",
+			"sessions": "Sessions",
+			"logs": "Logs"
+		},
+		"AdminUserTabsProfileBanned": {
+			"accountBanned": "This account is banned",
+			"expires": "Expires",
+			"noExpirationSet": "No expiration set",
+			"reason": "Reason"
+		},
+		"AdminUserTabsProfileData": {
+			"verified": "Verified",
+			"unverified": "Unverified",
+			"banned": "Banned",
+			"active": "Active",
+			"id": "ID",
+			"copyUserId": "Copy user ID",
+			"appId": "App ID",
+			"copyAppUserId": "Copy app user ID"
+		},
+		"AdminUserTabsProfileLifecycle": {
+			"lifecycle": "Lifecycle",
+			"created": "Created",
+			"lastUpdated": "Last updated"
+		},
+		"AdminUserTabsSessions": {
+			"sessions": "Sessions",
+			"description": "Sign-in sessions recorded for this user.",
+			"noSessions": "No sessions",
+			"noSessionsDescription": "No sign-in sessions are recorded for this user."
+		},
+		"AdminUserTabsSessionsItem": {
+			"active": "Active",
+			"expired": "Expired",
+			"impersonated": "Impersonated",
+			"ipUnavailable": "IP unavailable",
+			"userAgentUnavailable": "User agent unavailable",
+			"impersonatedBy": "by {user}",
+			"started": "Started",
+			"lastActive": "Last active",
+			"expires": "Expires"
+		},
+		"AdminUserTabsLogs": {
+			"logs": "Logs",
+			"description": "Audit activity recorded for this user.",
+			"noActivity": "No activity yet",
+			"noActivityDescription": "No audit logs are recorded for this user."
+		},
+		"AdminUserTabsLogsItem": {
+			"resource": "Resource",
+			"resourceWithId": "{type} {id}"
+		},
+		"AdminUserTabsSettingsAccess": {
+			"userRole": "User",
+			"adminRole": "Admin",
+			"access": "Access",
+			"description": "Manage this user's role and account access.",
+			"role": "Role",
+			"pendingRoleChange": "Pending — save to change the role to {role}.",
+			"adminsCanManage": "Admins can manage users from this area.",
+			"accountAccess": "Account access",
+			"banned": "Banned",
+			"active": "Active",
+			"accessBlockedUntil": "Access blocked until {date}.",
+			"accessBlockedNoExpiration": "Access is blocked with no expiration set.",
+			"userCanSignIn": "The user can sign in normally."
+		},
+		"AdminUserTabsSettingsDangerZone": {
+			"userDeleted": "User deleted.",
+			"dangerZone": "Danger zone",
+			"description": "Permanent account actions. These actions cannot be undone.",
+			"deleteAccount": "Delete account",
+			"deleteDescription": "Removes the account, sessions, and linked authentication accounts.",
+			"deleteConfirmationTitle": "Delete {name}?",
+			"deleteConfirmationDescription": "This permanently removes the account and all of its sessions and linked accounts.",
+			"typeToConfirm": "Type {email} to confirm",
+			"cancel": "Cancel"
+		},
+		"BanUserDialog": {
+			"userBanned": "User banned.",
+			"banUser": "Ban user",
+			"banTitle": "Ban {name}?",
+			"banDescription": "Banning the user immediately ends their active sessions.",
+			"reason": "Reason",
+			"reasonPlaceholder": "Optional reason for the audit trail",
+			"duration": "Duration",
+			"cancel": "Cancel"
+		},
+		"SaveRoleButton": {
+			"roleUpdated": "User role updated.",
+			"saveRole": "Save role"
+		},
+		"UnbanUserButton": {
+			"userUnbanned": "User unbanned.",
+			"unbanUser": "Unban user"
+		},
+		"userNotFound": "User not found",
+		"userNotFoundDescription": "This account may have been removed or the link is invalid."
+	},
+	"AdminLogsPage": {
+		"pageTitle": "Logs | Admin",
+		"adminLabel": "Admin",
+		"auditLogs": "Audit logs",
+		"description": "Review activity recorded across the application.",
+		"eventColumn": "Event",
+		"severityColumn": "Severity",
+		"actorColumn": "Actor",
+		"resourceColumn": "Resource",
+		"timeColumn": "Time",
+		"actor": "Actor: {actor}",
+		"system": "System",
+		"resource": "Resource",
+		"resourceWithId": "{type} {id}",
+		"none": "None",
+		"noActivity": "No activity yet",
+		"noActivityDescription": "No audit logs have been recorded."
+	},
+	"Components": {
+		"DataTable": {
+			"emptyTitle": "No items yet",
+			"emptyDescription": "There is nothing to show yet."
+		},
+		"DataList": {
+			"emptyTitle": "No items yet",
+			"emptyDescription": "There is nothing to show yet."
+		},
+		"ErrorComponent": {
+			"retry": "Retry"
+		},
+		"PaginatedData": {
+			"page": "Page {page}",
+			"pageWithTotal": "Page {page} / {total}",
+			"previousPage": "Previous page",
+			"nextPage": "Next page"
+		},
+		"DataTableItem": {
+			"selectRow": "Select row"
+		},
+		"DataTableSelectionBar": {
+			"selected": "Selected",
+			"item": "item",
+			"items": "items",
+			"clearSelection": "Clear selection",
+			"clear": "Clear"
+		},
+		"InfiniteScroll": {
+			"loading": "Loading more items...",
+			"loadMore": "Load more",
+			"retry": "Try again",
+			"end": "No more items."
+		},
+		"PasswordInput": {
+			"hidePassword": "Hide password",
+			"showPassword": "Show password"
+		},
+		"SearchCard": {
+			"location": "Location",
+			"locationPlaceholder": "Where are you going?",
+			"search": "Search",
+			"openSearch": "Open search"
+		},
+		"SearchCardStayDates": {
+			"stayDates": "Stay dates",
+			"selectDates": "Select dates"
+		},
+		"SearchCardGuests": {
+			"label": "Select occupancy",
+			"adult": "adult",
+			"adults": "adults",
+			"child": "child",
+			"children": "children",
+			"room": "room",
+			"rooms": "rooms",
+			"close": "Close"
+		},
+		"GoogleLocationSearchInput": {
+			"clear": "Clear location",
+			"suggestions": "Location suggestions"
+		},
+		"GoogleStreetInput": {
+			"label": "Street",
+			"placeholder": "Knez Mihailova",
+			"hint": "Start typing to find your street, or enter your address manually.",
+			"clear": "Clear location",
+			"suggestions": "Location suggestions",
+			"loading": "Looking up your address…",
+			"unavailable": "Address suggestions are unavailable. You can enter your address manually.",
+			"noResults": "No matching streets. You can enter your address manually."
+		},
+		"ImageGalleryBig": {
+			"carouselLabel": "Photos",
+			"previousImage": "Previous photo",
+			"nextImage": "Next photo",
+			"thumbnailLabel": "Choose a photo",
+			"selectImage": "Show photo {index}",
+			"noImages": "No photos yet"
+		},
+		"ImageGallerySmall": {
+			"carouselLabel": "Photos",
+			"previousImage": "Previous photo",
+			"nextImage": "Next photo",
+			"selectImage": "Show photo {index}"
+		},
+		"Counter": {
+			"decrease": "Decrease {label}",
+			"increase": "Increase {label}"
+		},
+		"NativeSelect": {
+			"select": "Select…"
+		},
+		"NativeSheet": {
+			"close": "Close"
+		},
+		"NativeSheetFallback": {
+			"open": "Open sheet",
+			"description": "Displays the sheet content."
+		},
+		"NativeSidebar": {
+			"label": "Sidebar",
+			"mobileNavigation": "Mobile navigation"
+		},
+		"NativeSidebarUser": {
+			"user": "User",
+			"openAccountMenu": "Open account menu",
+			"logOut": "Log out"
+		},
+		"NativeSidebarPageHeader": {
+			"title": "Home",
+			"openNavigation": "Open navigation"
+		},
+		"CopyValue": {
+			"copy": "Copy {label}",
+			"copied": "{label} copied"
+		},
+		"Form": {
+			"savedSuccessfully": "Saved successfully.",
+			"fixHighlightedFields": "Please fix the highlighted fields.",
+			"uploadFailed": "Failed to upload file.",
+			"uploadCancelled": "File upload was cancelled."
+		},
+		"FormUploadFile": {
+			"preparingFiles": "Preparing files...",
+			"uploadingFiles": "Uploading files",
+			"uploadProgress": "File upload progress"
+		},
+		"Header": {
+			"home": "Home",
+			"contact": "Contact",
+			"signOut": "Sign out",
+			"signIn": "Sign in",
+			"listYourProperty": "List your property",
+			"switchToHosting": "Switch to hosting",
+			"trips": "Trips",
+			"saved": "Saved",
+			"findBooking": "Find booking",
+			"accountSettings": "Account settings",
+			"help": "Help",
+			"adminDashboard": "Admin dashboard"
+		},
+		"HostSidebar": {
+			"hosting": "Hosting",
+			"navigationLabel": "Hosting navigation",
+			"openNavigation": "Open hosting navigation",
+			"general": "General",
+			"accommodations": "Accommodations",
+			"bookings": "Bookings",
+			"backToAccount": "Back to Account",
+			"dashboard": "Dashboard",
+			"addAccommodation": "Add accommodation",
+			"myAccommodations": "My accommodations",
+			"switchToTravelling": "Switch to travelling"
+		},
+		"GuestSidebar": {
+			"travelling": "Travelling",
+			"navigationLabel": "Travelling navigation",
+			"openNavigation": "Open travelling navigation",
+			"bookings": "Bookings",
+			"accommodations": "Accommodations",
+			"account": "Account",
+			"backToExploring": "Back to exploring",
+			"trips": "Trips",
+			"saved": "Saved",
+			"claimBooking": "Claim booking",
+			"settings": "Settings",
+			"switchToHosting": "Switch to hosting"
+		},
+		"SvelteHead": {
+			"home": "Home"
+		}
+	},
+	"ValidationMessages": {
+		"required": "This value cannot be empty.",
+		"invalid": "Enter a valid value.",
+		"invalidSelection": "Select a valid option.",
+		"number": "Enter a valid number.",
+		"integer": "Enter a whole number.",
+		"date": "Enter a valid date.",
+		"time": "Enter a valid time.",
+		"minLength": "Use at least {minimum} characters.",
+		"maxLength": "Use no more than {maximum} characters.",
+		"minItems": "Minimum number of items: {minimum}.",
+		"maxItems": "Maximum number of items: {maximum}.",
+		"minimum": "Enter a value of at least {minimum}.",
+		"maximum": "Enter a value of at most {maximum}.",
+		"greaterThan": "Enter a value greater than {minimum}.",
+		"lessThan": "Enter a value less than {maximum}.",
+		"multipleOf": "Enter a value in increments of {step}.",
+		"passwordsDoNotMatch": "Passwords do not match.",
+		"invalidEmail": "Please enter a valid email address.",
+		"userAlreadyExists": "An account with this email already exists.",
+		"invalidOtp": "That code is incorrect. Check it and try again.",
+		"otpExpired": "That code has expired. Request a new one.",
+		"tooManyAttempts": "Too many attempts. Try again in a few minutes.",
+		"pastStayDate": "Check-in must be today or a future date.",
+		"stayDateOrder": "Check-out must be after check-in.",
+		"minimumStay": "Choose at least {count} nights for this property.",
+		"maximumStay": "This property allows stays of up to {count} nights.",
+		"guestLimit": "Enter at least one adult and no more than {count} guests in total, using whole numbers."
+	},
+	"BackendMessages": {
+		"rateLimitSingle": "You hit the rate limit. Try again in 1 second.",
+		"rateLimitMultiple": "You hit the rate limit. Try again in {seconds} seconds.",
+		"unauthenticated": "Please sign in and try again.",
+		"forbidden": "You do not have permission to do that.",
+		"captchaFailed": "Please complete the security check and try again.",
+		"uploadNotFound": "The upload could not be found.",
+		"invalidUpload": "The selected file is invalid.",
+		"invalidAccommodation": "Some listing details are missing or invalid. Review each section and check your available dates.",
+		"invalidBooking": "Some booking details are missing or invalid. Check your dates, guests and contact details.",
+		"accommodationNotFound": "This accommodation is no longer available. Return to search and choose another stay.",
+		"invalidFeedback": "Some feedback details are missing or invalid. Review the form and try again.",
+		"feedbackNotFound": "That feedback no longer exists.",
+		"duplicateUpload": "Remove duplicate files and try again."
+	},
+	"AddAccommodationPage": {
+		"title": "Add an accommodation",
+		"untitled": "Untitled accommodation",
+		"AccommodationHeader": {
+			"title": "Create your accommodation",
+			"localOnly": "Details stay on this page until you publish. Leaving will discard them.",
+			"basicsTitle": "Tell us about your property",
+			"basicsHint": "Choose the space and how many people it comfortably sleeps.",
+			"locationTitle": "Where will your guests stay?",
+			"locationHint": "Enter the full address, including the building or unit number.",
+			"amenitiesTitle": "What does your property offer?",
+			"amenitiesHint": "Select what is available to guests. You can add more later.",
+			"photosTitle": "Help guests picture their stay",
+			"photosHint": "Add 5?10 photos. The first photo is your cover. Use the arrows to reorder.",
+			"pricingTitle": "Set your nightly price and dates",
+			"pricingHint": "Guests can arrive from the first date and must leave by the last date.",
+			"rulesTitle": "Set expectations for your guests",
+			"rulesHint": "Times are local to the property. Keep additional rules short and clear.",
+			"reviewTitle": "Take a final look",
+			"reviewHint": "Check the details below before making this accommodation public."
+		},
+		"AccommodationProgress": {
+			"position": "{current} of {total}",
+			"sections": "Accommodation sections",
+			"basics": "Property basics",
+			"location": "Location",
+			"amenities": "Amenities",
+			"photos": "Photos & description",
+			"pricing": "Pricing & availability",
+			"rules": "Guest rules",
+			"review": "Review & publish"
+		},
+		"AddAccommodationFormAmenities": {
+			"previous": "Back"
+		},
+		"AddAccommodationFormBasicInfo": {
+			"guests": "Maximum guests",
+			"bedrooms": "Bedrooms",
+			"beds": "Beds",
+			"bathrooms": "Bathrooms",
+			"type": "Property type",
+			"apartment": "Apartment",
+			"studio": "Studio",
+			"house": "House",
+			"villa": "Villa",
+			"room": "Room",
+			"other": "Other",
+			"spaceType": "What will guests have?",
+			"entire": "Entire property",
+			"private": "Private room",
+			"shared": "Shared room"
+		},
+		"AddAccommodationFormLocation": {
+			"streetNumber": "Street number",
+			"streetNumberPlaceholder": "12A",
+			"city": "City",
+			"cityPlaceholder": "Belgrade",
+			"postalCode": "Postal code (optional)",
+			"postalCodePlaceholder": "11000",
+			"country": "Country",
+			"mapTitle": "Pin your accommodation",
+			"mapHint": "Drag the pin or click the map to correct its position.",
+			"mapWaiting": "Enter a street, city and country to find the location on the map.",
+			"mapLoading": "Loading the map…",
+			"mapSearching": "Finding this address on the map…",
+			"mapNoResult": "We couldn't locate this address. Click the map to place the pin.",
+			"mapUnavailable": "The map is unavailable. Check your Google Maps settings.",
+			"mapPinTitle": "Accommodation location. Drag to adjust.",
+			"mapPinRequired": "Place the pin on the map before continuing.",
+			"previous": "Back"
+		},
+		"AddAccommodationFormPhotos": {
+			"name": "Listing title",
+			"namePlaceholder": "Sunny apartment near the old town",
+			"nameHint": "A clear title, between 5 and 100 characters.",
+			"description": "Description",
+			"descriptionPlaceholder": "Quiet, bright apartment with a balcony and a view of the park.",
+			"descriptionHint": "At least 30 characters. Tell guests what makes the space comfortable.",
+			"photoCount": "{count} of 5 required photos added",
+			"previous": "Back"
+		},
+		"AddAccommodationFormPricing": {
+			"nightlyPrice": "Base price per night",
+			"nightlyPricePlaceholder": "75",
+			"minimumStay": "Minimum stay (nights)",
+			"minimumStayPlaceholder": "2",
+			"maximumStay": "Maximum stay (nights)",
+			"maximumStayPlaceholder": "Unlimited",
+			"oneDay": "1 day",
+			"sevenDays": "7 days",
+			"thirtyDays": "30 days",
+			"previous": "Back"
+		},
+		"AddAccommodationFormReview": {
+			"preview": "Listing preview",
+			"noPhotos": "Add your cover photo",
+			"capacity": "{guests} guests ? {bedrooms} bedrooms ? {beds} beds ? {bathrooms} bathrooms",
+			"night": "per night",
+			"smokingAllowed": "Smoking allowed",
+			"yes": "Allowed",
+			"no": "Not allowed",
+			"petsAllowed": "Pets allowed",
+			"partiesAllowed": "Parties or events allowed",
+			"minimumStay": "Minimum stay (nights)",
+			"maximumStay": "Maximum stay (nights)",
+			"unlimited": "Unlimited",
+			"checkInStart": "Check-in from",
+			"checkInEnd": "Check-in until",
+			"checkOut": "Check-out by",
+			"basics": "Property basics",
+			"location": "Location",
+			"amenities": "Amenities",
+			"photos": "Photos & listing",
+			"pricing": "Price & availability",
+			"rules": "Guest rules",
+			"previous": "Back",
+			"apartment": "Apartment",
+			"studio": "Studio",
+			"house": "House",
+			"villa": "Villa",
+			"room": "Room",
+			"other": "Other",
+			"entire": "Entire property",
+			"private": "Private room",
+			"shared": "Shared room",
+			"sections": "Accommodation sections"
+		},
+		"AddAccommodationFormRules": {
+			"checkInStart": "Check-in from",
+			"checkInEnd": "Check-in until",
+			"checkOut": "Check-out by",
+			"checkInWindowHint": "Guests can check in between these times.",
+			"checkOutHint": "The time by which guests must leave the accommodation.",
+			"smokingAllowed": "Smoking allowed",
+			"smokingAllowedHint": "Guests may smoke inside the property.",
+			"petsAllowed": "Pets allowed",
+			"petsAllowedHint": "Guests may bring their pets.",
+			"partiesAllowed": "Parties or events allowed",
+			"partiesAllowedHint": "Guests may host parties or events.",
+			"houseRules": "Additional rules (optional)",
+			"houseRulesPlaceholder": "Quiet hours after 10 PM. No shoes indoors.",
+			"previous": "Back"
+		},
+
+		"AddAccommodationForm": {
+			"published": "Accommodation published",
+			"images": "Photos",
+			"publishError": "We could not publish your accommodation. Your entries are still on this page. Please try again."
+		},
+		"AddAccommodationContinueButton": {
+			"continue": "Continue"
+		},
+		"AddAccommodationSaveButton": {
+			"save": "Save accommodation"
+		}
+	},
+	"MyAccommodationsPage": {
+		"pageTitle": "My accommodations",
+		"searchPlaceholder": "Search by name...",
+		"clearFilters": "Clear filters ({count})",
+		"noMatchingAccommodations": "No matching accommodations",
+		"noAccommodationsYet": "No accommodations yet",
+		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"filtersEmptyDescription": "Nothing matches these filters.",
+		"emptyDescription": "List your first accommodation to start receiving bookings.",
+		"addAccommodation": "Add accommodation",
+		"MyAccommodationsHeader": {
+			"hostLabel": "Host",
+			"accommodationsFound": "Accommodations - {count} found",
+			"accommodationsLabel": "Accommodations",
+			"foundLabel": "found",
+			"filteredLabel": "Accommodations - Filtered",
+			"description": "Manage the listings guests can book."
+		},
+		"MyAccommodationCard": {
+			"manage": "Manage",
+			"guests": "Guests",
+			"bedrooms": "Bedrooms",
+			"beds": "Beds",
+			"bathrooms": "Bathrooms",
+			"perNight": "per night",
+			"updated": "Updated {date}"
+		}
+	},
+	"MyAccommodationPage": {
+		"pageTitle": "Manage accommodation",
+		"notFound": "We couldn't find this accommodation",
+		"notFoundHint": "It may have been removed, or you may not have access to it. Return to your accommodations to pick another listing.",
+		"MyAccommodationTabs": {
+			"label": "Accommodation sections",
+			"listing": "Listing",
+			"calendar": "Calendar",
+			"settings": "Settings"
+		},
+		"MyAccommodationHeader": {
+			"back": "My accommodations",
+			"published": "Published",
+			"view": "View public listing"
+		},
+		"MyAccommodationTabListing": {
+			"title": "Your listing",
+			"description": "Manage the details guests see and the rules for their stay."
+		},
+		"MyAccommodationTabListingSection": {
+			"property": "Property",
+			"booking": "Booking details",
+			"basicsSummary": "{type} · {guests} guests · {bedrooms} bedrooms · {beds} beds",
+			"amenitiesSummary": "{count} amenities selected",
+			"photosSummary": "{count} photos",
+			"pricingSummary": "{price} / night · {nights}-night minimum",
+			"rulesSummary": "Check-in {start}–{end} · Check-out {checkout}"
+		},
+		"MyAccommodationTabListingEditor": {
+			"back": "Back to listing",
+			"cancel": "Cancel",
+			"mapTitle": "Map location",
+			"mapHint": "Drag the pin or click the map to adjust the exact location."
+		},
+		"MyAccommodationTabListingSaveButton": {
+			"save": "Save changes"
+		},
+		"MyAccommodationTabListingSections": {
+			"basics": "Property basics",
+			"basicsHint": "Set the property type, guest capacity, and sleeping arrangements.",
+			"location": "Location",
+			"locationHint": "Your address and the location guests use to find your accommodation.",
+			"amenities": "Amenities",
+			"amenitiesHint": "Choose the amenities guests can expect during their stay.",
+			"photos": "Photos & description",
+			"photosHint": "Give guests a clear picture of your space. Add at least 5 photos.",
+			"pricing": "Pricing & length of stay",
+			"pricingHint": "Set your standard nightly rate and the length of stay you accept.",
+			"rules": "Guest rules",
+			"rulesHint": "Set arrival and departure times, permissions, and house rules."
+		},
+		"MyAccommodationTabCalendar": {
+			"title": "Availability",
+			"description": "A view of your nights, reservations, and time set aside for yourself.",
+			"blockDates": "Block dates",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"caption": "{month}, sample availability calendar",
+			"available": "Available",
+			"booked": "Booked",
+			"imported": "Synced booking",
+			"blocked": "Blocked",
+			"selected": "Selected dates",
+			"exampleRange": "26–28 October",
+			"rangeHint": "3 nights · Sample date selection",
+			"availability": "Availability",
+			"reason": "Block reason",
+			"maintenance": "Maintenance",
+			"privateNote": "Private note",
+			"sampleNote": "Refresh paint before the next arrival.",
+			"noteHint": "Only visible to you.",
+			"nightlyRate": "Nightly rate (EUR)",
+			"rateHint": "Optional rate override for these nights.",
+			"save": "Save dates",
+			"rules": "Availability rules",
+			"rulesHint": "Defaults for future bookings. These are sample settings.",
+			"stayLength": "Length of stay",
+			"stayValue": "2–30 nights",
+			"advanceNotice": "Advance notice",
+			"noticeValue": "At least 1 day",
+			"preparation": "Preparation time",
+			"preparationValue": "1 night between stays",
+			"bookingWindow": "Booking window",
+			"windowValue": "6 months ahead"
+		},
+		"MyAccommodationCalendarDayItem": {
+			"available": "Available",
+			"booked": "Booked",
+			"imported": "Synced booking",
+			"blocked": "Blocked",
+			"selected": "Selected dates",
+			"reservation": "Reserved",
+			"ownerStay": "Owner stay"
+		},
+		"MyAccommodationTabSettings": {
+			"financial": "Financial",
+			"financialHint": "Billing information for this accommodation, including charges and invoices.",
+			"billingOverview": "Accommodation billing",
+			"notConfigured": "Not configured",
+			"plan": "Plan",
+			"cycle": "Billing cycle",
+			"amount": "Recurring charge",
+			"nextInvoice": "Next invoice",
+			"paymentMethod": "Payment method",
+			"billingContact": "Billing contact",
+			"notSet": "Not set",
+			"notAdded": "Not added",
+			"notScheduled": "Not scheduled",
+			"invoicesEmpty": "No invoices for this accommodation yet.",
+			"viewInvoices": "View invoices",
+			"calendar": "Calendar connections",
+			"calendarHint": "Keep availability aligned with your listings on other platforms.",
+			"syncedExample": "Synced · example",
+			"lastSync": "Example sync: 27 Sep 2026, 10:30",
+			"refresh": "Sync now",
+			"notConnected": "Not connected",
+			"connectHint": "Import bookings to block those dates here.",
+			"connect": "Connect",
+			"export": "Export your calendar",
+			"exportHint": "Share availability using an iCal link.",
+			"copyLink": "Copy iCal link",
+			"syncHint": "Calendar updates may take time. Check the last successful sync before confirming a booking on another platform.",
+			"dangerZone": "Danger zone",
+			"dangerHint": "Control whether this accommodation is visible or remove it permanently.",
+			"unpublish": "Unpublish accommodation",
+			"unpublishHint": "Hide the listing from new guests. Keep its details so you can publish it again later.",
+			"delete": "Delete accommodation",
+			"deleteHint": "Permanently remove this listing. This cannot be undone. Existing bookings must be resolved first."
+		}
+	},
+	"MyBookingsPage": {
+		"pageTitle": "My bookings",
+		"searchPlaceholder": "Search by last name or email...",
+		"noMatchingBookings": "No matching bookings",
+		"noBookingsYet": "No bookings yet",
+		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"emptyDescription": "Bookings you make will appear here.",
+		"findAccommodation": "Find accommodation",
+		"MyBookingsHeader": {
+			"guestLabel": "Guest",
+			"bookingsFound": "Bookings - {count} found",
+			"bookingsLabel": "Bookings",
+			"foundLabel": "found",
+			"filteredLabel": "Bookings - Filtered",
+			"description": "Review your upcoming and past stays."
+		},
+		"MyBookingCard": {
+			"checkIn": "Check-in",
+			"checkOut": "Check-out",
+			"night": "night",
+			"nights": "nights",
+			"requests": "Special requests",
+			"booked": "Booked {date}"
+		}
+	},
+	"ErrorMessages": {
+		"unexpected": "Something went wrong. Please try again.",
+		"loadFailed": "Couldn't load this content. Please try again."
+	}
+}
