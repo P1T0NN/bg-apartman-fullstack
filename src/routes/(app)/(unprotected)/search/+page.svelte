@@ -31,12 +31,27 @@
 	// UTILS
 	import { cn } from '@/utils/utils.js';
 
+	// TYPES
+	import type { MapBounds } from '@/components/ui/custom-components/google-components/google-map/useGoogleMap.svelte.js';
+
 	let { data } = $props();
 
 	const place = $derived(data.placeDetails);
 	const hasLocation = $derived(Boolean(place?.country));
 	const mapPosition = $derived(place?.position ?? null);
 	const destination = $derived([place?.city, place?.country].filter(Boolean).join(', '));
+	const locationKey = $derived(page.url.searchParams.get('location'));
+	let viewport = $state<{ location: string | null; bounds?: MapBounds; moving: boolean }>();
+	const bounds = $derived(viewport?.location === locationKey ? viewport?.bounds : undefined);
+	const mapMoving = $derived(viewport?.location === locationKey && Boolean(viewport?.moving));
+
+	function updateMapBounds(next: MapBounds): void {
+		viewport = { location: locationKey, bounds: next, moving: false };
+	}
+
+	function updateMapMoving(moving: boolean): void {
+		viewport = { location: locationKey, bounds, moving };
+	}
 
 	const search = useSearchCriteria({ hasLocation: () => hasLocation });
 	setSearchContext(search);
@@ -49,21 +64,12 @@
 	const accommodations = useSearchAccommodations(
 		() => ({
 			location: { city: place?.city ?? undefined, country: place?.country ?? undefined },
+			bounds,
 			adults: readNumber('adults'),
 			children: readNumber('children'),
 			rooms: readNumber('rooms')
 		}),
-		{ pageSize: PAGINATION_CONFIG.DEFAULT_PAGE_SIZE }
-	);
-
-	const stayMarkers = $derived(
-		accommodations.data.map((stay) => ({
-			id: stay._id,
-			lat: stay.latitude,
-			lng: stay.longitude,
-			name: stay.name,
-			priceMinor: stay.pricePerNightMinor
-		}))
+		{ pageSize: PAGINATION_CONFIG.DEFAULT_PAGE_SIZE, isMapMoving: () => mapMoving }
 	);
 
 	const session = authClient.useSession();
@@ -100,12 +106,15 @@
 		<section
 			class={search.mapVisible ? 'hidden min-w-0 min-[68.75rem]:block' : 'min-w-0'}
 			aria-label={m['SearchPage.pageTitle']()}
+			aria-busy={accommodations.loading}
 		>
 			<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
 				<div>
 					{#if destination}
 						<h1 class="text-2xl font-semibold tracking-tight">
-							{m['SearchPage.staysIn']({ destination: destination.split(',')[0] })}
+							{bounds
+								? m['SearchPage.staysInArea']()
+								: m['SearchPage.staysIn']({ destination: destination.split(',')[0] })}
 						</h1>
 					{:else}
 						<h1 class="text-2xl font-semibold tracking-tight">
@@ -132,6 +141,7 @@
 			{#if hasLocation}
 				<DataList
 					pagination={accommodations}
+					showPagination={!accommodations.loading}
 					key={(item) => item._id}
 					class="grid grid-cols-1 gap-x-5 gap-y-9 sm:grid-cols-2"
 				>
@@ -159,12 +169,17 @@
 		</section>
 
 		{#if hasLocation}
-			<SearchMap
-				{destination}
-				position={mapPosition}
-				markers={stayMarkers}
-				highlightedId={hoveredId}
-			/>
+			{#key locationKey}
+				<SearchMap
+					{destination}
+					position={mapPosition}
+					markers={accommodations.loading || accommodations.error ? [] : accommodations.data}
+					highlightedId={hoveredId}
+					loading={accommodations.loading}
+					onBoundsChange={updateMapBounds}
+					onMovingChange={updateMapMoving}
+				/>
+			{/key}
 		{/if}
 	</div>
 </main>

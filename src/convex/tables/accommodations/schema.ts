@@ -46,4 +46,5 @@ export const accommodations = defineTable({
 	.index('by_owner_id', ['ownerId'])
 	.index('by_owner_id_type', ['ownerId', 'type'])
 	.index('by_address_country_city', ['address.country', 'address.city'])
+	.index('by_latitude', ['latitude'])
 	.searchIndex('search_name', { searchField: 'name', filterFields: ['ownerId', 'type'] });

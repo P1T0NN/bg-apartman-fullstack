@@ -3,11 +3,13 @@ import { env } from '$env/dynamic/public';
 
 // LIBRARIES
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+import { untrack } from 'svelte';
 
 // TYPES
 import type { Attachment } from 'svelte/attachments';
 
 export type Position = { lat: number; lng: number };
+export type MapBounds = google.maps.LatLngBoundsLiteral;
 
 export type MapMarker = {
 	position: Position;
@@ -22,8 +24,32 @@ export type GoogleMapConfig = {
 	getPinTitle: () => string;
 	getDisabled: () => boolean;
 	getZoom: () => number;
+	getFitMarkers?: () => boolean;
+	getShowPositionMarker?: () => boolean;
+	onBoundsChange?: (bounds: MapBounds) => void;
+	onMovingChange?: (moving: boolean) => void;
 	onPositionChange: (position: Position) => void;
 };
+
+// Custom marker content sits inside Google's map DOM, so gestures that start in
+// it (buttons, carousels, popovers) would otherwise pan or zoom the map. Stop
+// only gesture starts: a map drag that ends over a marker still has to finish.
+const MAP_GESTURE_EVENTS = [
+	'mousedown',
+	'pointerdown',
+	'touchstart',
+	'click',
+	'dblclick',
+	'wheel'
+] as const;
+
+function stopMapGesture(event: Event): void {
+	event.stopPropagation();
+}
+
+function blockMapGestures(element: HTMLElement): void {
+	for (const type of MAP_GESTURE_EVENTS) element.addEventListener(type, stopMapGesture);
+}
 
 let loaderConfigured = false;
 
@@ -38,10 +64,14 @@ export function useGoogleMap(options: GoogleMapConfig) {
 	let markerElements: google.maps.marker.AdvancedMarkerElement[] = [];
 	let loaded = $state(false);
 	let failed = $state(false);
+	let previousPosition: Position | null = null;
+	let previousZoom: number | undefined;
 
 	const initialize: Attachment<HTMLDivElement> = (element) => {
 		let removed = false;
 		let mapClick: google.maps.MapsEventListener | undefined;
+		let boundsChange: google.maps.MapsEventListener | undefined;
+		let idle: google.maps.MapsEventListener | undefined;
 		const handleDragEnd = () => {
 			if (options.getDisabled() || !marker?.position) return;
 			// SAFETY: a dragged AdvancedMarkerElement reports numeric latitude and longitude.
@@ -90,6 +120,19 @@ export function useGoogleMap(options: GoogleMapConfig) {
 				});
 
 				marker.addEventListener('gmp-dragend', handleDragEnd);
+				boundsChange = map.addListener('bounds_changed', () => {
+					if (!element.clientWidth || !element.clientHeight) return;
+					untrack(() => options.onMovingChange?.(true));
+				});
+				idle = map.addListener('idle', () => {
+					const bounds = map?.getBounds();
+					untrack(() => {
+						// Hidden mobile maps have no useful viewport until they are shown.
+						const hasViewport = bounds && element.clientWidth > 0 && element.clientHeight > 0;
+						if (hasViewport) options.onBoundsChange?.(bounds.toJSON());
+						options.onMovingChange?.(false);
+					});
+				});
 
 				loaded = true;
 			} catch {
@@ -100,6 +143,8 @@ export function useGoogleMap(options: GoogleMapConfig) {
 		return () => {
 			removed = true;
 			mapClick?.remove();
+			boundsChange?.remove();
+			idle?.remove();
 			for (const markerElement of markerElements) markerElement.map = null;
 			markerElements = [];
 			if (marker) {
@@ -114,10 +159,16 @@ export function useGoogleMap(options: GoogleMapConfig) {
 	const syncPosition: Attachment<HTMLDivElement> = () => {
 		if (!loaded || !map || !marker) return;
 		const next = options.getPosition();
-		marker.position = next;
-		if (next) {
+		marker.position = (options.getShowPositionMarker?.() ?? true) ? next : null;
+		const zoom = options.getZoom();
+		const positionChanged =
+			next?.lat !== previousPosition?.lat || next?.lng !== previousPosition?.lng;
+		const cameraChanged = positionChanged || zoom !== previousZoom;
+		previousPosition = next;
+		previousZoom = zoom;
+		if (next && cameraChanged) {
 			map.panTo(next);
-			map.setZoom(options.getZoom());
+			map.setZoom(zoom);
 		}
 	};
 
@@ -132,10 +183,14 @@ export function useGoogleMap(options: GoogleMapConfig) {
 				title: item.title
 			});
 			const content = item.content?.();
-			if (content) markerElement.append(content);
+			if (content) {
+				blockMapGestures(content);
+				markerElement.append(content);
+			}
 			return markerElement;
 		});
-		if (next.length === 0) return;
+		const shouldFitMarkers = next.length > 0 && (options.getFitMarkers?.() ?? true);
+		if (!shouldFitMarkers) return;
 
 		if (next.length === 1) {
 			map.setCenter(next[0].position);

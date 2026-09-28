@@ -16,7 +16,10 @@ import type { Id } from '@convex/_generated/dataModel';
 const searchQuery =
 	api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
 type SearchQuery = typeof searchQuery;
-type SearchArgs = Pick<FunctionArgs<SearchQuery>, 'location' | 'adults' | 'children' | 'rooms'>;
+type SearchArgs = Pick<
+	FunctionArgs<SearchQuery>,
+	'location' | 'bounds' | 'adults' | 'children' | 'rooms'
+>;
 type SearchPage = FunctionReturnType<SearchQuery>;
 type SearchItem = SearchPage['items'][number];
 
@@ -27,7 +30,7 @@ type SearchItem = SearchPage['items'][number];
  */
 export function useSearchAccommodations(
 	args: () => SearchArgs,
-	options: { pageSize?: number } = {}
+	options: { pageSize?: number; isMapMoving?: () => boolean } = {}
 ) {
 	const pageSize = normalizePageSize(options.pageSize);
 	const key = $derived(JSON.stringify(args()));
@@ -39,11 +42,13 @@ export function useSearchAccommodations(
 	let nextCursor = $state<string | null>(null);
 	let total = $state<number | undefined>(undefined);
 	let loading = $state(true);
+	let requestedKey = $state('');
 	let error = $state<unknown>(undefined);
 	let requestId = 0;
 
 	async function fetchPage(targetPage: number): Promise<void> {
 		const request = ++requestId;
+		requestedKey = untrack(() => key);
 		const cursor = untrack(() => cursors[targetPage] ?? null);
 		// SAFETY: The query validator requires paginationOpts, which Convex validates before the handler runs.
 		const requestArgs = {
@@ -54,8 +59,19 @@ export function useSearchAccommodations(
 		loading = true;
 		error = undefined;
 		try {
-			const result = await getConvexClient().query(searchQuery, requestArgs);
+			let result = await getConvexClient().query(searchQuery, requestArgs);
+			// A bounded index scan may return an empty batch with more candidates to check.
+			while (result.items.length === 0 && result.nextCursor !== null) {
+				if (request !== requestId) return;
+				requestArgs.paginationOpts.cursor = result.nextCursor;
+				result = await getConvexClient().query(searchQuery, requestArgs);
+			}
 			if (request !== requestId) return;
+			const exhaustedNextPage = targetPage > 1 && result.items.length === 0;
+			if (exhaustedNextPage) {
+				nextCursor = null;
+				return;
+			}
 			page = targetPage;
 			data = result.items;
 			favoriteIds = result.favoriteIds;
@@ -77,16 +93,19 @@ export function useSearchAccommodations(
 			page = 1;
 			cursors = { 1: null };
 			void fetchPage(1);
+			return () => {
+				requestId++;
+			};
 		};
 	}
 
 	function onPrev(): void {
-		if (page <= 1) return;
+		if (loading || options.isMapMoving?.() || page <= 1) return;
 		void fetchPage(page - 1);
 	}
 
 	function onNext(): void {
-		if (nextCursor === null) return;
+		if (loading || options.isMapMoving?.() || nextCursor === null) return;
 		const targetPage = page + 1;
 		cursors = { ...cursors, [targetPage]: nextCursor };
 		void fetchPage(targetPage);
@@ -107,10 +126,10 @@ export function useSearchAccommodations(
 			return data;
 		},
 		get loading() {
-			return loading;
+			return loading || requestedKey !== key || (options.isMapMoving?.() ?? false);
 		},
 		get error() {
-			return error;
+			return requestedKey !== key || options.isMapMoving?.() ? undefined : error;
 		},
 		get nextCursor() {
 			return nextCursor;

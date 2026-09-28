@@ -1,6 +1,11 @@
 <script lang="ts">
 	// HOOKS
-	import { useGoogleMap, type MapMarker, type Position } from './useGoogleMap.svelte.js';
+	import {
+		useGoogleMap,
+		type MapMarker,
+		type Position,
+		type MapBounds
+	} from './useGoogleMap.svelte.js';
 
 	// UTILS
 	import { cn } from '@/utils/utils.js';
@@ -9,6 +14,10 @@
 		position,
 		markers = [],
 		onPositionChange = () => {},
+		onBoundsChange,
+		onMovingChange,
+		fitMarkers = true,
+		showPositionMarker = true,
 		label,
 		pinTitle,
 		loadingText,
@@ -20,6 +29,10 @@
 		position: Position | null;
 		markers?: MapMarker[];
 		onPositionChange?: (position: Position) => void;
+		onBoundsChange?: (bounds: MapBounds) => void;
+		onMovingChange?: (moving: boolean) => void;
+		fitMarkers?: boolean;
+		showPositionMarker?: boolean;
 		label: string;
 		pinTitle: string;
 		loadingText: string;
@@ -35,6 +48,10 @@
 		getPinTitle: () => pinTitle,
 		getDisabled: () => disabled,
 		getZoom: () => zoom,
+		getFitMarkers: () => fitMarkers,
+		getShowPositionMarker: () => showPositionMarker,
+		onBoundsChange: (bounds) => onBoundsChange?.(bounds),
+		onMovingChange: (moving) => onMovingChange?.(moving),
 		onPositionChange: (point) => onPositionChange(point)
 	});
 </script>

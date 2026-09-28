@@ -16,16 +16,17 @@
 	import Price from '@/components/ui/custom-components/price/price.svelte';
 
 	// TYPES
-	import type { Doc } from '@convex/_generated/dataModel';
-
-	type Accommodation = Doc<'accommodations'> & { imageUrls: string[] };
+	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { Snippet } from 'svelte';
 
 	let {
 		accommodation,
-		onhover
+		onhover,
+		close
 	}: {
-		accommodation: Accommodation;
+		accommodation: PublicAccommodation;
 		onhover?: (hovered: boolean) => void;
+		close?: Snippet;
 	} = $props();
 </script>
 
@@ -36,11 +37,10 @@
 >
 	<ImageGallerySmall images={accommodation.imageUrls} alt={accommodation.name} />
 
-	<FavoriteButton
-		accommodationId={accommodation._id}
-		name={accommodation.name}
-		class="absolute top-3 right-3 z-10"
-	/>
+	<div class="absolute top-3 right-3 z-10 flex items-center gap-2">
+		<FavoriteButton accommodationId={accommodation._id} name={accommodation.name} />
+		{@render close?.()}
+	</div>
 
 	<div class="flex flex-1 flex-col gap-2 px-1">
 		<p class="text-xs text-muted-foreground capitalize">

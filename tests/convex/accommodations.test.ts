@@ -477,3 +477,70 @@ test('search filters by location, total guests, and rooms', async () => {
 	const unscoped = await t.query(search, { ...base, location: {} });
 	expect(unscoped.items).toEqual([]);
 });
+
+test('map search scopes coordinates before pagination and validates bounds', async () => {
+	const t = setup();
+	const { nightlyPrice, ...details } = listing;
+	await t.run(async (ctx) => {
+		for (const [name, latitude, longitude, maxGuests] of [
+			['outside longitude', 44, 10, 4],
+			['southwest edge', 44, 20, 4],
+			['inside', 44.5, 20.5, 2],
+			['northeast edge', 45, 21, 4],
+			['outside latitude', 46, 20, 4],
+			['east date line', 0, 179, 4],
+			['west date line', 0, -179, 4]
+		] as const) {
+			await ctx.db.insert('accommodations', {
+				...details,
+				name,
+				latitude,
+				longitude,
+				maxGuests,
+				ownerId: 'host',
+				pricePerNightMinor: Math.round(nightlyPrice * 100),
+				status: 'published',
+				updatedAt: 1
+			});
+		}
+	});
+	const search =
+		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
+	const args = {
+		location: { city: 'Paris', country: 'France' },
+		bounds: { south: 44, north: 45, west: 20, east: 21 },
+		adults: 3,
+		rooms: 1,
+		paginationOpts: { cursor: null, numItems: 1 }
+	};
+	const first = await t.query(search, args);
+	expect(first.items.map((item) => item.name)).toEqual(['southwest edge']);
+	const second = await t.query(search, {
+		...args,
+		paginationOpts: { ...args.paginationOpts, cursor: first.nextCursor }
+	});
+	expect(second.items.map((item) => item.name)).toEqual(['northeast edge']);
+	const empty = await t.query(search, {
+		...args,
+		bounds: { south: 30, north: 31, west: 20, east: 21 }
+	});
+	expect(empty.items).toEqual([]);
+	expect(empty.nextCursor).toBeNull();
+	const crossing = await t.query(search, {
+		...args,
+		bounds: { south: -1, north: 1, west: 178, east: -178 },
+		paginationOpts: { cursor: null, numItems: 10 }
+	});
+	expect(crossing.items.map((item) => item.name).sort()).toEqual([
+		'east date line',
+		'west date line'
+	]);
+	for (const bounds of [
+		{ ...args.bounds, north: 91 },
+		{ ...args.bounds, south: 46 },
+		{ ...args.bounds, west: -181 },
+		{ ...args.bounds, east: Number.NaN }
+	]) {
+		await expect(t.query(search, { ...args, bounds })).rejects.toThrow();
+	}
+});

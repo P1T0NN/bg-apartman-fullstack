@@ -384,11 +384,15 @@
 	},
 	"SearchPage": {
 		"staysIn": "Stays in {destination}",
+		"staysInArea": "Stays in this area",
 		"chooseDestination": "Search a destination",
 		"chooseDestinationHint": "Enter where you want to stay, then pick your dates and guests.",
 		"error": "We couldn't load stays right now. Try again with your current search.",
-		"empty": "No stays found in this destination",
-		"emptyHint": "Try another destination or change your dates and guests.",
+		"empty": "There are no accommodations in this area",
+		"emptyHint": "Move or zoom out on the map, or change your destination, guests, or rooms.",
+		"SearchMap": {
+			"loading": "Loading accommodations in this area"
+		},
 		"map": "Show map",
 		"list": "Show list",
 		"mapTitle": "Google Map of {destination}",
