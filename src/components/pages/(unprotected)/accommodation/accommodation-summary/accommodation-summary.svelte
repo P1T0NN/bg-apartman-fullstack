@@ -85,9 +85,6 @@
 		</Card.Content>
 
 		<Card.Footer class="flex-col items-stretch gap-3">
-			<p class="text-sm leading-6 text-muted-foreground">
-				{m['AccommodationPage.AccommodationSummary.bookingUnavailable']()}
-			</p>
 			<Button
 				href={UNPROTECTED_PAGE_ENDPOINTS.BOOK_ACCOMMODATION(accommodation._id) + page.url.search}
 				class="min-h-11">{m['AccommodationPage.AccommodationSummary.planBooking']()}</Button

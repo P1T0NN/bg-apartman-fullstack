@@ -6,12 +6,17 @@
 	import { authClient } from '@/features/auth/lib/authClient';
 	import { m } from '@/lib/paraglide/messages';
 
+	// CONFIG
+	import { PAGINATION_CONFIG } from '@/shared/features/pagination/config.js';
+
 	// COMPONENTS
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
 	import NativeSelect from '@/components/ui/native-components/native-select/native-select.svelte';
 	import DataList from '@/components/ui/custom-components/data-list/data-list.svelte';
 	import EmptyData from '@/components/ui/custom-components/empty-data/empty-data.svelte';
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
+	import SearchFiltersButton from '@/components/pages/(unprotected)/search/search-filters/search-filters-button.svelte';
+	import SearchFiltersDialog from '@/components/pages/(unprotected)/search/search-filters/search-filters-dialog.svelte';
 	import SearchHeader from '@/components/pages/(unprotected)/search/search-header/search-header.svelte';
 	import SearchMap from '@/components/pages/(unprotected)/search/search-map/search-map.svelte';
 	import AuthDialog from '@/features/auth/components/auth-dialog/auth-dialog.svelte';
@@ -24,9 +29,6 @@
 	import { useSearchCriteria } from '@/features/search/hooks/useSearchCriteria.svelte.js';
 	import { useFavorites } from '@/features/favorites/hooks/useFavorites.svelte.js';
 	import { setFavoritesContext } from '@/features/favorites/context/favoritesContext.js';
-
-	// CONFIG
-	import { PAGINATION_CONFIG } from '@/shared/features/pagination/config';
 
 	// UTILS
 	import { cn } from '@/utils/utils.js';
@@ -41,6 +43,7 @@
 	const mapPosition = $derived(place?.position ?? null);
 	const destination = $derived([place?.city, place?.country].filter(Boolean).join(', '));
 	const locationKey = $derived(page.url.searchParams.get('location'));
+
 	let viewport = $state<{ location: string | null; bounds?: MapBounds; moving: boolean }>();
 	const bounds = $derived(viewport?.location === locationKey ? viewport?.bounds : undefined);
 	const mapMoving = $derived(viewport?.location === locationKey && Boolean(viewport?.moving));
@@ -69,7 +72,7 @@
 			children: readNumber('children'),
 			rooms: readNumber('rooms')
 		}),
-		{ pageSize: PAGINATION_CONFIG.DEFAULT_PAGE_SIZE, isMapMoving: () => mapMoving }
+		{ pageSize: PAGINATION_CONFIG.DEFAULT_INFINITE_SCROLL_PAGE_SIZE, isMapMoving: () => mapMoving }
 	);
 
 	const session = authClient.useSession();
@@ -87,7 +90,10 @@
 	});
 	setFavoritesContext(favorites);
 
+	let filtersDialog: SearchFiltersDialog;
 	let hoveredId = $state<string | null>(null);
+	let focusedId = $state<string | null>(null);
+	const highlightedId = $derived(hoveredId ?? focusedId);
 </script>
 
 <SvelteHead title={m['SearchPage.pageTitle']()} noindex />
@@ -96,6 +102,7 @@
 <main
 	class="w-full px-4 py-5 sm:px-6 min-[68.75rem]:px-8"
 	{@attach accommodations.load(accommodations.key, viewerId)}
+	{@attach accommodations.loadMap(accommodations.key, Boolean(bounds))}
 >
 	<div
 		class={cn(
@@ -125,23 +132,26 @@
 						</p>
 					{/if}
 				</div>
-				{#if hasLocation}
-					<div class="hidden min-[68.75rem]:block">
-						<NativeSelect
-							label={m['SearchPage.SearchFilters.sort']()}
-							options={search.sorts}
-							value={search.criteria.sort}
-							onchange={(value) => search.setCriteria({ ...search.criteria, sort: value })}
-							includePlaceholderOption={false}
-						/>
-					</div>
-				{/if}
+				<div class="flex items-end gap-2">
+					{#if hasLocation}
+						<div class="hidden min-[68.75rem]:block">
+							<NativeSelect
+								label={m['SearchPage.SearchFilters.sort']()}
+								options={search.sorts}
+								value={search.criteria.sort}
+								onchange={(value) => search.setCriteria({ ...search.criteria, sort: value })}
+								includePlaceholderOption={false}
+							/>
+						</div>
+					{/if}
+					<SearchFiltersButton onopen={() => filtersDialog.open()} />
+				</div>
 			</div>
 
 			{#if hasLocation}
 				<DataList
 					pagination={accommodations}
-					showPagination={!accommodations.loading}
+					infiniteScrolling
 					key={(item) => item._id}
 					class="grid grid-cols-1 gap-x-5 gap-y-9 sm:grid-cols-2"
 				>
@@ -149,6 +159,10 @@
 						<AccommodationCard
 							{accommodation}
 							onhover={(hovered) => (hoveredId = hovered ? accommodation._id : null)}
+							onfocuschange={(focused) => {
+							if (focused) focusedId = accommodation._id;
+							else if (focusedId === accommodation._id) focusedId = null;
+						}}
 						/>
 					{/snippet}
 					{#snippet loadingSnippet()}
@@ -173,9 +187,12 @@
 				<SearchMap
 					{destination}
 					position={mapPosition}
-					markers={accommodations.loading || accommodations.error ? [] : accommodations.data}
-					highlightedId={hoveredId}
-					loading={accommodations.loading}
+					markers={accommodations.mapLoading || mapMoving || !bounds ? [] : accommodations.mapData}
+					accommodations={accommodations.data}
+					{highlightedId}
+					loading={accommodations.mapLoading || mapMoving || !bounds}
+					mapError={accommodations.mapError}
+					retryMap={accommodations.retryMap}
 					onBoundsChange={updateMapBounds}
 					onMovingChange={updateMapMoving}
 				/>
@@ -185,3 +202,4 @@
 </main>
 
 <AuthDialog bind:this={authDialog} />
+<SearchFiltersDialog bind:this={filtersDialog} />

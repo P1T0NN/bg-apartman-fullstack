@@ -7,6 +7,17 @@ import { STORAGE_CONFIG } from '../../storage/config.js';
 // DATA
 import { AMENITY_KEYS } from '../data/accommodationsData.js';
 
+export const boundsSchema = z
+	.object({
+		south: z.number().min(-90).max(90),
+		north: z.number().min(-90).max(90),
+		west: z.number().min(-180).max(180),
+		east: z.number().min(-180).max(180)
+	})
+	.refine((bounds) => bounds.south <= bounds.north);
+
+export type AccommodationBounds = z.infer<typeof boundsSchema>;
+
 export const accommodationBasicInfoSchema = z.object({
 	type: z.enum(['apartment', 'studio', 'house', 'villa', 'room', 'other']),
 	spaceType: z.enum(['entire', 'private', 'shared']),

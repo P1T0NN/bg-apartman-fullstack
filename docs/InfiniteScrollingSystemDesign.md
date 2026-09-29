@@ -149,9 +149,10 @@ cursor as an offset.
 - The client never treats `items.length` as the total.
 
 For the current project, `getPagination` adapts native Convex pagination to
-the page shape, and `fetchOptimizedQuery` attaches `total` when an appropriate
-count source is configured. Infinite scrolling should reuse that contract
-instead of introducing a second pagination protocol.
+the page shape; each list query attaches `total` itself from its table's
+maintained aggregate only when no search or filters are active. Infinite
+scrolling should reuse that contract instead of introducing a second pagination
+protocol.
 
 ## The total count is a separate concern
 
@@ -592,17 +593,18 @@ when measurements show it is necessary rather than introduced everywhere.
 
 The current project already has the main server-side pieces:
 
-| Responsibility                    | Current location or convention                                   |
-| --------------------------------- | ---------------------------------------------------------------- |
-| Default page size                 | `src/shared/features/pagination/config.ts`, value `10`           |
-| Convex page adapter               | `src/convex/helpers/getPagination.ts`                            |
-| Count read helper                 | `src/convex/aggregates/helpers/getTotalSizeAggregate.ts`         |
-| Shared optimized query contract   | `src/convex/wrappers/fetchOptimizedQuery.ts`                     |
-| Accommodation count usage         | Not configured; add when a booking flow needs exact totals        |
-| Exact filtered counts             | Not configured for a booking collection                          |
-| Classic previous/next client flow | `src/features/pagination/hooks/useConvexPagination.svelte.ts`    |
-| Existing list/table renderers     | `src/components/ui/custom-components/data-list` and `data-table` |
-| New infinite-scroll UI boundary   | `src/components/ui/custom-components/infinite-scroll`            |
+| Responsibility                    | Current location or convention                                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Default page size                 | `src/shared/features/pagination/config.ts`, value `10`                                                    |
+| Convex page adapter               | `src/convex/helpers/getPagination.ts`                                                                     |
+| Count read helper                 | `src/convex/aggregates/helpers/getTotalSizeAggregate.ts`                                                  |
+| Shared cursor-list arguments      | `src/convex/validators/listPageArgs.ts`                                                                   |
+| Per-table page/filter/enrichment  | `src/convex/tables/<table>/helpers/get<Entity>Page.ts`, `read<Entity>Filters.ts`, `enrich<Entity>Page.ts` |
+| Owned count sources               | `accommodationOwnerAggregate`, `bookingOwnerAggregate`, `feedbackAggregate`, `newsletterAggregate`        |
+| Exact filtered counts             | Only the owner `type` filter; other filtered totals are omitted                                           |
+| Classic previous/next client flow | `src/features/pagination/hooks/useConvexPagination.svelte.ts`                                             |
+| Existing list/table renderers     | `src/components/ui/custom-components/data-list` and `data-table`                                          |
+| New infinite-scroll UI boundary   | `src/components/ui/custom-components/infinite-scroll`                                                     |
 
 The infinite-pagination hook and thin `InfiniteScroll.svelte` component now
 reuse `getPagination`, the existing validated search/filter conventions, and

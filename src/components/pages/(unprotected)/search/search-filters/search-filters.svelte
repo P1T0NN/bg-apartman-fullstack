@@ -2,10 +2,6 @@
 	// COMPONENTS
 	import { Button } from '@/components/ui/button/index.js';
 	import NativeSelect from '@/components/ui/native-components/native-select/native-select.svelte';
-	import { Separator } from '@/components/ui/separator/index.js';
-	import SearchFiltersButton from './search-filters-button.svelte';
-	import SearchFiltersDialog from './search-filters-dialog.svelte';
-	import SearchFiltersPopular from './search-filters-popular.svelte';
 	import SearchFiltersSelected from './search-filters-selected.svelte';
 
 	// HOOKS
@@ -15,7 +11,6 @@
 	import { m } from '@/lib/paraglide/messages';
 
 	const search = getSearchContext();
-	let dialog: SearchFiltersDialog;
 </script>
 
 <div class="flex flex-wrap items-center gap-2 pt-4">
@@ -28,9 +23,6 @@
 			includePlaceholderOption={false}
 		/>
 	</div>
-	<SearchFiltersButton onopen={() => dialog.open()} />
-	<Separator orientation="vertical" class="hidden h-5! sm:block" />
-	<SearchFiltersPopular />
 	{#if search.hasLocation}
 		<Button
 			variant="outline"
@@ -46,4 +38,3 @@
 </div>
 
 <SearchFiltersSelected />
-<SearchFiltersDialog bind:this={dialog} />

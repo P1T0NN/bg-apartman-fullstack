@@ -15,7 +15,7 @@
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
-	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { AccommodationListItem } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	// LUCIDE ICONS
 	import X from '@lucide/svelte/icons/x';
@@ -24,7 +24,7 @@
 		accommodation,
 		isHighlighted
 	}: {
-		accommodation: PublicAccommodation;
+		accommodation: AccommodationListItem;
 		isHighlighted: () => boolean;
 	} = $props();
 

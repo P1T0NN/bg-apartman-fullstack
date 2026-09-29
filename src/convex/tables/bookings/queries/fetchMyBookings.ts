@@ -1,47 +1,53 @@
 // CONVEX
-import { fetchOptimizedQuery } from '../../../wrappers/fetchOptimizedQuery.js';
-import { getPagination } from '../../../helpers/getPagination.js';
-import { paginateSearch } from '../../../helpers/paginateSearch.js';
+import { authenticatedQuery } from '../../../builders/convexFunctionBuilders.js';
 
 // AGGREGATES
 import { bookingOwnerAggregate } from '../aggregates/bookingOwnerAggregate.js';
+
+// AGGREGATE HELPERS
+import { getTotalSizeAggregate } from '../../../aggregates/helpers/getTotalSizeAggregate.js';
+
+// HELPERS
+import { getPagination } from '../../../helpers/getPagination.js';
+import { paginateSearch } from '../../../helpers/paginateSearch.js';
 
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // VALIDATORS
+import { listPageArgs } from '../../../validators/listPageArgs.js';
 import { bookingPage } from '../validators/bookingValidators.js';
 
-export const fetchMyBookings = fetchOptimizedQuery({
-	auth: 'user',
+export const fetchMyBookings = authenticatedQuery({
+	args: listPageArgs,
 	returns: bookingPage,
-	count: bookingOwnerAggregate,
-	countTotal: ({ ctx, identity }) =>
-		bookingOwnerAggregate.count(ctx, { namespace: getOwnerId(identity) }),
-	fetchPage: async ({ ctx, identity, paginationOpts, search, filters }) => {
-		const ownerId = getOwnerId(identity);
-
-		if (search) {
-			return paginateSearch({
-				ctx,
-				search,
-				filters,
-				paginationOpts,
-				buildQuery: ({ search: term }) =>
+	handler: async (ctx, args) => {
+		const search = args.search?.trim() || undefined;
+		const ownerId = getOwnerId(ctx.identity);
+		const canCountTotal = !search;
+		const page = search
+			? await paginateSearch({
+					ctx,
+					search,
+					paginationOpts: args.paginationOpts,
+					buildQuery: ({ ctx, search: term }) =>
+						ctx.db
+							.query('bookings')
+							.withSearchIndex('search_guest', (q) =>
+								q.search('searchText', term).eq('ownerId', ownerId)
+							)
+				})
+			: await getPagination(
 					ctx.db
 						.query('bookings')
-						.withSearchIndex('search_guest', (q) =>
-							q.search('searchText', term).eq('ownerId', ownerId)
-						)
-			});
-		}
+						.withIndex('by_owner_id', (q) => q.eq('ownerId', ownerId))
+						.order('desc'),
+					{ paginationOpts: args.paginationOpts }
+				);
+		const total = canCountTotal
+			? await getTotalSizeAggregate(ctx, bookingOwnerAggregate, { namespace: ownerId })
+			: undefined;
 
-		return getPagination(
-			ctx.db
-				.query('bookings')
-				.withIndex('by_owner_id', (q) => q.eq('ownerId', ownerId))
-				.order('desc'),
-			{ paginationOpts }
-		);
+		return { ...page, total };
 	}
 });

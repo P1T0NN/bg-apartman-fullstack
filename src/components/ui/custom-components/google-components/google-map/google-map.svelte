@@ -13,10 +13,12 @@
 	let {
 		position,
 		markers = [],
+		highlightedMarkerId = null,
 		onPositionChange = () => {},
 		onBoundsChange,
 		onMovingChange,
 		fitMarkers = true,
+		clusterMarkers = false,
 		showPositionMarker = true,
 		label,
 		pinTitle,
@@ -28,10 +30,12 @@
 	}: {
 		position: Position | null;
 		markers?: MapMarker[];
+		highlightedMarkerId?: PropertyKey | null;
 		onPositionChange?: (position: Position) => void;
 		onBoundsChange?: (bounds: MapBounds) => void;
 		onMovingChange?: (moving: boolean) => void;
 		fitMarkers?: boolean;
+		clusterMarkers?: boolean;
 		showPositionMarker?: boolean;
 		label: string;
 		pinTitle: string;
@@ -45,10 +49,12 @@
 	const map = useGoogleMap({
 		getPosition: () => position,
 		getMarkers: () => markers,
+		getHighlightedMarkerId: () => highlightedMarkerId,
 		getPinTitle: () => pinTitle,
 		getDisabled: () => disabled,
 		getZoom: () => zoom,
 		getFitMarkers: () => fitMarkers,
+		getClusterMarkers: () => clusterMarkers,
 		getShowPositionMarker: () => showPositionMarker,
 		onBoundsChange: (bounds) => onBoundsChange?.(bounds),
 		onMovingChange: (moving) => onMovingChange?.(moving),
@@ -66,6 +72,7 @@
 		{@attach map.initialize}
 		{@attach map.syncPosition}
 		{@attach map.syncMarkers}
+		{@attach map.syncHighlightedMarker}
 		{@attach map.syncDisabled}
 	></div>
 

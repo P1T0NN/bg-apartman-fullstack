@@ -10,6 +10,37 @@ export type PublicAccommodation = Omit<Doc<'accommodations'>, 'ownerId' | 'image
 	imageUrls: string[];
 };
 
+/** Accommodation row returned by the list queries: only list fields, with resolved image urls. */
+export type AccommodationListItem = Omit<
+	Doc<'accommodations'>,
+	| 'ownerId'
+	| 'description'
+	| 'spaceType'
+	| 'address'
+	| 'amenities'
+	| 'imageKeys'
+	| 'checkInStart'
+	| 'checkInEnd'
+	| 'checkOut'
+	| 'minimumStay'
+	| 'maximumStay'
+	| 'smokingAllowed'
+	| 'petsAllowed'
+	| 'partiesAllowed'
+	| 'houseRules'
+	| 'status'
+	| 'updatedAt'
+> & {
+	address: { city: string; country: string };
+	imageUrls: string[];
+};
+
+/** Lightweight location and price data used to cluster every map search result. */
+export type AccommodationMapMarker = Pick<
+	Doc<'accommodations'>,
+	'_id' | 'name' | 'latitude' | 'longitude' | 'pricePerNightMinor'
+>;
+
 export const ACCOMMODATION_TYPES = [
 	'apartment',
 	'studio',

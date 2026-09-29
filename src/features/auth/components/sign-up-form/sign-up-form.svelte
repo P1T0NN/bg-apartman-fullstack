@@ -15,15 +15,25 @@
 	import PasswordInput from '@/components/ui/custom-components/password-input/password-input.svelte';
 	import { Input } from '@/components/ui/input/index.js';
 
+	// UTILS
+	import { cn } from '@/utils/utils.js';
+
 	// TYPES
 	import type { ComponentProps } from 'svelte';
 
 	type SignUpFormProps = ComponentProps<typeof Card.Root> & {
 		/** When set, switching to sign-in happens in place (dialog) instead of navigating. */
 		onSwitchToSignIn?: () => void;
+		/** Opt-in for the split auth pages; the dialog keeps the normal card spacing. */
+		splitLayout?: boolean;
 	};
 
-	let { onSwitchToSignIn, ...restProps }: SignUpFormProps = $props();
+	let {
+		onSwitchToSignIn,
+		splitLayout = false,
+		class: className,
+		...restProps
+	}: SignUpFormProps = $props();
 
 	const auth = useAuth();
 	const captcha = useCaptcha();
@@ -65,10 +75,11 @@
 </script>
 
 <AuthFormShell
+	class={cn('w-full max-w-sm', className)}
 	{...restProps}
 	title={m['AuthFeature.SignUpForm.createAccount']()}
 	description={m['AuthFeature.SignUpForm.createAccountDescription']()}
-	splitLayout
+	{splitLayout}
 	submitting={auth.submitting}
 	error={auth.error}
 	{captcha}

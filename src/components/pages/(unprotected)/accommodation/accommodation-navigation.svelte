@@ -1,22 +1,25 @@
 <script lang="ts">
+	// COMPONENTS
+	import { Button } from '@/components/ui/button/index.js';
+
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 </script>
 
 <nav
 	aria-label={m['AccommodationPage.AccommodationNavigation.label']()}
-	class="mt-3 flex gap-6 overflow-x-auto border-b text-sm font-medium"
+	class="mt-3 flex gap-2 overflow-x-auto border-b pb-3"
 >
-	<a class="flex min-h-14 shrink-0 items-center hover:underline" href="#overview"
-		>{m['AccommodationPage.AccommodationNavigation.overview']()}</a
+	<Button variant="outline" href="#overview"
+		>{m['AccommodationPage.AccommodationNavigation.overview']()}</Button
 	>
-	<a class="flex min-h-14 shrink-0 items-center hover:underline" href="#amenities"
-		>{m['AccommodationPage.AccommodationNavigation.amenities']()}</a
+	<Button variant="outline" href="#amenities"
+		>{m['AccommodationPage.AccommodationNavigation.amenities']()}</Button
 	>
-	<a class="flex min-h-14 shrink-0 items-center hover:underline" href="#location"
-		>{m['AccommodationPage.AccommodationNavigation.location']()}</a
+	<Button variant="outline" href="#location"
+		>{m['AccommodationPage.AccommodationNavigation.location']()}</Button
 	>
-	<a class="flex min-h-14 shrink-0 items-center hover:underline" href="#rules"
-		>{m['AccommodationPage.AccommodationNavigation.rules']()}</a
+	<Button variant="outline" href="#rules"
+		>{m['AccommodationPage.AccommodationNavigation.rules']()}</Button
 	>
 </nav>

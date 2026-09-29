@@ -1,7 +1,4 @@
 <script lang="ts">
-	// CONVEX
-	import type { Doc } from '@convex/_generated/dataModel';
-
 	// COMPONENTS
 	import { Button } from '@/components/ui/button/index.js';
 	import * as Card from '@/components/ui/card/index.js';
@@ -11,9 +8,12 @@
 	// CONFIG
 	import { PROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
-	type Accommodation = Doc<'accommodations'> & { coverUrl: string | null };
+	// TYPES
+	import type { AccommodationListItem } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
-	let { accommodation }: { accommodation: Accommodation } = $props();
+	let { accommodation }: { accommodation: AccommodationListItem } = $props();
+
+	const coverUrl = $derived(accommodation.imageUrls[0]);
 
 	const location = $derived(
 		[accommodation.address.city, accommodation.address.country].filter(Boolean).join(', ')
@@ -24,9 +24,9 @@
 	class="h-full min-w-0 rounded-2xl border border-border pt-0 shadow-none ring-0 [--card-spacing:--spacing(5)]"
 >
 	<div class="relative aspect-3/2 shrink-0 overflow-hidden bg-muted">
-		{#if accommodation.coverUrl}
+		{#if coverUrl}
 			<img
-				src={accommodation.coverUrl}
+				src={coverUrl}
 				alt=""
 				loading="lazy"
 				decoding="async"

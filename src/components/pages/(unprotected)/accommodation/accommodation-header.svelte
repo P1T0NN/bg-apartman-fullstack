@@ -9,8 +9,8 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
-	import CopyValue from '@/components/ui/custom-components/copy-value/copy-value.svelte';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
+	import ShareValue from '@/components/ui/custom-components/share-value/share-value.svelte';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -45,8 +45,8 @@
 				{accommodation.address.city}, {accommodation.address.country}
 			</a>
 		</div>
-		
-		<CopyValue
+
+		<ShareValue
 			label={m['AccommodationPage.AccommodationHeader.share']()}
 			value={page.url.origin + page.url.pathname}
 		/>

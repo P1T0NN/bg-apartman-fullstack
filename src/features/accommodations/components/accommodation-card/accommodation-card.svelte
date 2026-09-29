@@ -16,16 +16,18 @@
 	import Price from '@/components/ui/custom-components/price/price.svelte';
 
 	// TYPES
-	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { AccommodationListItem } from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type { Snippet } from 'svelte';
 
 	let {
 		accommodation,
 		onhover,
+		onfocuschange,
 		close
 	}: {
-		accommodation: PublicAccommodation;
+		accommodation: AccommodationListItem;
 		onhover?: (hovered: boolean) => void;
+		onfocuschange?: (focused: boolean) => void;
 		close?: Snippet;
 	} = $props();
 </script>
@@ -34,6 +36,13 @@
 	class="group relative flex h-full min-w-0 flex-col gap-3"
 	onpointerenter={() => onhover?.(true)}
 	onpointerleave={() => onhover?.(false)}
+	onfocusin={() => onfocuschange?.(true)}
+	onfocusout={(event) => {
+		const nextTarget = event.relatedTarget;
+		if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+			onfocuschange?.(false);
+		}
+	}}
 >
 	<ImageGallerySmall images={accommodation.imageUrls} alt={accommodation.name} />
 

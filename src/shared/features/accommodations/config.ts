@@ -2,5 +2,6 @@
 
 export const ACCOMMODATION_CONFIG = {
 	/** R2 key prefix for accommodation photos. */
-	uploadNamespace: 'accommodations/images'
+	uploadNamespace: 'accommodations/images',
+	mapSearchPageSize: 500
 } as const;

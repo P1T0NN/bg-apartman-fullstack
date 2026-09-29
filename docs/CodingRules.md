@@ -1,8 +1,11 @@
 # Coding rules and reuse map
 
-This is the short, current map of the starter. Check here before creating a
-component, hook, query helper, or another state mechanism. The longer design
-notes are [`DataTableSearchSystemDesign.md`](./DataTableSearchSystemDesign.md),
+Global engineering rules for this starter. Domain rules for the accommodation
+marketplace, bookings, favorites, feedback, and newsletters live in
+[`ProjectCodingRules.md`](./ProjectCodingRules.md); read both before changing
+code. The longer design notes are
+[`BookingPageDesign.md`](./BookingPageDesign.md),
+[`DataTableSearchSystemDesign.md`](./DataTableSearchSystemDesign.md),
 [`FiltersDataTableAndList.md`](./FiltersDataTableAndList.md),
 [`InfiniteScrollingSystemDesign.md`](./InfiniteScrollingSystemDesign.md), and
 [`RateLimitingSystemDesign.md`](./RateLimitingSystemDesign.md).
@@ -99,12 +102,12 @@ For `DataList` and `DataTable` headers:
   initialization, return state through getters, and pass changing inputs as
   getter functions. Destructuring a returned getter or a reactive prop freezes
   the value.
-- `$effect` is exceptional. It remains deliberately in
-  `useCachedConvexQuery.svelte.ts` and `useConvexPagination.svelte.ts` only to
-  write fresh, non-stale results to the external bounded LRU cache; that is an
-  external synchronization with no `useQuery` success callback, not derived
-  state. Do not use effects for calculations, debouncing, URL writes, or state
-  mirroring when an event handler, `$derived`, `onMount`, or attachment works.
+- `$effect` is exceptional. It is reserved for external synchronization
+  without a `useQuery` success callback, never for derived state. Do not use
+  effects for calculations, debouncing, URL writes, or state mirroring when an
+  event handler, `$derived`, `onMount`, or attachment works. The current
+  allowed effect locations are listed in
+  [`ProjectCodingRules.md`](./ProjectCodingRules.md).
 - Use `$state.snapshot` before passing a deeply reactive proxy to code that
   expects plain data (the form-change hook does this). Do not export a directly
   reassigned `$state` binding from a module; expose an object or functions.
@@ -161,6 +164,7 @@ rules; every dialog-like surface has an accessible title.
 | `LocalizedValue` / `BadgeLocalized`                                                                                    | Resolve `value -> locale -> English -> raw value`; the latter wraps the result in a `Badge`.                                                                    |
 | `Plural`                                                                                                               | ICU `Intl.PluralRules` (`one`, `few`, `many`, `other`) for count labels.                                                                                        |
 | `CopyValue`                                                                                                            | Clipboard copy button with truncated value, live confirmation, and timer cleanup.                                                                               |
+| `ShareValue`                                                                                                           | Icon-only share button; copies its `value` to the clipboard and confirms with a success toast.                                                                  |
 | `Counter` / `FormCounter`                                                                                              | Accessible min/max increment/decrement control; the form renderer handles `kind: 'counter'` fields.                                                             |
 | `EmailInput` / `PasswordInput`                                                                                         | InputGroup wrappers with email-domain suggestion and password visibility toggle.                                                                                |
 | `EmptyData` / `ErrorComponent`                                                                                         | Standard empty state (optional card/icon/action) and safe retry error block.                                                                                    |
@@ -199,7 +203,7 @@ imported directly.
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Auth       | `SignInForm`, `SignUpForm`, `ForgotPasswordForm`, `VerifyEmailForm`, and `LogoutButton`; `useAuth` centralizes Better Auth calls, error codes, pending state, OTP/password/social flows, and redirects. Keep wording in components via `ERROR_MESSAGES`. |
 | Search     | `SearchInput` is an InputGroup with clear button and optional listbox snippet. `useSearch` owns raw value, debounce, trim, minimum two-character gate, and `state`/`url` mode. Pass only `search.term` to a query.                                       |
-| Filters    | `ADMIN_USERS_FILTER_DEFS` defines current admin options. `useFilters` owns state/URL mode, active values, count, clear methods, and stable `identity`; feature filters belong with their feature.                                                        |
+| Filters    | Filter defs define symbolic options. `useFilters` owns state/URL mode, active values, count, clear methods, and stable `identity`; feature filters belong with their feature.                                                                            |
 | Pagination | `useConvexPagination` owns page/cursor sessions; `useConvexInfinitePagination` owns accumulated pages, duplicate protection, retry, and reset. `createConvexPaginationQuery` is their shared subscription builder.                                       |
 | Uploads    | `UploadFile`, `UploadFileDropzone`, `UploadFilePreviewItem`, and `useUpload` manage previews, object-URL cleanup, multiple-file ordering, cover selection, and removal. `optimizeToWebp` is the browser compression step.                                |
 
@@ -209,9 +213,9 @@ their loading skeletons. Reuse the generic `DataList`, `DataTable`, `Card`,
 `Badge`, `NativeDialog`, `NativeSelect`, and query hooks inside new admin
 screens instead of copying those page components.
 
-Operation input schemas use the exact function name plus `Schema`, such as
-`createBookingSchema` and `updateBookingSchema`. Reusable data schemas keep
-descriptive names such as `backendErrorDataSchema`.
+Operation input schemas use the exact function name plus `Schema`; reusable
+data schemas keep descriptive names. Domain schema names are listed in
+[`ProjectCodingRules.md`](./ProjectCodingRules.md).
 
 Keep ordinary Zod schemas free of custom messages: `z.enum(...)`, `.min(...)`,
 and `.max(...)` use the global translated defaults in `src/lib/validation.ts`,
@@ -236,73 +240,26 @@ structured codes and `getBackendErrorMessage` as described below.
 
 ## Form submission
 
-Shared template components and hooks are read-only unless explicitly authorized.
-Keep accommodation-specific behavior in the accommodation feature and compose
-existing Form fields/snippets instead of extending the template API.
-
-The host add-accommodation route renders `add-accommodation-form.svelte` under
-`src/components/pages/(protected)/host/add-accommodation/add-accommodation-form`.
-The small `useAccommodationForm.svelte.ts` hook owns local state and navigation,
-shared per form instance through `features/accommodations/context/accommodationFormContext.ts`. The parent composes Form and
-the steps; children do not receive navigation callbacks. Continue and Save
-buttons live in accommodation-specific components. There is no leave confirmation.
-Six individual step components own their fields. The Continue button calls the
-hook's `validate`, which selects the current section schema and calls `safeParse`. Reuse the Form field context and existing field components.
-Each step defines its fields directly in `src/shared/features/accommodations/schemas/accommodationSchemas.ts`.
-The location step composes `google-street-input.svelte`: street suggestions
-start at two characters with a 300 ms debounce. It uses the existing Places
-proxy with `kind: 'street'` (`route` only), then fetches address components with
-the same session token. Manual entry always works; stale responses are cancelled
-and manually corrected fields are preserved. `address.streetNumber` is optional
-text. Country controls display and store the country name from
-`shared/utils/countries.ts`, and the geocoding request filters by that name.
-The home location search keeps its city/country filter.
-The location step loads `google-map.svelte` only after the street, city, and
-country are entered. It calls the authenticated `/api/geocode` proxy after a
-short pause, stores the marker's `latitude` and `longitude` on the form, and
-lets the host drag or click to correct it. Editing the address clears stale
-coordinates. The Convex table keeps these fields optional for older listings;
-new listings require both through `accommodationLocationSchema`.
-The browser map reads `PUBLIC_GOOGLE_MAPS_API_KEY` and
-`PUBLIC_GOOGLE_MAPS_MAP_ID`; the proxy reads `GOOGLE_GEOCODING_API_KEY` privately.
-`saveAccommodationSchema` combines all six step schemas for Form submission and server validation.
-Amenity keys, icons, categories, and the eight popular shortcuts live in
-`src/shared/features/accommodations/data/accommodationsData.ts`;
-`utils/getAmenities.ts` resolves their
-`AccommodationsFeature.AccommodationAmenities.*` labels. Keep the data file
-translation-free because `saveAccommodationSchema` is bundled by Convex.
-The amenities step shows only the popular shortcuts and a total count. The
-feature UI lives in
-`src/features/accommodations/components/accommodation-amenities`;
-`accommodation-amenities-dialog.svelte` composes the dialog header, body, and
-footer, while `hooks/useAmenityDialog.svelte.ts` owns the temporary selection,
-search, selected-only filtering, and save/close behavior. It commits to the
-form only on Save; Cancel and the close button discard the draft. It is
-full-screen on mobile. Category labels live in the dialog and checkbox
-rows are shared with the main step. Future amenities editing pages can render
-the dialog directly.
-The Form upload field stays mounted to preserve local photo previews and show
-upload progress; other step components mount as needed. Only Publish uploads
-photos and calls `createAccommodation` (in `src/convex/tables/accommodations/mutations`). No drafts or analytics.
-
 `Form` requires a Zod `schema`. It validates a snapshot of
 `{ ...values, ...extraFields }` with `safeParseAsync` before CAPTCHA, uploads,
 or the Convex call, and submits the parsed output. Put defaults, coercions,
 optional-empty handling, and conditional validation in that schema. Native
 `required`/`type` attributes describe controls; Zod decides whether to submit.
+Shared template components and hooks are read-only unless explicitly
+authorized; keep feature-specific behavior in the owning feature and compose
+existing Form fields/snippets instead of extending the template API.
 
 - `extraFields` is a plain object of additional arguments, such as
-  `extraFields={{ id: booking._id }}`. It overrides whole top-level values and
+  `extraFields={{ id: record._id }}`. It overrides whole top-level values and
   must be included in the schema. Zod object schemas strip undeclared keys.
-  Pass reactive expressions to keep cart/customer data current; initialize
+  Pass reactive expressions to keep request data current; initialize
   browser-only values in an event handler or `onMount`.
-- Name nested controls `shippingAddress.street`, `shippingAddress.city`, etc.
-  `getValue`, `setValue`, and `bind:values` use the same nested object. Dotted
-  paths address objects; pass arrays as whole values from custom controls or
-  `extraFields`.
+- Name nested controls `address.street`, `address.city`, etc. `getValue`,
+  `setValue`, and `bind:values` use the same nested object. Dotted paths address
+  objects; pass arrays as whole values from custom controls or `extraFields`.
 - Hidden controls retain their values. For conditional payloads, use a Zod
-  discriminated union: a pickup branch without `shippingAddress` strips a
-  previously entered address while the delivery branch validates it.
+  discriminated union: one branch strips a previously entered address while the
+  other validates it.
 - `customFields` is the rendering snippet formerly named `extraFields`.
   Snippet contexts expose `errors`; custom field contexts also expose `error`.
   Connect custom controls' `aria-invalid` and `aria-describedby` to that error.
@@ -310,8 +267,8 @@ optional-empty handling, and conditional validation in that schema. Native
   Do not recreate the entire payload in a replacement callback.
 - Form attaches `uploadedFiles`, `retainedFiles`, and `turnstileToken` after
   validation. These transport fields are not inputs to the form schema.
-  Upload actions validate storage keys on the server. Keep form schemas focused on
-  business fields and preserve ownership checks at the mutation boundary.
+  Upload actions validate storage keys on the server. Keep form schemas focused
+  on business fields and preserve ownership checks at the mutation boundary.
 
 ## Shared hooks, state, and utilities
 
@@ -454,17 +411,7 @@ optimize the actual bottleneck. `analyzeAlgorithm()` automates this abstract
 `Q * f(N)` comparison for already-loaded data; its pressure label is not a
 runtime benchmark or latency prediction.
 
-## Convex data model and function surface
-
-`src/convex/schema.ts` registers `accommodations` from
-`src/convex/tables/accommodations/schema.ts` and `storageUploads`, which tracks
-owner-scoped files until a feature claims or removes them. Accommodation prices
-use integer minor units in the platform currency (`COMPANY_DATA.CURRENCY`);
-photos use ordered R2 keys.
-Future write functions must validate numeric ranges, codes, times, and array
-limits, derive ownership server-side, and verify ownership of uploaded keys.
-Better Auth owns its
-component tables (`user`, `session`, `account`, and related auth data).
+## Convex platform conventions
 
 Use generated `Doc<'table'>` types for Convex documents. Do not derive document
 types from query response items; reserve `FunctionReturnType` for query-specific
@@ -475,21 +422,22 @@ checks, validation, and rate limits. Storage functions expose upload URL,
 metadata synchronization, and object deletion. Search suggestions use a
 bounded public query. Admin routes expose account and audit-log operations.
 
-For future feature lists, `fetchOptimizedQuery` provides validated pagination,
-search, and symbolic-filter handling when the feature has a corresponding
-indexed query. Keep cursors opaque. Do not send owner ids or database predicates
+For list queries, use the explicit cursor-list pattern: validate args with
+`listPageArgs` (`src/convex/validators/listPageArgs.ts`), build one indexed page
+through the owning table's page helper, enrich rows (joins, summaries) after the
+fetch with the table's `enrichXPage` helpers, and attach `total` only when no
+search/filters are active. Use `fetchOptimizedSearchQuery` for bounded
+suggestions. Keep cursors opaque. Do not send owner ids or database predicates
 from the client.
-
-Current aggregate-backed totals support admin user counts. Storage upload
-metadata is cleaned up in bounded batches. Add a domain table, counters, or
-aggregates only with the booking behavior that needs them; the current schema
-currently contains accommodations and upload-tracking metadata; booking tables belong with booking flows.
 
 Convex rules: every function has argument and return validators; derive owner
 scope from identity; check ownership on every read/update/delete; use indexes
 and bounded pagination; use `ConvexError` for safe expected failures; do not
 scan for routine totals or expose raw infrastructure errors. Read the generated
 `src/convex/_generated/ai/guidelines.md` before changing Convex code.
+
+The app's tables and app-facing functions are listed in
+[`ProjectCodingRules.md`](./ProjectCodingRules.md).
 
 ### Translatable backend errors
 
@@ -526,26 +474,16 @@ unknown code, malformed payload, ordinary `Error`, or infrastructure failure.
 
 ## Routes and page patterns
 
-The host `/host/my-accommodations/[id]` workspace is currently a UI preview
-using sample data. Its header and three tabs live under
-`src/components/pages/(protected)/host/my-accommodation`. Listing uses six
-section definitions in `my-accommodation-tab-listing/listing-sections.ts`,
-each with an existing accommodation schema and its own Form instance when
-opened. Save is disabled; the required create reference is only a placeholder
-and must be replaced with an owner-scoped section update before enabling it.
-Calendar and Settings controls are visual only. No billing, sync, publication,
-or deletion actions are connected.
-
-- `/` is the public home page.
-- `(app)/(unprotected)` contains sign-in, sign-up, verify-email, and
-  forgot-password screens.
-- `(app)/(protected)` contains the data-list, infinite-list, and data-table
-  component demos. Its server layout owns the authentication redirect and its
-  `+layout@.svelte` owns the workspace shell.
-- `/admin` contains users, audit logs, and user detail tabs; its server layout
-  owns authentication and admin-role redirects.
+- `(app)/(unprotected)` contains public app screens.
+- `(app)/(protected)` is reserved for authenticated screens; its server layout
+  owns the authentication redirect.
+- `/admin` is the admin area; its server layout owns both authentication and
+  admin-role redirects.
 - `/api/auth/[...all]` is the Better Auth HTTP handler. `hooks.server.ts`
   injects the Convex token and sanitizes unexpected/validation errors.
+
+The current route map is in
+[`ProjectCodingRules.md`](./ProjectCodingRules.md).
 
 Pages should compose existing loading/error/empty states, use `SvelteHead`, and
 keep each Convex query's loading/error branch local. Use SvelteKit server `load`

@@ -446,7 +446,7 @@ test('search filters by location, total guests, and rooms', async () => {
 		location: { city: 'Belgrade', country: 'Serbia' }
 	});
 	expect(city.items).toHaveLength(2);
-	expect(city.items.every((item) => item.coverUrl?.startsWith('https://cdn.example.com/'))).toBe(
+	expect(city.items.every((item) => item.imageUrls[0]?.startsWith('https://cdn.example.com/'))).toBe(
 		true
 	);
 

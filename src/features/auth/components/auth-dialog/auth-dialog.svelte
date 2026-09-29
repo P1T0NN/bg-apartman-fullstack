@@ -18,7 +18,7 @@
 	type AuthView = 'sign-in' | 'sign-up';
 
 	/** The dialog is already the surface, so the form drops its card chrome. */
-	const formClass = 'bg-transparent shadow-none ring-0';
+	const formClass = 'w-full max-w-none bg-transparent shadow-none ring-0';
 
 	let dialog: NativeDialog;
 	/** null until the first open: the forms (and their captcha) mount lazily. */

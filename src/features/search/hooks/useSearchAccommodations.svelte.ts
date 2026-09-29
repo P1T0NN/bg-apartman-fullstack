@@ -1,11 +1,13 @@
-// LIBRARIES
-import { getConvexClient } from 'convex-svelte';
+// SVELTEKIT IMPORTS
 import { untrack } from 'svelte';
 
-// CONVEX
+// LIBRARIES
+import { getConvexClient } from 'convex-svelte';
 import { api } from '@convex/_generated/api';
 
 // UTILS
+import { ACCOMMODATION_CONFIG } from '@/shared/features/accommodations/config.js';
+import { appendUniquePaginationItems } from '@/shared/features/pagination/utils/appendUniquePaginationItems.js';
 import { normalizePageSize } from '@/shared/features/pagination/utils/normalizePageSize.js';
 
 // TYPES
@@ -15,13 +17,19 @@ import type { Id } from '@convex/_generated/dataModel';
 
 const searchQuery =
 	api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
+const mapSearchQuery =
+	api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap;
 type SearchQuery = typeof searchQuery;
+type MapSearchQuery = typeof mapSearchQuery;
 type SearchArgs = Pick<
 	FunctionArgs<SearchQuery>,
 	'location' | 'bounds' | 'adults' | 'children' | 'rooms'
 >;
 type SearchPage = FunctionReturnType<SearchQuery>;
 type SearchItem = SearchPage['items'][number];
+type MapSearchPage = FunctionReturnType<MapSearchQuery>;
+type MapSearchItem = MapSearchPage['items'][number];
+type FailedRequest = { cursor: string | null; append: boolean };
 
 /**
  * One-shot cursor pagination for the search page: no live subscription, no
@@ -35,53 +43,123 @@ export function useSearchAccommodations(
 	const pageSize = normalizePageSize(options.pageSize);
 	const key = $derived(JSON.stringify(args()));
 
-	let page = $state(1);
-	let cursors = $state<Record<number, string | null>>({ 1: null });
-	let data = $state<SearchItem[]>([]);
-	let favoriteIds = $state<Id<'accommodations'>[]>([]);
+	let data = $state.raw<SearchItem[]>([]);
+	let mapData = $state.raw<MapSearchItem[]>([]);
+	let favoriteIds = $state.raw<Id<'accommodations'>[]>([]);
 	let nextCursor = $state<string | null>(null);
 	let total = $state<number | undefined>(undefined);
 	let loading = $state(true);
+	let mapLoading = $state(false);
+	let loadingMore = $state(false);
 	let requestedKey = $state('');
 	let error = $state<unknown>(undefined);
+	let mapError = $state<unknown>(undefined);
 	let requestId = 0;
+	let mapRequestId = 0;
+	let failedRequest: FailedRequest | undefined;
+	let failedMapKey: string | undefined;
+	let requestedMapKey = '';
 
-	async function fetchPage(targetPage: number): Promise<void> {
+	async function fetchPage(cursor: string | null, append: boolean, argsKey: string): Promise<void> {
 		const request = ++requestId;
-		requestedKey = untrack(() => key);
-		const cursor = untrack(() => cursors[targetPage] ?? null);
+		requestedKey = argsKey;
 		// SAFETY: The query validator requires paginationOpts, which Convex validates before the handler runs.
 		const requestArgs = {
 			...untrack(args),
 			paginationOpts: { cursor, numItems: pageSize }
 		} as FunctionArgs<SearchQuery>;
 
-		loading = true;
+		if (append) {
+			loadingMore = true;
+		} else loading = true;
+
 		error = undefined;
+		failedRequest = undefined;
+
 		try {
-			let result = await getConvexClient().query(searchQuery, requestArgs);
-			// A bounded index scan may return an empty batch with more candidates to check.
-			while (result.items.length === 0 && result.nextCursor !== null) {
-				if (request !== requestId) return;
-				requestArgs.paginationOpts.cursor = result.nextCursor;
+			let items: SearchItem[] = [];
+			let pageFavoriteIds: Id<'accommodations'>[] = [];
+			let nextPageCursor = cursor;
+			let result: SearchPage;
+
+			do {
+				requestArgs.paginationOpts.cursor = nextPageCursor;
+				requestArgs.paginationOpts.numItems = pageSize - items.length;
 				result = await getConvexClient().query(searchQuery, requestArgs);
-			}
-			if (request !== requestId) return;
-			const exhaustedNextPage = targetPage > 1 && result.items.length === 0;
-			if (exhaustedNextPage) {
-				nextCursor = null;
-				return;
-			}
-			page = targetPage;
-			data = result.items;
-			favoriteIds = result.favoriteIds;
+
+				if (request !== requestId) return;
+
+				// Continue bounded scans until this visible batch is full or the cursor is exhausted.
+				items = appendUniquePaginationItems(items, result.items, (item) => item._id);
+
+				pageFavoriteIds = appendUniquePaginationItems(
+					pageFavoriteIds,
+					result.favoriteIds,
+					(id) => id
+				);
+
+				nextPageCursor = result.nextCursor;
+			} while (items.length < pageSize && nextPageCursor !== null);
+
+			if (request !== requestId || requestedKey !== key) return;
+
+			data = append ? appendUniquePaginationItems(data, items, (item) => item._id) : items;
+
+			favoriteIds = append
+				? appendUniquePaginationItems(favoriteIds, pageFavoriteIds, (id) => id)
+				: pageFavoriteIds;
+
 			nextCursor = result.nextCursor;
 			total = result.total;
 		} catch (cause) {
 			if (request !== requestId) return;
 			error = cause;
+			failedRequest = { cursor, append };
 		} finally {
-			if (request === requestId) loading = false;
+			if (request === requestId) {
+				loading = false;
+				loadingMore = false;
+			}
+		}
+	}
+
+	async function fetchMapData(argsKey: string): Promise<void> {
+		const request = ++mapRequestId;
+		requestedMapKey = argsKey;
+		// SAFETY: The map query requires pagination options validated by Convex.
+		const requestArgs = {
+			...untrack(args),
+			paginationOpts: { cursor: null, numItems: ACCOMMODATION_CONFIG.mapSearchPageSize }
+		} as FunctionArgs<MapSearchQuery>;
+
+		mapLoading = true;
+		mapError = undefined;
+		failedMapKey = undefined;
+
+		try {
+			let items: MapSearchItem[] = [];
+			let nextPageCursor: string | null = null;
+
+			do {
+				requestArgs.paginationOpts.cursor = nextPageCursor;
+				const result = await getConvexClient().query(mapSearchQuery, requestArgs);
+
+				if (request !== mapRequestId) return;
+
+				// Continue through empty partial pages until the map's cursor is exhausted.
+				items = appendUniquePaginationItems(items, result.items, (item) => item._id);
+				nextPageCursor = result.nextCursor;
+			} while (nextPageCursor !== null);
+
+			if (request !== mapRequestId || requestedMapKey !== key || argsKey !== key) return;
+
+			mapData = items;
+		} catch (cause) {
+			if (request !== mapRequestId) return;
+			mapError = cause;
+			failedMapKey = argsKey;
+		} finally {
+			if (request === mapRequestId) mapLoading = false;
 		}
 	}
 
@@ -90,52 +168,89 @@ export function useSearchAccommodations(
 			// These arguments are the reactive dependencies; the body only writes state.
 			void argsKey;
 			void viewerId;
-			page = 1;
-			cursors = { 1: null };
-			void fetchPage(1);
+			data = [];
+			favoriteIds = [];
+			nextCursor = null;
+			total = undefined;
+			error = undefined;
+			loading = true;
+			loadingMore = false;
+			void fetchPage(null, false, argsKey);
 			return () => {
 				requestId++;
 			};
 		};
 	}
 
-	function onPrev(): void {
-		if (loading || options.isMapMoving?.() || page <= 1) return;
-		void fetchPage(page - 1);
+	function loadMap(argsKey: string, enabled: boolean): Attachment<HTMLElement> {
+		return () => {
+			void argsKey;
+			void enabled;
+			mapRequestId++;
+			requestedMapKey = argsKey;
+			mapData = [];
+			mapError = undefined;
+			failedMapKey = undefined;
+			mapLoading = enabled;
+
+			if (enabled) void fetchMapData(argsKey);
+
+			return () => {
+				mapRequestId++;
+			};
+		};
 	}
 
-	function onNext(): void {
-		if (loading || options.isMapMoving?.() || nextCursor === null) return;
-		const targetPage = page + 1;
-		cursors = { ...cursors, [targetPage]: nextCursor };
-		void fetchPage(targetPage);
+	function loadMore(): void {
+		if (
+			loading ||
+			loadingMore ||
+			requestedKey !== key ||
+			options.isMapMoving?.() ||
+			nextCursor === null
+		) {
+			return;
+		}
+		void fetchPage(nextCursor, true, key);
 	}
 
 	function retry(): void {
-		void fetchPage(page);
+		if (!failedRequest) return;
+		void fetchPage(failedRequest.cursor, failedRequest.append, key);
+	}
+
+	function retryMap(): void {
+		if (failedMapKey !== key) return;
+		void fetchMapData(key);
 	}
 
 	return {
 		get key() {
 			return key;
 		},
-		get page() {
-			return page;
-		},
 		get data() {
 			return data;
+		},
+		get mapData() {
+			return mapData;
 		},
 		get loading() {
 			return loading || requestedKey !== key || (options.isMapMoving?.() ?? false);
 		},
+		get loadingMore() {
+			return loadingMore;
+		},
+		get mapLoading() {
+			return mapLoading || requestedMapKey !== key;
+		},
+		get mapError() {
+			return requestedMapKey !== key || options.isMapMoving?.() ? undefined : mapError;
+		},
 		get error() {
 			return requestedKey !== key || options.isMapMoving?.() ? undefined : error;
 		},
-		get nextCursor() {
-			return nextCursor;
-		},
-		get pageSize() {
-			return pageSize;
+		get hasNextPage() {
+			return requestedKey === key && nextCursor !== null;
 		},
 		get total() {
 			return total;
@@ -144,8 +259,9 @@ export function useSearchAccommodations(
 			return favoriteIds;
 		},
 		load,
-		onPrev,
-		onNext,
-		retry
+		loadMap,
+		loadMore,
+		retry,
+		retryMap
 	};
 }

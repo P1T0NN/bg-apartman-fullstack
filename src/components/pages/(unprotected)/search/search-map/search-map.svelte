@@ -1,6 +1,7 @@
 <script lang="ts">
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages';
+	import { getLocale } from '@/lib/paraglide/runtime.js';
 	import { getAllContexts, mount, onDestroy, unmount } from 'svelte';
 
 	// CONTEXTS
@@ -10,12 +11,17 @@
 	import GoogleMap from '@/components/ui/custom-components/google-components/google-map/google-map.svelte';
 	import SearchMapPin from './search-map-pin.svelte';
 	import SearchMapLoading from '../loading/search-map-loading.svelte';
+	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
 
 	// UTILS
 	import { cn } from '@/utils/utils.js';
+	import { formatCompactCurrency } from '@/shared/utils/currency.js';
 
 	// TYPES
-	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type {
+		AccommodationListItem,
+		AccommodationMapMarker
+	} from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type {
 		MapBounds,
 		Position
@@ -25,16 +31,22 @@
 		destination,
 		position,
 		markers = [],
+		accommodations = [],
 		highlightedId = null,
 		loading = false,
+		mapError,
+		retryMap = () => {},
 		onBoundsChange,
 		onMovingChange
 	}: {
 		destination: string;
 		position: Position | null;
-		markers?: PublicAccommodation[];
+		markers?: AccommodationMapMarker[];
+		accommodations?: AccommodationListItem[];
 		highlightedId?: string | null;
 		loading?: boolean;
+		mapError?: unknown;
+		retryMap?: () => void;
 		onBoundsChange: (bounds: MapBounds) => void;
 		onMovingChange: (moving: boolean) => void;
 	} = $props();
@@ -79,18 +91,29 @@
 	// Do not apply old bounds after leaving this map or selecting a new destination.
 	onDestroy(() => clearTimeout(boundsTimer));
 
-	const pinDestroyers: (() => void)[] = [];
-	let pinGeneration: symbol | null = null;
+	function buildStayPin(
+		marker: AccommodationMapMarker,
+		accommodation: AccommodationListItem | undefined
+	) {
+		if (!accommodation) {
+			const pin = document.createElement('div');
+			pin.className = 'flex flex-col items-center';
+			pin.title = marker.name;
+			pin.setAttribute(
+				'aria-label',
+				`${marker.name}: ${formatCompactCurrency(marker.pricePerNightMinor, getLocale())}`
+			);
 
-	function clearPins(): void {
-		for (const destroy of pinDestroyers) destroy();
-		pinDestroyers.length = 0;
-	}
+			const price = document.createElement('span');
+			price.className =
+				'flex min-w-11 items-center justify-center rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-foreground shadow-md';
+			price.textContent = formatCompactCurrency(marker.pricePerNightMinor, getLocale());
 
-	function buildStayPin(accommodation: PublicAccommodation, generation: symbol): HTMLElement {
-		if (generation !== pinGeneration) {
-			clearPins();
-			pinGeneration = generation;
+			const pointer = document.createElement('span');
+			pointer.className =
+				'-mt-1.5 size-2.5 rotate-45 border-r border-b border-border bg-background';
+			pin.append(price, pointer);
+			return { element: pin };
 		}
 
 		const pin = document.createElement('div');
@@ -99,24 +122,30 @@
 			target: pin,
 			props: {
 				accommodation,
-				isHighlighted: () => accommodation._id === highlightedId
+				isHighlighted: () => marker._id === highlightedId
 			},
 			context: contexts
 		});
-		pinDestroyers.push(() => void unmount(component));
-		return pin;
+		return {
+			element: pin,
+			destroy: () => void unmount(component)
+		};
 	}
 
-	onDestroy(clearPins);
-
+	const accommodationById = $derived.by(
+		() => new Map(accommodations.map((accommodation) => [accommodation._id, accommodation]))
+	);
 	const googleMarkers = $derived.by(() => {
-		// A fresh token per result set so pins from a previous set are unmounted first.
-		const generation = Symbol();
-		return markers.map((stay) => ({
-			position: { lat: stay.latitude, lng: stay.longitude },
-			title: stay.name,
-			content: () => buildStayPin(stay, generation)
-		}));
+		return markers.map((marker) => {
+			const accommodation = accommodationById.get(marker._id);
+			return {
+				id: marker._id,
+				position: { lat: marker.latitude, lng: marker.longitude },
+				title: marker.name,
+				contentKey: accommodation ?? marker,
+				content: () => buildStayPin(marker, accommodation)
+			};
+		});
 	});
 </script>
 
@@ -127,12 +156,11 @@
 			search.mapVisible ? 'block' : 'hidden'
 		)}
 		aria-busy={loading}
-		{@attach () => {
-			if (googleMarkers.length === 0) clearPins();
-		}}
 	>
 		<GoogleMap
 			markers={googleMarkers}
+			highlightedMarkerId={highlightedId}
+			clusterMarkers
 			{position}
 			onBoundsChange={handleBoundsChange}
 			onMovingChange={handleMovingChange}
@@ -148,6 +176,20 @@
 		/>
 		{#if loading}
 			<SearchMapLoading />
+		{/if}
+		{#if !loading && !mapError && markers.length > 0}
+			<div
+				class="pointer-events-none absolute top-3 left-3 z-10 rounded-full border bg-background/95 px-3 py-1.5 text-sm font-medium shadow-sm"
+			>
+				{m['SearchPage.mapResultCount']({ count: markers.length })}
+			</div>
+		{/if}
+		{#if mapError}
+			<div
+				class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-background/90 px-4 backdrop-blur-sm"
+			>
+				<ErrorComponent message={m['SearchPage.error']()} retry={retryMap} />
+			</div>
 		{/if}
 	</aside>
 {/if}

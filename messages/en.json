@@ -130,7 +130,6 @@
 			"night": "night",
 			"nights": "nights",
 			"capacity": "Maximum guests",
-			"bookingUnavailable": "Online reservations are not available for this stay yet.",
 			"reviewRules": "Review stay requirements",
 			"planBooking": "Plan your booking",
 			"priceHint": "This is the listed rate, not a confirmed trip total. Availability, additional fees and cancellation terms must be confirmed before booking."
@@ -385,6 +384,7 @@
 	"SearchPage": {
 		"staysIn": "Stays in {destination}",
 		"staysInArea": "Stays in this area",
+		"mapResultCount": "Stays in this area: {count}",
 		"chooseDestination": "Search a destination",
 		"chooseDestinationHint": "Enter where you want to stay, then pick your dates and guests.",
 		"error": "We couldn't load stays right now. Try again with your current search.",

@@ -1,40 +1,30 @@
 // CONVEX
-import { fetchOptimizedQuery } from '../../../wrappers/fetchOptimizedQuery.js';
-import { getPagination } from '../../../helpers/getPagination.js';
+import { authenticatedQuery } from '../../../builders/convexFunctionBuilders.js';
 
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // HELPERS
-import { withCoverUrls } from '../../accommodations/helpers/withCoverUrls.js';
+import { getPagination } from '../../../helpers/getPagination.js';
+import { withPublishedAccommodationImageUrls } from '../helpers/enrichFavoritePage.js';
 
 // VALIDATORS
+import { listPageArgs } from '../../../validators/listPageArgs.js';
 import { accommodationPage } from '../../accommodations/validators/accommodationValidators.js';
 
-// TYPES
-import type { Doc } from '../../../_generated/dataModel.js';
-
-export const fetchFavorites = fetchOptimizedQuery({
-	auth: 'user',
+export const fetchFavorites = authenticatedQuery({
+	args: listPageArgs,
 	returns: accommodationPage,
-	fetchPage: async ({ ctx, identity, paginationOpts }) => {
+	handler: async (ctx, args) => {
 		const favorites = await getPagination(
 			ctx.db
 				.query('favorites')
-				.withIndex('by_owner_id', (q) => q.eq('ownerId', getOwnerId(identity)))
+				.withIndex('by_owner_id', (q) => q.eq('ownerId', getOwnerId(ctx.identity)))
 				.order('desc'),
-			{ paginationOpts }
+			{ paginationOpts: args.paginationOpts }
 		);
-		
-		const accommodations = await Promise.all(
-			favorites.items.map((favorite) => ctx.db.get(favorite.accommodationId))
-		);
+		const items = await withPublishedAccommodationImageUrls({ ctx, items: favorites.items });
 
-		const published = accommodations.filter(
-			(accommodation): accommodation is Doc<'accommodations'> =>
-				accommodation !== null && accommodation.status === 'published'
-		);
-
-		return { ...favorites, items: await withCoverUrls(published) };
+		return { ...favorites, items };
 	}
 });

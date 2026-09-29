@@ -41,9 +41,12 @@ boundary.
 - `src/features/pagination/hooks/useConvexPagination.svelte.ts`
 - `src/shared/features/pagination/types/paginationTypes.ts`
 - `src/shared/features/pagination/types/paginationTypesConvex.ts`
+- `src/convex/validators/listPageArgs.ts`
 - `src/convex/helpers/getPagination.ts`
-- `src/convex/wrappers/fetchOptimizedQuery.ts`
 - `src/convex/helpers/paginateSearch.ts`
+- per-table `get<Entity>Page.ts` helpers, `read<Entity>Filters.ts` readers, and
+  `enrich<Entity>Page.ts` row enrichment under `src/convex/tables/<table>/helpers`
+- `src/convex/wrappers/fetchOptimizedSearchQuery.ts` (bounded suggestions)
 
 ## Verification
 

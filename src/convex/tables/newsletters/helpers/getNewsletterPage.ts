@@ -11,16 +11,19 @@ import type { PaginationOptions } from 'convex/server';
 type NewsletterSubscriber = Doc<'newsletters'>;
 export type AdminNewsletterSubscriber = NewsletterSubscriber;
 
-export async function getNewsletterPage(
-	ctx: QueryCtx,
-	paginationOpts: PaginationOptions,
-	search: string | undefined
-): Promise<ConvexPaginatedPage<AdminNewsletterSubscriber>> {
+export async function getNewsletterPage({
+	ctx,
+	paginationOpts,
+	search
+}: {
+	ctx: QueryCtx;
+	paginationOpts: PaginationOptions;
+	search?: string;
+}): Promise<ConvexPaginatedPage<AdminNewsletterSubscriber>> {
 	const page = search
 		? await paginateSearch<NewsletterSubscriber>({
 				ctx,
 				search,
-				filters: [],
 				paginationOpts,
 				buildQuery: ({ ctx, search }) =>
 					ctx.db
