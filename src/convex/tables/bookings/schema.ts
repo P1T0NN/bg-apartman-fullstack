@@ -1,10 +1,18 @@
 // LIBRARIES
+import { literals } from 'convex-helpers/validators';
 import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
+// CONFIG
+import { BOOKING_STATUSES } from '../../../shared/features/bookings/schemas/bookingSchemas.js';
+
 export const bookings = defineTable({
-	// Set server-side when a guest booking is claimed by a signed-in user.
+	// Set server-side when a signed-in guest books; also used to claim anonymous bookings.
 	ownerId: v.optional(v.string()),
+	// Owner of the booked accommodation, copied at creation; powers the host bookings page.
+	hostId: v.optional(v.string()),
+	// Booking request lifecycle; every new booking starts as 'pending'.
+	status: literals(...BOOKING_STATUSES),
 	// Lowercased "<lastName> <email>" maintained by booking writes; powers guest search.
 	searchText: v.optional(v.string()),
 	accommodationId: v.id('accommodations'),
@@ -19,4 +27,9 @@ export const bookings = defineTable({
 	children: v.number()
 })
 	.index('by_owner_id', ['ownerId'])
-	.searchIndex('search_guest', { searchField: 'searchText', filterFields: ['ownerId'] });
+	.index('by_host_id', ['hostId'])
+	.index('by_host_id_status', ['hostId', 'status'])
+	.searchIndex('search_guest', {
+		searchField: 'searchText',
+		filterFields: ['ownerId', 'hostId', 'status']
+	});

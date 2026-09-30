@@ -8,6 +8,7 @@
 
 	// CONFIG
 	import { PAGINATION_CONFIG } from '@/shared/features/pagination/config.js';
+	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	// COMPONENTS
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
@@ -15,8 +16,8 @@
 	import DataList from '@/components/ui/custom-components/data-list/data-list.svelte';
 	import EmptyData from '@/components/ui/custom-components/empty-data/empty-data.svelte';
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
-	import SearchFiltersButton from '@/components/pages/(unprotected)/search/search-filters/search-filters-button.svelte';
-	import SearchFiltersDialog from '@/components/pages/(unprotected)/search/search-filters/search-filters-dialog.svelte';
+	import SearchFilters from '@/components/pages/(unprotected)/search/search-filters/search-filters.svelte';
+	import SearchFiltersSelected from '@/components/pages/(unprotected)/search/search-filters/search-filters-selected.svelte';
 	import SearchHeader from '@/components/pages/(unprotected)/search/search-header/search-header.svelte';
 	import SearchMap from '@/components/pages/(unprotected)/search/search-map/search-map.svelte';
 	import AuthDialog from '@/features/auth/components/auth-dialog/auth-dialog.svelte';
@@ -70,7 +71,16 @@
 			bounds,
 			adults: readNumber('adults'),
 			children: readNumber('children'),
-			rooms: readNumber('rooms')
+			rooms: readNumber('rooms'),
+			stayFilters: {
+				minPrice: search.criteria.minPrice,
+				maxPrice: search.criteria.maxPrice,
+				type: ACCOMMODATION_TYPES.find((type) => type === search.criteria.type),
+				bedrooms: search.criteria.bedrooms,
+				beds: search.criteria.beds,
+				bathrooms: search.criteria.bathrooms,
+				amenities: search.criteria.amenities
+			}
 		}),
 		{ pageSize: PAGINATION_CONFIG.DEFAULT_INFINITE_SCROLL_PAGE_SIZE, isMapMoving: () => mapMoving }
 	);
@@ -90,9 +100,9 @@
 	});
 	setFavoritesContext(favorites);
 
-	let filtersDialog: SearchFiltersDialog;
 	let hoveredId = $state<string | null>(null);
 	let focusedId = $state<string | null>(null);
+
 	const highlightedId = $derived(hoveredId ?? focusedId);
 </script>
 
@@ -136,7 +146,7 @@
 					{#if hasLocation}
 						<div class="hidden min-[68.75rem]:block">
 							<NativeSelect
-								label={m['SearchPage.SearchFilters.sort']()}
+								label={m['SearchPage.SearchToolbar.sort']()}
 								options={search.sorts}
 								value={search.criteria.sort}
 								onchange={(value) => search.setCriteria({ ...search.criteria, sort: value })}
@@ -144,8 +154,9 @@
 							/>
 						</div>
 					{/if}
-					<SearchFiltersButton onopen={() => filtersDialog.open()} />
+					<SearchFilters />
 				</div>
+				<SearchFiltersSelected />
 			</div>
 
 			{#if hasLocation}
@@ -160,9 +171,9 @@
 							{accommodation}
 							onhover={(hovered) => (hoveredId = hovered ? accommodation._id : null)}
 							onfocuschange={(focused) => {
-							if (focused) focusedId = accommodation._id;
-							else if (focusedId === accommodation._id) focusedId = null;
-						}}
+								if (focused) focusedId = accommodation._id;
+								else if (focusedId === accommodation._id) focusedId = null;
+							}}
 						/>
 					{/snippet}
 					{#snippet loadingSnippet()}
@@ -202,4 +213,3 @@
 </main>
 
 <AuthDialog bind:this={authDialog} />
-<SearchFiltersDialog bind:this={filtersDialog} />

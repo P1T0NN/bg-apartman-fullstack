@@ -17,28 +17,30 @@
 </script>
 
 {#if search.activeFilters.length}
-	<div class="flex flex-wrap gap-2 pt-3">
+	<div class="flex w-full flex-wrap gap-2">
 		{#each search.activeFilters as key (key)}
 			<Button
 				size="sm"
 				variant="secondary"
-				aria-label={m['SearchPage.SearchFilters.remove']({ filter: search.labels[key] })}
+				aria-label={m['SearchPage.SearchFiltersSelected.remove']({ filter: search.labels[key] })}
 				onclick={() =>
 					search.setCriteria({
 						...search.criteria,
 						[key]: clearSearchFilters(search.criteria)[key]
 					})}
 			>
-				{search.labels[key]}{key !== 'pets' && key !== 'cancellation'
-					? `: ${Array.isArray(search.criteria[key]) ? search.criteria[key].map((value) => amenities.find((item) => item.key === value)?.label ?? value).join(', ') : search.criteria[key]}`
-					: ''}<span class="icon-[lucide--x]" aria-hidden="true"></span>
+				{search.labels[key]}: {Array.isArray(search.criteria[key])
+					? search.criteria[key]
+							.map((value) => amenities.find((item) => item.key === value)?.label ?? value)
+							.join(', ')
+					: search.criteria[key]}<span class="icon-[lucide--x]" aria-hidden="true"></span>
 			</Button>
 		{/each}
 		<Button
 			size="sm"
 			variant="ghost"
 			onclick={() => search.setCriteria(clearSearchFilters(search.criteria))}
-			>{m['SearchPage.SearchFilters.clear']()}</Button
+			>{m['SearchPage.SearchFiltersSelected.clear']()}</Button
 		>
 	</div>
 {/if}

@@ -22,6 +22,7 @@ import authConfig from './auth.config.js';
 import { TURNSTILE_ALWAYS_PASS_TEST_SECRET } from '../../shared/features/captcha/config.js';
 
 // EMAILS
+import { sendDeleteAccountVerificationEmail } from './emails/sendDeleteAccountVerificationEmail.js';
 import { sendVerificationOTPEmail } from './emails/sendVerificationOTPEmail.js';
 
 // TYPES
@@ -133,6 +134,21 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
 			enabled: true,
 			autoSignIn: false,
 			requireEmailVerification: true
+		},
+		user: {
+			deleteUser: {
+				enabled: true,
+				// Email verification keeps deletion intentional and works for social-only accounts.
+				sendDeleteAccountVerification: async ({ user, url }) => {
+					await sendDeleteAccountVerificationEmail({
+						email: user.email,
+						name: user.name,
+						url
+					}).catch((error) => {
+						console.error('[deleteUser] send failed', error);
+					});
+				}
+			}
 		},
 		rateLimit: {
 			enabled: true,

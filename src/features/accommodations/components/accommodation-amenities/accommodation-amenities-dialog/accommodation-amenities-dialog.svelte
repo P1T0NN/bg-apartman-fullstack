@@ -23,11 +23,13 @@
 	let {
 		selected,
 		additionalCount,
+		triggerLabel,
 		disabled = false,
 		onSave
 	}: {
 		selected: AmenityKey[];
 		additionalCount: number;
+		triggerLabel?: string;
 		disabled?: boolean;
 		onSave: (selected: AmenityKey[]) => void;
 	} = $props();
@@ -79,9 +81,10 @@
 			<span class="icon-[lucide--sliders-horizontal]" aria-hidden="true" data-icon="inline-start"
 			></span>
 
-			{additionalCount
-				? m['AccommodationsFeature.AccommodationAmenitiesDialog.edit']()
-				: m['AccommodationsFeature.AccommodationAmenitiesDialog.addMore']()}
+			{triggerLabel ??
+				(additionalCount
+					? m['AccommodationsFeature.AccommodationAmenitiesDialog.edit']()
+					: m['AccommodationsFeature.AccommodationAmenitiesDialog.addMore']())}
 		</Button>
 	{/snippet}
 

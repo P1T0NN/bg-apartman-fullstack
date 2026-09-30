@@ -8,7 +8,7 @@
 
 <Loader2Icon
 	role="status"
-	aria-label="Cargando"
+	aria-label="Loading"
 	class={cn('size-4 animate-spin', className)}
 	{...restProps}
 />

@@ -1,6 +1,7 @@
 <script lang="ts">
 	// SVELTEKIT IMPORTS
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 
@@ -9,9 +10,6 @@
 
 	// CONVEX
 	import { api } from '@convex/_generated/api';
-
-	// CONSTANTS
-	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
 	import * as Field from '@/components/ui/field/index.js';
@@ -75,6 +73,7 @@
 	const fields = $derived(
 		createBookingFormFields({
 			accommodation,
+			guests: { adults: Number(values.adults), children: Number(values.children) },
 			render: { tripHeading, stayDates, tripLimits, guestHeading }
 		})
 	);
@@ -140,7 +139,8 @@
 		extraFields={{ accommodationId: accommodation._id }}
 		bind:values
 		bind:submitting
-		onSuccess={(bookingId) => goto(UNPROTECTED_PAGE_ENDPOINTS.BOOK_CONFIRMATION(bookingId))}
+		onSuccess={(bookingId) =>
+			goto(resolve('/(app)/(unprotected)/book-confirmation/[id]', { id: bookingId }))}
 		successMessage={m['BookingPage.BookingCheckout.booked']()}
 		class="min-w-0 lg:col-start-1 lg:row-start-1"
 	>

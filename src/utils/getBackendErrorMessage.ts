@@ -17,6 +17,10 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.invalidAccommodation']();
 		case 'INVALID_BOOKING':
 			return m['BackendMessages.invalidBooking']();
+		case 'BOOKING_NOT_FOUND':
+			return m['BackendMessages.bookingNotFound']();
+		case 'INVALID_BOOKING_STATUS':
+			return m['BackendMessages.invalidBookingStatus']();
 		case 'ACCOMMODATION_NOT_FOUND':
 			return m['BackendMessages.accommodationNotFound']();
 		case 'INVALID_FEEDBACK':

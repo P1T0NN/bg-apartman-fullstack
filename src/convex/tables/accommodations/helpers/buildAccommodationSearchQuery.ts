@@ -1,10 +1,17 @@
+// LIBRARIES
+import { filter } from 'convex-helpers/server/filter';
+
 // CONVEX
 import type { QueryCtx } from '../../../_generated/server.js';
 
-// TYPES
-import type { AccommodationBounds } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
+// SCHEMAS
+import { accommodationSearchFiltersSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
 
-export const SEARCH_MAXIMUM_ROWS_READ = 1000;
+// TYPES
+import type {
+	AccommodationBounds,
+	AccommodationSearchFilters
+} from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
 
 type AccommodationSearchArgs = {
 	bounds?: AccommodationBounds;
@@ -12,13 +19,16 @@ type AccommodationSearchArgs = {
 	adults?: number;
 	children?: number;
 	rooms?: number;
+	stayFilters?: AccommodationSearchFilters;
 };
 
 export function buildAccommodationSearchQuery(ctx: QueryCtx, args: AccommodationSearchArgs) {
 	const city = args.location.city?.trim();
 	const country = args.location.country?.trim() ?? '';
 	const guests = (args.adults ?? 0) + (args.children ?? 0);
-	const bedrooms = args.rooms ?? 0;
+	const filters = accommodationSearchFiltersSchema.parse(args.stayFilters ?? {});
+	const { type, minPrice = 0, maxPrice = 0, beds = 0, bathrooms = 0 } = filters;
+	const bedrooms = Math.max(args.rooms ?? 0, filters.bedrooms ?? 0);
 	const bounds = args.bounds;
 
 	if (!country && !bounds) return null;
@@ -50,9 +60,33 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 	}
 
 	const hasCountMinimums = guests > 0 || bedrooms > 0;
-	return hasCountMinimums
-		? accommodationsQuery.filter((q) =>
-				q.and(q.gte(q.field('maxGuests'), guests), q.gte(q.field('bedrooms'), bedrooms))
-			)
+	if (hasCountMinimums) {
+		accommodationsQuery = accommodationsQuery.filter((q) =>
+			q.and(q.gte(q.field('maxGuests'), guests), q.gte(q.field('bedrooms'), bedrooms))
+		);
+	}
+	if (type) {
+		accommodationsQuery = accommodationsQuery.filter((q) => q.eq(q.field('type'), type));
+	}
+	if (minPrice) {
+		accommodationsQuery = accommodationsQuery.filter((q) =>
+			q.gte(q.field('pricePerNightMinor'), Math.round(minPrice * 100))
+		);
+	}
+	if (maxPrice) {
+		accommodationsQuery = accommodationsQuery.filter((q) =>
+			q.lte(q.field('pricePerNightMinor'), Math.round(maxPrice * 100))
+		);
+	}
+	if (beds) {
+		accommodationsQuery = accommodationsQuery.filter((q) => q.gte(q.field('beds'), beds));
+	}
+	if (bathrooms) {
+		accommodationsQuery = accommodationsQuery.filter((q) => q.gte(q.field('bathrooms'), bathrooms));
+	}
+	const amenities = filters.amenities ?? [];
+	// Filter the bounded indexed page, preserving its cursor even when no rows match.
+	return amenities.length
+		? filter(accommodationsQuery, (item) => amenities.every((key) => item.amenities.includes(key)))
 		: accommodationsQuery;
 }

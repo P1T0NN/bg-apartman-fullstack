@@ -3,7 +3,6 @@
 	"example_message": "Hello world {username}",
 	"BookingPage": {
 		"title": "Plan your booking",
-		"loading": "Loading your stay",
 		"BookingHeader": {
 			"back": "Back to accommodation",
 			"title": "Make it your next stay.",
@@ -53,6 +52,13 @@
 			"booked": "Booking request sent"
 		},
 		"BookingConfirmation": {
+			"eyebrow": "One step closer to your next stay",
+			"checkOut": "Check-out",
+			"viewAccommodation": "View accommodation",
+			"next": "What happens next?",
+			"nextHint": "Your request is saved. Availability, the final price and payment arrangements still need confirmation from the property before your stay is booked.",
+			"saveLink": "Bookmark this page to keep your request details close at hand.",
+			"noPayment": "No payment has been taken.",
 			"stay": "Accommodation",
 			"dates": "Dates",
 			"bookedHint": "We saved your request for this stay. The property will confirm availability and payment details.",
@@ -62,7 +68,6 @@
 	},
 	"AccommodationPage": {
 		"title": "Accommodation details",
-		"loading": "Loading accommodation details",
 		"error": "We could not load this accommodation. Please try again.",
 		"notFound": "This stay is no longer available",
 		"notFoundHint": "Return to search to find another place for your trip.",
@@ -342,6 +347,13 @@
 			"checkIn": "Check-in",
 			"checkOut": "Check-out",
 			"selectDates": "Select your dates"
+		},
+		"status": {
+			"pending": "Pending",
+			"confirmed": "Confirmed",
+			"declined": "Declined",
+			"cancelled": "Cancelled",
+			"completed": "Completed"
 		}
 	},
 	"FavoritesFeature": {
@@ -389,39 +401,42 @@
 		"chooseDestinationHint": "Enter where you want to stay, then pick your dates and guests.",
 		"error": "We couldn't load stays right now. Try again with your current search.",
 		"empty": "There are no accommodations in this area",
-		"emptyHint": "Move or zoom out on the map, or change your destination, guests, or rooms.",
-		"SearchMap": {
-			"loading": "Loading accommodations in this area"
-		},
-		"map": "Show map",
-		"list": "Show list",
+		"emptyHint": "Move or zoom out on the map, or change your destination, guests, rooms, or filters.",
 		"mapTitle": "Google Map of {destination}",
 		"mapLoading": "Loading the map…",
 		"mapError": "We couldn't load the map.",
 		"SearchFilters": {
-			"rating": "Guest rating",
-			"distance": "Distance from centre",
-			"cancellation": "Free cancellation",
 			"filters": "Filters",
 			"price": "Nightly price",
 			"minPrice": "Minimum ({currency})",
 			"maxPrice": "Maximum ({currency})",
+			"noMaximum": "No maximum",
 			"type": "Property type",
 			"bedrooms": "Bedrooms",
 			"beds": "Beds",
 			"bathrooms": "Bathrooms",
 			"amenities": "Amenities",
-			"pets": "Pets allowed",
+			"popularAmenities": "Popular amenities",
+			"allAmenities": "Show all amenities",
+			"additionalAmenities": "{count} additional amenities selected",
 			"any": "Any",
 			"clear": "Clear all",
 			"show": "Show results",
 			"close": "Close filters",
-			"remove": "Remove {filter}",
+			"invalid": "Maximum price must be at least the minimum price."
+		},
+		"SearchToolbar": {
+			"map": "Show map",
+			"list": "Show list",
 			"sort": "Sort by",
 			"recommended": "Recommended",
 			"priceAsc": "Price: low to high",
 			"priceDesc": "Price: high to low",
-			"invalid": "Maximum price must be at least the minimum price."
+			"distance": "Distance from centre"
+		},
+		"SearchFiltersSelected": {
+			"remove": "Remove {filter}",
+			"clear": "Clear all"
 		},
 		"SearchStay": {
 			"save": "Save {name}",
@@ -875,6 +890,8 @@
 		"invalidUpload": "The selected file is invalid.",
 		"invalidAccommodation": "Some listing details are missing or invalid. Review each section and check your available dates.",
 		"invalidBooking": "Some booking details are missing or invalid. Check your dates, guests and contact details.",
+		"bookingNotFound": "That booking no longer exists.",
+		"invalidBookingStatus": "That status change is not allowed for this booking.",
 		"accommodationNotFound": "This accommodation is no longer available. Return to search and choose another stay.",
 		"invalidFeedback": "Some feedback details are missing or invalid. Review the form and try again.",
 		"feedbackNotFound": "That feedback no longer exists.",
@@ -1023,7 +1040,6 @@
 			"houseRulesPlaceholder": "Quiet hours after 10 PM. No shoes indoors.",
 			"previous": "Back"
 		},
-
 		"AddAccommodationForm": {
 			"published": "Accommodation published",
 			"images": "Photos",
@@ -1204,24 +1220,205 @@
 		"emptyDescription": "Bookings you make will appear here.",
 		"findAccommodation": "Find accommodation",
 		"MyBookingsHeader": {
-			"guestLabel": "Guest",
-			"bookingsFound": "Bookings - {count} found",
-			"bookingsLabel": "Bookings",
-			"foundLabel": "found",
-			"filteredLabel": "Bookings - Filtered",
-			"description": "Review your upcoming and past stays."
+			"bookingsFound": "Saved bookings: {count} · Newest requests first",
+			"filteredLabel": "Search results",
+			"description": "See where you're staying, when you're going and whether your booking is confirmed."
 		},
-		"MyBookingCard": {
+		"MyBookingItem": {
 			"checkIn": "Check-in",
 			"checkOut": "Check-out",
+			"trip": "Stay length & guests",
 			"night": "night",
 			"nights": "nights",
+			"guest": "guest",
+			"guests": "guests",
+			"pending": "Awaiting confirmation",
+			"pendingHint": "Your request is saved. The property still needs to confirm availability and payment details.",
+			"confirmed": "Confirmed",
+			"confirmedHint": "The property has confirmed your booking.",
+			"declined": "Declined",
+			"declinedHint": "The property could not accept this request. This stay is not booked.",
+			"cancelled": "Cancelled",
+			"cancelledHint": "This booking has been cancelled.",
+			"completed": "Completed",
+			"completedHint": "This stay is complete. Your booking details are saved here.",
+			"unavailable": "Accommodation unavailable",
+			"viewAccommodation": "View accommodation",
+			"viewAccommodationLabel": "View accommodation: {name}",
+			"details": "Guest details & requests",
+			"leadGuest": "Lead guest",
+			"guestBreakdown": "Guest breakdown",
+			"adults": "Adults",
+			"children": "Children",
+			"email": "Email address",
+			"phone": "Phone number",
 			"requests": "Special requests",
-			"booked": "Booked {date}"
+			"requestsHint": "Special requests are subject to confirmation by the property.",
+			"requested": "Request sent on {date}"
 		}
+	},
+	"HostBookingsPage": {
+		"pageTitle": "Bookings",
+		"searchPlaceholder": "Search by guest last name or email...",
+		"noMatchingBookings": "No matching bookings",
+		"noBookingsYet": "No bookings yet",
+		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"filtersEmptyDescription": "No bookings match this status.",
+		"emptyDescription": "Requests for the accommodations you host will appear here.",
+		"addAccommodation": "Add accommodation",
+		"statusTabsLabel": "Filter by booking status",
+		"allStatuses": "All",
+		"columns": {
+			"guest": "Guest",
+			"stay": "Stay",
+			"accommodation": "Accommodation",
+			"status": "Status",
+			"actions": "Actions"
+		},
+		"HostBookingsHeader": {
+			"description": "Review requests, confirm stays and keep track of every guest."
+		},
+		"HostBookingsItem": {
+			"night": "night",
+			"nights": "nights",
+			"guest": "guest",
+			"guests": "guests",
+			"unavailable": "Accommodation unavailable",
+			"requested": "Requested {time}",
+			"until": "until",
+			"awaitingResponse": "Awaiting your response",
+			"specialRequest": "Special request",
+			"guestBreakdown": "{adults} adults, {children} children"
+		},
+		"HostBookingsItemActions": {
+			"complete": "Mark completed",
+			"toastCompleted": "Stay marked completed"
+		},
+		"HostBookingsConfirmButton": {
+			"confirm": "Confirm",
+			"confirmTitle": "Confirm {name}'s booking?",
+			"confirmDescription": "The guest is told this stay is booked. Use their contact details to arrange arrival and payment.",
+			"confirmSubmit": "Confirm booking",
+			"keep": "Keep booking",
+			"toastConfirmed": "Booking confirmed"
+		},
+		"HostBookingsCancelButton": {
+			"decline": "Decline",
+			"declineTitle": "Decline {name}'s request?",
+			"declineDescription": "The request is marked as declined and cannot be reopened. The guest is not contacted automatically.",
+			"cancel": "Cancel booking",
+			"cancelTitle": "Cancel {name}'s booking?",
+			"cancelDescription": "The stay is marked as cancelled and cannot be reopened. The guest is not contacted automatically.",
+			"keep": "Keep booking",
+			"toastDeclined": "Request declined",
+			"toastCancelled": "Booking cancelled"
+		},
+		"HostBookingsDetailsDialog": {
+			"details": "Details",
+			"detailsLabel": "View details for {name}",
+			"close": "Close",
+			"requested": "Requested on {date}"
+		},
+		"HostBookingsDetailsDialogStay": {
+			"stay": "Stay",
+			"checkIn": "Check-in",
+			"checkOut": "Check-out"
+		},
+		"HostBookingsDetailsDialogGuests": {
+			"trip": "Length & guests",
+			"night": "night",
+			"nights": "nights",
+			"guest": "guest",
+			"guests": "guests",
+			"guestBreakdown": "Adults {adults}, children {children}"
+		},
+		"HostBookingsDetailsDialogGuestInfo": {
+			"contact": "Guest contact",
+			"email": "Email",
+			"phone": "Phone"
+		},
+		"HostBookingsDetailsDialogAccommodationInfo": {
+			"accommodation": "Accommodation",
+			"unavailable": "Accommodation unavailable"
+		},
+		"HostBookingsDetailsDialogSpecialRequests": {
+			"requests": "Special requests"
+		},
+		"pendingOrder": "Oldest requests first",
+		"defaultOrder": "Newest requests first",
+		"searchOrder": "Matching guest requests"
 	},
 	"ErrorMessages": {
 		"unexpected": "Something went wrong. Please try again.",
 		"loadFailed": "Couldn't load this content. Please try again."
+	},
+	"HostDashboardPage": {
+		"pageTitle": "Dashboard",
+		"pendingTitle": "Pending bookings need your attention",
+		"pendingDescription": "You have booking requests for your accommodations awaiting a response. Review them and confirm or decline each request.",
+		"reviewPending": "Review pending bookings"
+	},
+	"GuestSettingsPage": {
+		"pageTitle": "Account settings",
+		"GuestSettingsHeader": {
+			"description": "Manage your profile and keep your account secure."
+		},
+		"GuestSettingsProfileCard": {
+			"title": "Profile",
+			"description": "This is how your name appears on bookings you make.",
+			"displayName": "Display name",
+			"email": "Email address",
+			"emailHint": "Used to sign in and to send booking confirmations.",
+			"verified": "Verified",
+			"unverified": "Not verified",
+			"save": "Save changes",
+			"updated": "Profile updated"
+		},
+		"GuestSettingsSecurityCard": {
+			"title": "Security",
+			"description": "Change your password and review where you are signed in.",
+			"passwordTitle": "Password",
+			"passwordDescription": "Choose a strong password you do not use anywhere else.",
+			"changePassword": "Change password",
+			"sessionsTitle": "Active sessions",
+			"sessionsDescription": "Devices signed in to your account. Sign out anything you do not recognize.",
+			"signOutOthers": "Sign out other sessions",
+			"signedOutOthers": "Signed out of all other sessions"
+		},
+		"GuestSettingsPasswordDialog": {
+			"title": "Change your password",
+			"description": "Enter your current password, then choose a new one.",
+			"current": "Current password",
+			"next": "New password",
+			"confirm": "Confirm new password",
+			"requirements": "Use at least 8 characters.",
+			"revokeOthers": "Sign out other devices",
+			"revokeOthersHint": "Keeps only this device signed in.",
+			"cancel": "Cancel",
+			"submit": "Update password",
+			"mismatch": "The new passwords do not match.",
+			"updated": "Password updated"
+		},
+		"GuestSettingsSessionItem": {
+			"current": "This device",
+			"lastActive": "Last active",
+			"started": "Signed in",
+			"expires": "Expires",
+			"signOut": "Sign out",
+			"signOutLabel": "Sign out of this session",
+			"signedOut": "Session signed out",
+			"unknownAgent": "Unknown device",
+			"unknownIp": "IP unavailable"
+		},
+		"GuestSettingsDangerZone": {
+			"title": "Danger zone",
+			"description": "Permanently delete your account and its saved data. This cannot be undone.",
+			"deleteAccount": "Delete account",
+			"dialogTitle": "Delete your account?",
+			"dialogDescription": "We email you a link. Opening it permanently deletes your account, saved stays and sign-in details. Bookings you already made stay on record for the host.",
+			"typeToConfirm": "Type {email} to confirm",
+			"keepAccount": "Keep my account",
+			"sent": "Confirmation email sent. Open the link in it to finish deleting your account."
+		}
 	}
 }

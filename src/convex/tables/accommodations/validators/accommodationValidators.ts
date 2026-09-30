@@ -1,9 +1,14 @@
 // LIBRARIES
 import { docValidator } from 'convex/server';
 import { v } from 'convex/values';
+import { literals } from 'convex-helpers/validators';
 
 // SCHEMAS
 import { accommodations } from '../schema.js';
+
+// DATA
+import { AMENITY_KEYS } from '../../../../shared/features/accommodations/data/accommodationsData.js';
+import { ACCOMMODATION_TYPES } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
 
 export const boundsValidator = v.object({
 	south: v.number(),
@@ -20,7 +25,18 @@ export const searchCriteriaArgs = {
 	}),
 	adults: v.optional(v.number()),
 	children: v.optional(v.number()),
-	rooms: v.optional(v.number())
+	rooms: v.optional(v.number()),
+	stayFilters: v.optional(
+		v.object({
+			minPrice: v.optional(v.number()),
+			maxPrice: v.optional(v.number()),
+			type: v.optional(literals(...ACCOMMODATION_TYPES)),
+			bedrooms: v.optional(v.number()),
+			beds: v.optional(v.number()),
+			bathrooms: v.optional(v.number()),
+			amenities: v.optional(v.array(literals(...AMENITY_KEYS)))
+		})
+	)
 };
 
 const accommodationDoc = docValidator('accommodations', accommodations);

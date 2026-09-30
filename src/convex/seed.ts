@@ -147,16 +147,23 @@ function buildImageKeys(index: number): string[] {
 export const seedAccommodations = internalMutation({
 	args: {
 		count: v.optional(v.number()),
-		ownerId: v.optional(v.string())
+		ownerId: v.optional(v.string()),
+		/** Concentrate all rows in Belgrade for the search-map benchmark. */
+		denseBelgrade: v.optional(v.boolean()),
+		/** Keep deterministic batches distinct when seeding more than 500 rows. */
+		offset: v.optional(v.number())
 	},
 	returns: v.number(),
 	handler: async (ctx, args) => {
 		const count = Math.min(Math.max(Math.floor(args.count ?? 100), 1), 500);
 		const ownerId = args.ownerId?.trim() || SEED_OWNER_ID;
+		const offset = args.offset ?? 0;
+		if (!Number.isSafeInteger(offset) || offset < 0) throw new Error('Invalid seed offset.');
 
 		for (let index = 0; index < count; index += 1) {
-			const random = createRandom(1_000 + index);
-			const city = pickCity(index);
+			const seedIndex = offset + index;
+			const random = createRandom(1_000 + seedIndex);
+			const city = pickCity(args.denseBelgrade ? 0 : seedIndex);
 			const type = pick(ACCOMMODATION_TYPES, random);
 			const spaceType = pick(SPACE_TYPES, random);
 			const maxGuests = 2 + Math.floor(random() * 7);
@@ -189,7 +196,7 @@ export const seedAccommodations = internalMutation({
 				bathrooms,
 				pricePerNightMinor: Math.round(30 + random() * 220) * 100,
 				amenities,
-				imageKeys: buildImageKeys(index),
+				imageKeys: buildImageKeys(seedIndex),
 				checkInStart: pick(CHECK_IN_STARTS, random),
 				checkInEnd: pick(CHECK_IN_ENDS, random),
 				checkOut: pick(CHECK_OUTS, random),
@@ -214,7 +221,7 @@ export const seedAccommodations = internalMutation({
 	}
 });
 
-/** Dev-only: delete every accommodation owned by `ownerId` (defaults to the seed owner). */
+/** Dev-only: delete up to 100 seeded rows. Repeat until this returns zero. */
 export const clearSeededAccommodations = internalMutation({
 	args: {
 		ownerId: v.optional(v.string())
@@ -225,7 +232,7 @@ export const clearSeededAccommodations = internalMutation({
 		const seeded = await ctx.db
 			.query('accommodations')
 			.withIndex('by_owner_id', (query) => query.eq('ownerId', ownerId))
-			.collect();
+			.take(100);
 
 		for (const accommodation of seeded) {
 			await accommodationOwnerAggregate.delete(ctx, accommodation);

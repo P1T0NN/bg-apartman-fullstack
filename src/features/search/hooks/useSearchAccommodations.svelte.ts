@@ -23,7 +23,7 @@ type SearchQuery = typeof searchQuery;
 type MapSearchQuery = typeof mapSearchQuery;
 type SearchArgs = Pick<
 	FunctionArgs<SearchQuery>,
-	'location' | 'bounds' | 'adults' | 'children' | 'rooms'
+	'location' | 'bounds' | 'adults' | 'children' | 'rooms' | 'stayFilters'
 >;
 type SearchPage = FunctionReturnType<SearchQuery>;
 type SearchItem = SearchPage['items'][number];

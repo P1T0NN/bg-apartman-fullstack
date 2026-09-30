@@ -7,6 +7,8 @@ export type typesBackendResult<Code extends string = string> =
 export const backendErrorDataSchema = z.discriminatedUnion('code', [
 	z.object({ code: z.literal('INVALID_ACCOMMODATION') }),
 	z.object({ code: z.literal('INVALID_BOOKING') }),
+	z.object({ code: z.literal('BOOKING_NOT_FOUND') }),
+	z.object({ code: z.literal('INVALID_BOOKING_STATUS') }),
 	z.object({ code: z.literal('ACCOMMODATION_NOT_FOUND') }),
 	z.object({ code: z.literal('INVALID_FEEDBACK') }),
 	z.object({ code: z.literal('FEEDBACK_NOT_FOUND') }),

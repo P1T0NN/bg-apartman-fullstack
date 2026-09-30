@@ -1,3 +1,6 @@
+// TYPES
+import type { AmenityKey } from '@/shared/features/accommodations/types/amenityTypes.js';
+
 // Local filter/sort criteria for the search page; destination, dates, and guests live in the URL.
 export const DEFAULT_SEARCH = {
 	minPrice: 0,
@@ -6,10 +9,7 @@ export const DEFAULT_SEARCH = {
 	bedrooms: 0,
 	beds: 0,
 	bathrooms: 0,
-	amenities: new Array<string>(),
-	pets: false,
-	rating: 0,
-	cancellation: false,
+	amenities: new Array<AmenityKey>(),
 	sort: 'recommended'
 };
 export type StaySearch = typeof DEFAULT_SEARCH;
@@ -23,10 +23,7 @@ export function clearSearchFilters(criteria: StaySearch): StaySearch {
 		bedrooms: 0,
 		beds: 0,
 		bathrooms: 0,
-		amenities: [],
-		pets: false,
-		rating: 0,
-		cancellation: false
+		amenities: []
 	};
 }
 
@@ -37,8 +34,5 @@ export const OPTIONAL_FILTER_KEYS = [
 	'bedrooms',
 	'beds',
 	'bathrooms',
-	'rating',
-	'amenities',
-	'pets',
-	'cancellation'
+	'amenities'
 ] as const;

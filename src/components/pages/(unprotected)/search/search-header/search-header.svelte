@@ -1,22 +1,24 @@
 <script lang="ts">
+	// SVELTEKIT IMPORTS
+	import { resolve } from '$app/paths';
+
 	// LIBRARIES
 	import { slide } from 'svelte/transition';
 
 	// CONSTANTS
-	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints';
 	import { COMPANY_DATA } from '@/shared/config';
 
 	// COMPONENTS
 	import SearchCard from '@/components/ui/custom-components/search-card/search-card.svelte';
-	import SearchFilters from '@/components/pages/(unprotected)/search/search-filters/search-filters.svelte';
+	import SearchToolbar from '@/components/pages/(unprotected)/search/search-filters/search-toolbar.svelte';
 	import SearchHeaderUserContent from './search-header-user-content.svelte';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 
 	const navItems = $derived([
-		{ href: UNPROTECTED_PAGE_ENDPOINTS.ROOT, label: m['Components.Header.home']() },
-		{ href: UNPROTECTED_PAGE_ENDPOINTS.CONTACT, label: m['Components.Header.contact']() }
+		{ href: '/' as const, label: m['Components.Header.home']() },
+		{ href: '/contact' as const, label: m['Components.Header.contact']() }
 	]);
 
 	let { initialLocation = '' }: { initialLocation?: string } = $props();
@@ -38,14 +40,19 @@
 
 <svelte:window onpointerdown={collapseOnOutsideClick} onkeydown={collapseOnEscape} />
 
-<header bind:this={headerElement} class="sticky top-0 z-40 border-b bg-background">
+<header
+	{@attach (element) => {
+		headerElement = element;
+		return () => {
+			headerElement = undefined;
+		};
+	}}
+	class="sticky top-0 z-40 border-b bg-background"
+>
 	<div
 		class="mx-auto flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-4 sm:px-6 min-[68.75rem]:items-start min-[68.75rem]:px-8"
 	>
-		<a
-			href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}
-			class="text-lg font-semibold tracking-tight min-[68.75rem]:pt-1"
-		>
+		<a href={resolve('/')} class="text-lg font-semibold tracking-tight min-[68.75rem]:pt-1">
 			{COMPANY_DATA.NAME}
 		</a>
 
@@ -53,7 +60,7 @@
 			<nav class="flex items-center gap-5 min-[68.75rem]:pt-2">
 				{#each navItems as item (item.href)}
 					<a
-						href={item.href}
+						href={resolve(item.href)}
 						class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
 					>
 						{item.label}
@@ -66,7 +73,7 @@
 			>
 				<div class="flex flex-col items-center">
 					<SearchCard compact {initialLocation} onopen={() => (expanded = true)} />
-					<SearchFilters />
+					<SearchToolbar />
 				</div>
 			</div>
 		{/if}

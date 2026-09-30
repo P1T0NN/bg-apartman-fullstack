@@ -1,6 +1,8 @@
 // SVELTEKIT IMPORTS
 import { pushState, replaceState } from '$app/navigation';
 import { page } from '$app/state';
+import { browser } from '$app/environment';
+import { createSubscriber } from 'svelte/reactivity';
 
 /**
  * Universal URL search-params plumbing. `keys` are the params this hook
@@ -8,9 +10,9 @@ import { page } from '$app/state';
  * pathname and the hash. Reading is unrestricted — `get`/`read` work for any
  * key. Callers keep their own `$state` (debounce, min-chars, mode) on top.
  *
- * Writes are shallow (`pushState`/`replaceState`), so SvelteKit leaves
- * `page.url` — and therefore `get`/`read` — at the last navigated URL. Keep
- * your own `$state` for the values you write; URL is the shareable seed.
+ * Writes are shallow (`pushState`/`replaceState`). Reads use the browser's
+ * current URL and react to back/forward, even when `page.url` is unchanged.
+ * Callers keep their own state for values they write between history events.
  *
  * `get(key)` — raw read (`string | null`, matches `URLSearchParams.get`).
  * `read(key)` — read with `''` fallback (the string url-mode state wants).
@@ -25,7 +27,13 @@ export function useSearchParams(
 	{ history = 'replace' }: { history?: 'replace' | 'push' } = {}
 ) {
 	const getKeys = Array.isArray(keys) ? () => keys : keys;
-	const get = (key: string): string | null => page.url.searchParams.get(key);
+	const subscribeToHistory = createSubscriber((update) => onPopState(update));
+	const get = (key: string): string | null => {
+		subscribeToHistory();
+		// Track full SvelteKit navigations as well as shallow history changes.
+		const url = page.url;
+		return (browser ? new URL(window.location.href) : url).searchParams.get(key);
+	};
 
 	const read = (key: string): string => get(key) ?? '';
 
@@ -38,14 +46,12 @@ export function useSearchParams(
 	}
 
 	function buildUrl(values: Record<string, string>): string {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Mutable URL is intentional while building the navigation target.
 		const url = new URL(window.location.href);
 		setOwnedParams(url.searchParams, values);
 		return `${url.pathname}${url.search}${url.hash}`;
 	}
 
 	function href(pathname: string, values: Record<string, string>): string {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Mutable URLSearchParams is intentional while building the navigation target.
 		const params = new URLSearchParams();
 		setOwnedParams(params, values);
 		const search = params.toString();

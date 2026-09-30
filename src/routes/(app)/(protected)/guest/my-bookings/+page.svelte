@@ -8,9 +8,9 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
-	import MyBookingCard from '@/components/pages/(protected)/guest/my-bookings/my-booking-card.svelte';
+	import MyBookingItem from '@/components/pages/(protected)/guest/my-bookings/my-booking-item.svelte';
 	import MyBookingsHeader from '@/components/pages/(protected)/guest/my-bookings/my-bookings-header.svelte';
-	import MyBookingCardLoading from '@/components/pages/(protected)/guest/my-bookings/loading/my-booking-card-loading.svelte';
+	import MyBookingItemLoading from '@/components/pages/(protected)/guest/my-bookings/loading/my-booking-item-loading.svelte';
 	import DataList from '@/components/ui/custom-components/data-list/data-list.svelte';
 	import EmptyData from '@/components/ui/custom-components/empty-data/empty-data.svelte';
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
@@ -46,10 +46,10 @@
 		total={paginationTotal}
 		placement="above"
 		key={(booking) => booking._id}
-		class="grid gap-4 lg:grid-cols-2"
+		class="gap-4"
 	>
 		{#snippet header()}
-			<div class="flex flex-col gap-4">
+			<div class="flex flex-col gap-5 pb-2 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
 				<MyBookingsHeader {total} showTotal={!search.isActive} />
 				<SearchInput
 					bind:value={search.value}
@@ -60,11 +60,11 @@
 		{/snippet}
 
 		{#snippet children(booking)}
-			<MyBookingCard {booking} />
+			<MyBookingItem {booking} />
 		{/snippet}
 
 		{#snippet loadingSnippet()}
-			<MyBookingCardLoading />
+			<MyBookingItemLoading />
 		{/snippet}
 
 		{#snippet errorSnippet()}

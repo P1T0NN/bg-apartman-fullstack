@@ -4,10 +4,10 @@ import { query } from '../../../_generated/server.js';
 import { getPagination } from '../../../helpers/getPagination.js';
 
 // HELPERS
-import {
-	buildAccommodationSearchQuery,
-	SEARCH_MAXIMUM_ROWS_READ
-} from '../helpers/buildAccommodationSearchQuery.js';
+import { buildAccommodationSearchQuery } from '../helpers/buildAccommodationSearchQuery.js';
+
+// CONFIG
+import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
 
 // VALIDATORS
 import { accommodationMapPage, searchCriteriaArgs } from '../validators/accommodationValidators.js';
@@ -35,10 +35,13 @@ export const fetchAccommodationsMap = query({
 		const page = await getPagination(accommodationsQuery, {
 			paginationOpts: {
 				...args.paginationOpts,
-				numItems: Math.min(args.paginationOpts.numItems, SEARCH_MAXIMUM_ROWS_READ),
+				numItems: Math.min(
+					args.paginationOpts.numItems,
+					ACCOMMODATION_CONFIG.searchMaximumRowsRead
+				),
 				maximumRowsRead: Math.min(
-					args.paginationOpts.maximumRowsRead ?? SEARCH_MAXIMUM_ROWS_READ,
-					SEARCH_MAXIMUM_ROWS_READ
+					args.paginationOpts.maximumRowsRead ?? ACCOMMODATION_CONFIG.searchMaximumRowsRead,
+					ACCOMMODATION_CONFIG.searchMaximumRowsRead
 				)
 			}
 		});

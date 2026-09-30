@@ -10,6 +10,7 @@ import { getTotalSizeAggregate } from '../../../aggregates/helpers/getTotalSizeA
 // HELPERS
 import { getPagination } from '../../../helpers/getPagination.js';
 import { paginateSearch } from '../../../helpers/paginateSearch.js';
+import { enrichBookingPage } from '../helpers/enrichBookingPage.js';
 
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
@@ -48,6 +49,7 @@ export const fetchMyBookings = authenticatedQuery({
 			? await getTotalSizeAggregate(ctx, bookingOwnerAggregate, { namespace: ownerId })
 			: undefined;
 
-		return { ...page, total };
+		const items = await enrichBookingPage(ctx, page.items);
+		return { ...page, items, total };
 	}
 });

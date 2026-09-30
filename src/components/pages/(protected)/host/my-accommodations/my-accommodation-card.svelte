@@ -3,6 +3,7 @@
 	import { Button } from '@/components/ui/button/index.js';
 	import * as Card from '@/components/ui/card/index.js';
 	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
 	import { m } from '@/lib/paraglide/messages';
 
 	// CONFIG
@@ -14,10 +15,6 @@
 	let { accommodation }: { accommodation: AccommodationListItem } = $props();
 
 	const coverUrl = $derived(accommodation.imageUrls[0]);
-
-	const location = $derived(
-		[accommodation.address.city, accommodation.address.country].filter(Boolean).join(', ')
-	);
 </script>
 
 <Card.Root
@@ -46,7 +43,12 @@
 			<Card.Title class="text-lg leading-snug font-semibold tracking-tight">
 				<h2 class="line-clamp-2 wrap-anywhere" title={accommodation.name}>{accommodation.name}</h2>
 			</Card.Title>
-			<Card.Description class="text-sm wrap-anywhere">{location}</Card.Description>
+			<Card.Description class="text-sm wrap-anywhere">
+				<AccommodationLocation
+					city={accommodation.address.city}
+					country={accommodation.address.country}
+				/>
+			</Card.Description>
 		</div>
 
 		<dl class="grid grid-cols-2 gap-x-5 gap-y-2 text-sm">

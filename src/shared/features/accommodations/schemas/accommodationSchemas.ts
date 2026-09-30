@@ -6,6 +6,7 @@ import { STORAGE_CONFIG } from '../../storage/config.js';
 
 // DATA
 import { AMENITY_KEYS } from '../data/accommodationsData.js';
+import { ACCOMMODATION_TYPES } from '../types/accommodationTypes.js';
 
 export const boundsSchema = z
 	.object({
@@ -17,6 +18,20 @@ export const boundsSchema = z
 	.refine((bounds) => bounds.south <= bounds.north);
 
 export type AccommodationBounds = z.infer<typeof boundsSchema>;
+
+export const accommodationSearchFiltersSchema = z
+	.object({
+		minPrice: z.number().finite().min(0).max(1000000).multipleOf(0.01).optional(),
+		maxPrice: z.number().finite().min(0).max(1000000).multipleOf(0.01).optional(),
+		type: z.enum(ACCOMMODATION_TYPES).optional(),
+		bedrooms: z.number().int().min(0).max(100).optional(),
+		beds: z.number().int().min(0).max(100).optional(),
+		bathrooms: z.number().int().min(0).max(100).optional(),
+		amenities: z.array(z.enum(AMENITY_KEYS)).max(AMENITY_KEYS.length).optional()
+	})
+	.refine((filters) => !filters.maxPrice || filters.maxPrice >= (filters.minPrice ?? 0));
+
+export type AccommodationSearchFilters = z.infer<typeof accommodationSearchFiltersSchema>;
 
 export const accommodationBasicInfoSchema = z.object({
 	type: z.enum(['apartment', 'studio', 'house', 'villa', 'room', 'other']),

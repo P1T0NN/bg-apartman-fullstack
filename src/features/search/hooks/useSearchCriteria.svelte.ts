@@ -18,11 +18,10 @@ export function useSearchCriteria({ hasLocation }: { hasLocation: () => boolean 
 	let showMap = $state(false);
 
 	const sorts = $derived([
-		{ value: 'recommended', label: m['SearchPage.SearchFilters.recommended']() },
-		{ value: 'price-asc', label: m['SearchPage.SearchFilters.priceAsc']() },
-		{ value: 'price-desc', label: m['SearchPage.SearchFilters.priceDesc']() },
-		{ value: 'rating', label: m['SearchPage.SearchFilters.rating']() },
-		{ value: 'distance', label: m['SearchPage.SearchFilters.distance']() }
+		{ value: 'recommended', label: m['SearchPage.SearchToolbar.recommended']() },
+		{ value: 'price-asc', label: m['SearchPage.SearchToolbar.priceAsc']() },
+		{ value: 'price-desc', label: m['SearchPage.SearchToolbar.priceDesc']() },
+		{ value: 'distance', label: m['SearchPage.SearchToolbar.distance']() }
 	]);
 	const labels = $derived({
 		minPrice: m['SearchPage.SearchFilters.minPrice']({ currency: 'EUR' }),
@@ -31,10 +30,7 @@ export function useSearchCriteria({ hasLocation }: { hasLocation: () => boolean 
 		bedrooms: m['SearchPage.SearchFilters.bedrooms'](),
 		beds: m['SearchPage.SearchFilters.beds'](),
 		bathrooms: m['SearchPage.SearchFilters.bathrooms'](),
-		amenities: m['SearchPage.SearchFilters.amenities'](),
-		pets: m['SearchPage.SearchFilters.pets'](),
-		rating: m['SearchPage.SearchFilters.rating'](),
-		cancellation: m['SearchPage.SearchFilters.cancellation']()
+		amenities: m['SearchPage.SearchFilters.amenities']()
 	});
 	const activeFilters = $derived(
 		OPTIONAL_FILTER_KEYS.filter((key) =>

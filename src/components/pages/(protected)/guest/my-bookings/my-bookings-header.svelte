@@ -1,28 +1,26 @@
 <script lang="ts">
-	// COMPONENTS
-	import Spinner from '@/components/ui/spinner/spinner.svelte';
+	import { Skeleton } from '@/components/ui/skeleton/index.js';
 	import { m } from '@/lib/paraglide/messages';
 
 	let { total, showTotal = true }: { total?: number | null; showTotal?: boolean } = $props();
 </script>
 
-<div class="flex flex-col gap-1">
-	<p class="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
-		{m['MyBookingsPage.MyBookingsHeader.guestLabel']()}
+<header class="flex min-w-0 flex-col gap-2">
+	<h1 class="text-3xl font-semibold tracking-tight">{m['MyBookingsPage.pageTitle']()}</h1>
+	<p class="max-w-prose text-sm leading-6 text-muted-foreground">
+		{m['MyBookingsPage.MyBookingsHeader.description']()}
 	</p>
-	<h1 class="text-2xl font-semibold tracking-tight">
-		{#if showTotal}
-			{#if total != null}
+	{#if showTotal}
+		{#if total != null}
+			<p class="text-xs text-muted-foreground">
 				{m['MyBookingsPage.MyBookingsHeader.bookingsFound']({ count: total })}
-			{:else}
-				<span class="inline-flex items-center gap-1">
-					{m['MyBookingsPage.MyBookingsHeader.bookingsLabel']()} - <Spinner />
-					{m['MyBookingsPage.MyBookingsHeader.foundLabel']()}
-				</span>
-			{/if}
+			</p>
 		{:else}
-			{m['MyBookingsPage.MyBookingsHeader.filteredLabel']()}
+			<Skeleton class="h-4 w-40" />
 		{/if}
-	</h1>
-	<p class="text-sm text-muted-foreground">{m['MyBookingsPage.MyBookingsHeader.description']()}</p>
-</div>
+	{:else}
+		<p class="text-xs text-muted-foreground">
+			{m['MyBookingsPage.MyBookingsHeader.filteredLabel']()}
+		</p>
+	{/if}
+</header>

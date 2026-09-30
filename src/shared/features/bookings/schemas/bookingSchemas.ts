@@ -4,6 +4,25 @@ import { z } from 'zod';
 // UTILS
 import { DAY_IN_MS, parseIsoDate } from '../../../utils/date.js';
 
+export const BOOKING_STATUSES = [
+	'pending',
+	'confirmed',
+	'declined',
+	'cancelled',
+	'completed'
+] as const;
+
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+/** Allowed host-driven status changes; every other status is terminal. */
+export const BOOKING_STATUS_TRANSITIONS = {
+	pending: ['confirmed', 'declined', 'cancelled'],
+	confirmed: ['completed', 'cancelled'],
+	declined: [],
+	cancelled: [],
+	completed: []
+} satisfies Record<BookingStatus, readonly BookingStatus[]>;
+
 /** Listing facts the stay checks need; the client passes the loaded listing, Convex the stored one. */
 export type BookingStayLimits = {
 	today: string;

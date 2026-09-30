@@ -7,12 +7,40 @@ import { bookings } from '../schema.js';
 
 const bookingDoc = docValidator('bookings', bookings);
 
+export const bookingItem = bookingDoc.extend({
+	accommodation: v.union(
+		v.object({
+			name: v.string(),
+			city: v.string(),
+			country: v.string(),
+			imageUrl: v.union(v.string(), v.null())
+		}),
+		v.null()
+	)
+});
+
 export const bookingPage = v.object({
-	items: v.array(bookingDoc),
+	items: v.array(bookingItem),
 	nextCursor: v.union(v.string(), v.null()),
 	hasNextPage: v.boolean(),
 	pageSize: v.number(),
 	total: v.optional(v.number())
+});
+
+/** Exact per-status counts for the host's whole pipeline, independent of the active filters. */
+export const bookingStatusCounts = v.object({
+	pending: v.number(),
+	confirmed: v.number(),
+	declined: v.number(),
+	cancelled: v.number(),
+	completed: v.number()
+});
+
+export const hostBookingPage = v.object({
+	items: v.array(bookingItem),
+	nextCursor: v.union(v.string(), v.null()),
+	hasNextPage: v.boolean(),
+	pageSize: v.number()
 });
 
 /** Non-identifying booking summary for the public confirmation page. */

@@ -6,7 +6,7 @@ import r2Test from '@convex-dev/r2/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
 import { expect, test } from 'vitest';
 import { convexTest } from 'convex-test';
-import { api } from '../../src/convex/_generated/api';
+import { api, internal } from '../../src/convex/_generated/api';
 import schema from '../../src/convex/schema';
 import { accommodationOwnerAggregate } from '../../src/convex/tables/accommodations/aggregates/accommodationOwnerAggregate';
 import {
@@ -15,6 +15,9 @@ import {
 } from '../../src/shared/features/accommodations/schemas/accommodationSchemas';
 
 import type { AccommodationDetails } from '../../src/shared/features/accommodations/schemas/accommodationSchemas';
+import type { FunctionArgs, FunctionReturnType } from 'convex/server';
+import type { AccommodationSearchFilters } from '../../src/shared/features/accommodations/schemas/accommodationSchemas';
+import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData';
 
 const emptyListing: AccommodationDetails = {
 	imageKeys: [],
@@ -60,6 +63,199 @@ function setup() {
 	aggregateTest.register(t, 'accommodationOwnerAggregate');
 	return t;
 }
+
+test('list rows and map pins apply the same stay filters through paginated geographic searches', async () => {
+	const t = setup();
+	const listQuery =
+		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
+	const mapQuery =
+		api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap;
+	const { nightlyPrice: _nightlyPrice, ...details } = listing;
+	const base = {
+		...details,
+		ownerId: 'filter-test',
+		pricePerNightMinor: 8025,
+		maxGuests: 6,
+		bedrooms: 2,
+		beds: 3,
+		bathrooms: 2,
+		amenities: [...AMENITY_KEYS],
+		status: 'published' as const,
+		updatedAt: 1
+	};
+	const variants = [
+		{ ...base, amenities: [] },
+		base,
+		{ ...base, pricePerNightMinor: 10050, bedrooms: 4 },
+		{ ...base, pricePerNightMinor: 8024 },
+		{ ...base, pricePerNightMinor: 10051 },
+		{ ...base, type: 'studio' as const },
+		{ ...base, bedrooms: 1 },
+		{ ...base, beds: 2 },
+		{ ...base, bathrooms: 1 },
+		{ ...base, maxGuests: 4 },
+		{ ...base, amenities: ['wifi', 'heating'] },
+		{ ...base, longitude: 21 },
+		{ ...base, latitude: 45 },
+		{ ...base, address: { ...base.address, city: 'Novi Sad' } }
+	];
+	const ids = await t.run(async (ctx) => {
+		const inserted = [];
+		for (const row of variants) inserted.push(await ctx.db.insert('accommodations', row));
+		return inserted;
+	});
+	const stayFilters: AccommodationSearchFilters = {
+		minPrice: 80.25,
+		maxPrice: 100.5,
+		type: 'apartment',
+		bedrooms: 2,
+		beds: 3,
+		bathrooms: 2,
+		amenities: ['wifi', 'elevator', 'heating']
+	};
+	const bounds = { south: 44.8, north: 44.9, west: 20.4, east: 20.5 };
+	const cases: Array<
+		Omit<FunctionArgs<typeof mapQuery>, 'paginationOpts'> & { expected: string[] }
+	> = [
+		{
+			location: { country: 'Serbia', city: 'Belgrade' },
+			stayFilters,
+			adults: 3,
+			children: 2,
+			expected: [ids[1], ids[2], ids[11], ids[12]]
+		},
+		{ location: {}, bounds, stayFilters, adults: 5, expected: [ids[1], ids[2], ids[13]] },
+		{ location: {}, bounds, stayFilters, rooms: 4, adults: 5, expected: [ids[2]] },
+		{
+			location: {},
+			bounds,
+			stayFilters: { ...stayFilters, minPrice: 100.51, maxPrice: 0 },
+			adults: 5,
+			expected: [ids[4]]
+		},
+		{
+			location: {},
+			bounds,
+			stayFilters: { amenities: ['wifi'] },
+			expected: ids.filter((_id, index) => ![0, 11, 12].includes(index))
+		},
+		{
+			location: {},
+			bounds,
+			stayFilters: {},
+			expected: ids.filter((_id, index) => ![11, 12].includes(index))
+		},
+		{ location: {}, bounds: { ...bounds, west: 20.6, east: 20.7 }, stayFilters, expected: [] }
+	];
+	for (const query of [listQuery, mapQuery]) {
+		const first = await t.query(query, {
+			location: { country: 'Serbia', city: 'Belgrade' },
+			stayFilters: { amenities: ['wifi'] },
+			paginationOpts: { cursor: null, numItems: 1, maximumRowsRead: 1 }
+		});
+		expect(first.items).toEqual([]);
+		expect(first.nextCursor).not.toBeNull();
+		for (const { expected, ...criteria } of cases) {
+			let cursor: string | null = null;
+			const matchingIds: string[] = [];
+			do {
+				const page: FunctionReturnType<typeof query> = await t.query(query, {
+					...criteria,
+					paginationOpts: { cursor, numItems: 2, maximumRowsRead: 3 }
+				});
+				matchingIds.push(...page.items.map((item) => item._id));
+				cursor = page.nextCursor;
+			} while (cursor !== null);
+			expect(matchingIds.sort()).toEqual([...expected].sort());
+		}
+		for (const invalid of [
+			{ beds: -1 },
+			{ bathrooms: 1.5 },
+			{ minPrice: 81, maxPrice: 80 },
+			{ minPrice: Number.NaN }
+		]) {
+			await expect(
+				t.query(query, {
+					location: {},
+					bounds,
+					stayFilters: invalid,
+					paginationOpts: { cursor: null, numItems: 2 }
+				})
+			).rejects.toThrow();
+		}
+	}
+});
+
+test('dense map fixtures use distinct batches and clean only their owner in bounded steps', async () => {
+	const t = setup();
+	const ownerId = 'search-map-benchmark-test';
+	await t.mutation(internal.seed.seedAccommodations, {
+		ownerId,
+		count: 100,
+		denseBelgrade: true,
+		offset: 0
+	});
+	await t.mutation(internal.seed.seedAccommodations, {
+		ownerId,
+		count: 1,
+		denseBelgrade: true,
+		offset: 100
+	});
+	const fixtures = await t.run((ctx) =>
+		ctx.db
+			.query('accommodations')
+			.withIndex('by_owner_id', (q) => q.eq('ownerId', ownerId))
+			.take(102)
+	);
+	expect(fixtures).toHaveLength(101);
+	expect(
+		fixtures.every((row) => row.address.city === 'Belgrade' && row.address.country === 'Serbia')
+	).toBe(true);
+	expect(
+		fixtures.every(
+			(row) =>
+				row.latitude > 44.77 &&
+				row.latitude < 44.86 &&
+				row.longitude > 20.4 &&
+				row.longitude < 20.53
+		)
+	).toBe(true);
+	expect(new Set(fixtures.map((row) => row.imageKeys[0])).size).toBe(101);
+	expect(new Set(fixtures.map((row) => row.maxGuests)).size).toBeGreaterThan(1);
+	expect(new Set(fixtures.map((row) => row.bedrooms)).size).toBeGreaterThan(1);
+	const mapQuery =
+		api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap;
+	const criteria = {
+		location: {},
+		bounds: { south: 44.77, north: 44.86, west: 20.4, east: 20.53 },
+		adults: 6,
+		rooms: 3
+	};
+	let cursor: string | null = null;
+	const ids: string[] = [];
+	do {
+		const page: FunctionReturnType<typeof mapQuery> = await t.query(mapQuery, {
+			...criteria,
+			paginationOpts: { cursor, numItems: 10 }
+		});
+		ids.push(...page.items.map((item) => item._id));
+		cursor = page.nextCursor;
+	} while (cursor !== null);
+	expect(ids.sort()).toEqual(
+		fixtures
+			.filter((row) => row.maxGuests >= 6 && row.bedrooms >= 3)
+			.map((row) => row._id)
+			.sort()
+	);
+	await t.mutation(internal.seed.seedAccommodations, { ownerId: 'other-owner', count: 1 });
+	expect(await t.mutation(internal.seed.clearSeededAccommodations, { ownerId })).toBe(100);
+	expect(await t.mutation(internal.seed.clearSeededAccommodations, { ownerId })).toBe(1);
+	expect(await t.mutation(internal.seed.clearSeededAccommodations, { ownerId })).toBe(0);
+	expect(await t.run((ctx) => accommodationOwnerAggregate.count(ctx, { namespace: ownerId }))).toBe(
+		0
+	);
+	expect(await t.run((ctx) => ctx.db.query('accommodations').take(2))).toHaveLength(1);
+}, 30_000);
 
 test('public details resolve ordered photos without exposing owner or storage keys', async () => {
 	const t = setup();
@@ -446,9 +642,9 @@ test('search filters by location, total guests, and rooms', async () => {
 		location: { city: 'Belgrade', country: 'Serbia' }
 	});
 	expect(city.items).toHaveLength(2);
-	expect(city.items.every((item) => item.imageUrls[0]?.startsWith('https://cdn.example.com/'))).toBe(
-		true
-	);
+	expect(
+		city.items.every((item) => item.imageUrls[0]?.startsWith('https://cdn.example.com/'))
+	).toBe(true);
 
 	const guests = await t.query(search, {
 		...base,

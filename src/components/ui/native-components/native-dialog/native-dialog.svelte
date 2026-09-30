@@ -13,6 +13,8 @@
 	// and `close` are plain event handlers on the native API, so there is no
 	// state to sync and no $effect. The trigger snippet must be a button (or
 	// another element with `onclick`); pass the `open` handler to it.
+	// `whitespace-normal` resets inherited `nowrap` when a trigger lives inside a
+	// table cell, so dialog text still wraps there.
 	let {
 		trigger,
 		children,
@@ -44,7 +46,7 @@
 	{@attach setDialogElement}
 	oncancel={(e) => e.preventDefault()}
 	class={cn(
-		'm-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-x-auto overflow-y-auto rounded-2xl border bg-popover p-0 [overflow-wrap:anywhere] text-popover-foreground shadow-lg backdrop:bg-black/50 backdrop:backdrop-blur-sm',
+		'm-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-x-auto overflow-y-auto rounded-2xl border bg-popover p-0 [overflow-wrap:anywhere] whitespace-normal text-popover-foreground shadow-lg backdrop:bg-black/50 backdrop:backdrop-blur-sm',
 		className
 	)}
 >

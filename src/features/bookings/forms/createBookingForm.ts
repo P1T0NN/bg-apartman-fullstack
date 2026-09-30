@@ -11,7 +11,8 @@ import type {
 
 /** Booking checkout fields. Translation keys stay under the BookingPage page namespace. */
 export function createBookingFormFields(input: {
-	accommodation: PublicAccommodation;
+	accommodation: Pick<PublicAccommodation, 'maxGuests'>;
+	guests: { adults: number; children: number };
 	render: {
 		tripHeading: Snippet<[CustomFieldContext]>;
 		stayDates: Snippet<[CustomFieldContext]>;
@@ -19,7 +20,7 @@ export function createBookingFormFields(input: {
 		guestHeading: Snippet<[CustomFieldContext]>;
 	};
 }): FieldConfig[] {
-	const { accommodation, render } = input;
+	const { accommodation, guests, render } = input;
 
 	return [
 		{ kind: 'custom', name: 'tripHeading', render: render.tripHeading },
@@ -29,14 +30,14 @@ export function createBookingFormFields(input: {
 			name: 'adults',
 			label: m['BookingPage.BookingCheckout.adults'](),
 			min: 1,
-			max: accommodation.maxGuests
+			max: accommodation.maxGuests - guests.children
 		},
 		{
 			kind: 'counter',
 			name: 'children',
 			label: m['BookingPage.BookingCheckout.children'](),
 			min: 0,
-			max: accommodation.maxGuests - 1
+			max: accommodation.maxGuests - guests.adults
 		},
 		{ kind: 'custom', name: 'tripLimits', render: render.tripLimits },
 		{

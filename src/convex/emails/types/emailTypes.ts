@@ -8,6 +8,12 @@ export type OtpEmailData = {
 	type: EmailOTPType;
 };
 
+export type DeleteAccountEmailData = {
+	name: string;
+	email: string;
+	url: string;
+};
+
 export type SendEmailOptions = {
 	to: EmailRecipient;
 	subject: string;
