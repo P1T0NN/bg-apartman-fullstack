@@ -108,7 +108,9 @@
 				onclick={onSignOut}
 				aria-label={m['GuestSettingsPage.GuestSettingsSessionItem.signOutLabel']()}
 			>
-				{#if pending}<Spinner data-icon="inline-start" />{/if}
+				{#if pending}
+					<Spinner data-icon="inline-start" />
+				{/if}
 				{m['GuestSettingsPage.GuestSettingsSessionItem.signOut']()}
 			</Button>
 		{/if}

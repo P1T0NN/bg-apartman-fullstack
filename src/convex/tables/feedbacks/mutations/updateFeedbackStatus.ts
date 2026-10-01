@@ -17,10 +17,10 @@ export const updateFeedbackStatus = adminMutation({
 	},
 	returns: v.null(),
 	handler: async (ctx, args) => {
-		const feedback = await ctx.db.get(args.id);
+		const feedback = await ctx.db.get('feedbacks', args.id);
 		if (!feedback) throw new ConvexError<BackendErrorData>({ code: 'FEEDBACK_NOT_FOUND' });
 
-		await ctx.db.patch(args.id, {
+		await ctx.db.patch('feedbacks', args.id, {
 			status: args.status,
 			resolvedAt: args.status === 'resolved' ? Date.now() : undefined
 		});

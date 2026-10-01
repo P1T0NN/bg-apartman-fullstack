@@ -83,8 +83,11 @@
 	<h2 class="flex items-center gap-3 text-xl font-semibold">
 		<span
 			class="flex size-8 items-center justify-center rounded-full bg-muted text-sm"
-			aria-hidden="true">1</span
-		>{m['BookingPage.BookingCheckout.trip']()}
+			aria-hidden="true"
+		>
+			1
+		</span>
+		{m['BookingPage.BookingCheckout.trip']()}
 	</h2>
 	<p class="mt-3 text-sm text-muted-foreground">{m['BookingPage.BookingCheckout.tripHint']()}</p>
 {/snippet}
@@ -116,8 +119,11 @@
 	<h2 class="flex items-center gap-3 text-xl font-semibold">
 		<span
 			class="flex size-8 items-center justify-center rounded-full bg-muted text-sm"
-			aria-hidden="true">2</span
-		>{m['BookingPage.BookingCheckout.guestDetails']()}
+			aria-hidden="true"
+		>
+			2
+		</span>
+		{m['BookingPage.BookingCheckout.guestDetails']()}
 	</h2>
 	<p class="mt-3 text-sm text-muted-foreground">{m['BookingPage.BookingCheckout.guestHint']()}</p>
 {/snippet}

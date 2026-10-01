@@ -9,7 +9,7 @@
 	// UTILS
 	import { cn } from '@/utils/utils.js';
 
-	let { images, name, open }: { images: string[]; name: string; open: () => void } = $props();
+	let { images, name, dialogId }: { images: string[]; name: string; dialogId: string } = $props();
 </script>
 
 <div class="relative overflow-hidden rounded-2xl bg-muted">
@@ -31,7 +31,12 @@
 		{/each}
 	</div>
 
-	<Button variant="secondary" class="absolute right-4 bottom-4 min-h-11 shadow-sm" onclick={open}>
+	<Button
+		variant="secondary"
+		class="absolute right-4 bottom-4 min-h-11 shadow-sm"
+		commandfor={dialogId}
+		command="show-modal"
+	>
 		<span class="icon-[lucide--images]" data-icon="inline-start" aria-hidden="true"></span>
 		{m['AccommodationPage.AccommodationGalleryDialogTrigger.showPhotos']({ count: images.length })}
 	</Button>

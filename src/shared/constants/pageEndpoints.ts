@@ -10,6 +10,7 @@ export const PROTECTED_PAGE_ENDPOINTS = {
 	CLAIM_BOOKING: resolve('/guest/claim-booking'),
 	FAVORITES: resolve('/guest/favorites'),
 	MY_BOOKINGS: resolve('/guest/my-bookings'),
+	MY_REVIEWS: resolve('/guest/my-reviews'),
 	MY_BOOKING: (id: string) => resolve(`/guest/my-bookings/${id}`),
 	GUEST_SETTINGS: resolve('/guest/settings')
 };
@@ -37,5 +38,6 @@ export const ADMIN_PAGE_ENDPOINTS = {
 	LOGS: resolve('/admin/logs'),
 	ACCOMMODATIONS: resolve('/admin/accommodations'),
 	NEWSLETTERS: resolve('/admin/newsletters'),
-	FEEDBACK: resolve('/admin/feedback')
+	FEEDBACK: resolve('/admin/feedback'),
+	REVIEWS: resolve('/admin/reviews')
 };

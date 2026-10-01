@@ -39,7 +39,8 @@
 				selected && 'bg-primary text-primary-foreground'
 			)}
 		>
-			{day}<span class="sr-only">: {status}</span>
+			{day}
+			<span class="sr-only">: {status}</span>
 		</span>
 		{#if booked || imported}
 			<span
@@ -53,11 +54,11 @@
 						: 'border border-primary/25 bg-primary/10 text-foreground'
 				)}
 			>
-				<span class="hidden sm:inline"
-					>{booked
+				<span class="hidden sm:inline">
+					{booked
 						? m['MyAccommodationPage.MyAccommodationCalendarDayItem.reservation']()
-						: 'Airbnb'}</span
-				>
+						: 'Airbnb'}
+				</span>
 				<span
 					class={cn(
 						'mx-auto block size-3.5 sm:hidden',
@@ -70,17 +71,19 @@
 			<span
 				class="text-muted-foreground"
 				title={m['MyAccommodationPage.MyAccommodationCalendarDayItem.ownerStay']()}
-				><span class="hidden text-xs sm:inline"
-					>{m['MyAccommodationPage.MyAccommodationCalendarDayItem.ownerStay']()}</span
-				><span
+			>
+				<span class="hidden text-xs sm:inline">
+					{m['MyAccommodationPage.MyAccommodationCalendarDayItem.ownerStay']()}
+				</span>
+				<span
 					class="mx-auto icon-[lucide--lock-keyhole] block size-3.5 sm:hidden"
 					aria-hidden="true"
-				></span></span
-			>
+				></span>
+			</span>
 		{:else}
-			<span class="text-[10px] text-muted-foreground tabular-nums sm:text-sm"
-				>{formatCurrency(8500, getLocale())}</span
-			>
+			<span class="text-[10px] text-muted-foreground tabular-nums sm:text-sm">
+				{formatCurrency(8500, getLocale())}
+			</span>
 		{/if}
 	</div>
 </td>

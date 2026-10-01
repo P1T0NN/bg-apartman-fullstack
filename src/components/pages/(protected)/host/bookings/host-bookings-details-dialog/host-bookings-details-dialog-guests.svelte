@@ -34,7 +34,7 @@
 				}}
 				locale={getLocale()}
 			/>
-			<span class="mx-0.5" aria-hidden="true">·</span>
+			<span class="mx-0.5" aria-hidden="true">&middot;</span>
 			<Plural
 				count={guests}
 				forms={{

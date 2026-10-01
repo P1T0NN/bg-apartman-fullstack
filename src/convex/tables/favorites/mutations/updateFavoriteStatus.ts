@@ -13,7 +13,7 @@ export const updateFavoriteStatus = authenticatedMutation({
 	args: { accommodationId: v.id('accommodations'), favorite: v.boolean() },
 	returns: v.boolean(),
 	handler: async (ctx, { accommodationId, favorite }) => {
-		const accommodation = await ctx.db.get(accommodationId);
+		const accommodation = await ctx.db.get('accommodations', accommodationId);
 		if (!accommodation || accommodation.status !== 'published') {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
@@ -29,7 +29,7 @@ export const updateFavoriteStatus = authenticatedMutation({
 		if (favorite && !existing) {
 			await ctx.db.insert('favorites', { ownerId, accommodationId });
 		} else if (!favorite && existing) {
-			await ctx.db.delete(existing._id);
+			await ctx.db.delete('favorites', existing._id);
 		}
 
 		return favorite;

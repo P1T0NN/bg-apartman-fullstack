@@ -28,9 +28,14 @@ export const createAccommodation = authenticatedUploadMutation({
 		const uploaded = new Set(args.uploadedFiles ?? []);
 
 		const duplicateImages = new Set(data.imageKeys).size !== data.imageKeys.length;
-		if (duplicateImages) throw new ConvexError<BackendErrorData>({ code: 'DUPLICATE_RETAINED_IMAGE' });
-		
-		const invalidImages = Boolean(args.retainedFiles?.length) || data.imageKeys.some((key) => !uploaded.has(key)) || uploaded.size !== data.imageKeys.length;
+		if (duplicateImages)
+			throw new ConvexError<BackendErrorData>({ code: 'DUPLICATE_RETAINED_IMAGE' });
+
+		const invalidImages =
+			Boolean(args.retainedFiles?.length) ||
+			data.imageKeys.some((key) => !uploaded.has(key)) ||
+			uploaded.size !== data.imageKeys.length;
+
 		if (invalidImages) throw new ConvexError<BackendErrorData>({ code: 'INVALID_RETAINED_IMAGE' });
 
 		const id = await ctx.db.insert('accommodations', {
@@ -41,7 +46,7 @@ export const createAccommodation = authenticatedUploadMutation({
 			updatedAt: Date.now()
 		});
 
-		const accommodation = await ctx.db.get(id);
+		const accommodation = await ctx.db.get('accommodations', id);
 		if (!accommodation) throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 
 		await accommodationOwnerAggregate.insert(ctx, accommodation);

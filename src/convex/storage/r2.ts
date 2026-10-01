@@ -40,7 +40,7 @@ const clientApi = r2.clientApi<DataModel>({
 	},
 	onDelete: async (ctx, _bucket, key) => {
 		const upload = await getUploadByKey(ctx, key);
-		if (upload) await ctx.db.delete(upload._id);
+		if (upload) await ctx.db.delete('storageUploads', upload._id);
 	}
 });
 
@@ -167,12 +167,12 @@ export const validateUpload = internalMutation({
 			metadata.contentType === upload.expectedContentType &&
 			args.detectedContentType === upload.expectedContentType;
 		if (valid) {
-			await ctx.db.patch(upload._id, { status: 'uploaded' });
+			await ctx.db.patch('storageUploads', upload._id, { status: 'uploaded' });
 			return true;
 		}
 
 		await r2.deleteObject(ctx, args.key);
-		await ctx.db.delete(upload._id);
+		await ctx.db.delete('storageUploads', upload._id);
 		return false;
 	}
 });
@@ -221,7 +221,7 @@ export const cleanupStaleUploads = internalMutation({
 
 		for (const upload of staleUploads) {
 			await r2.deleteObject(ctx, upload.key);
-			await ctx.db.delete(upload._id);
+			await ctx.db.delete('storageUploads', upload._id);
 		}
 		return staleUploads.length;
 	}

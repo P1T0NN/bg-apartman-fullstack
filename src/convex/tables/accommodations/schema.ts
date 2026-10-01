@@ -43,6 +43,8 @@ export const accommodations = defineTable({
 	status: v.literal('published'),
 	updatedAt: v.number() // Unix milliseconds; Convex supplies _creationTime.
 })
+	// Retained for _creationTime ordering; owner list queries sort newest first.
+	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])
 	.index('by_owner_id_type', ['ownerId', 'type'])
 	.index('by_address_country_city', ['address.country', 'address.city'])

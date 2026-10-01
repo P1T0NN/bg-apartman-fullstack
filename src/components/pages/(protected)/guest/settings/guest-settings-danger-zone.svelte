@@ -56,13 +56,13 @@
 
 	<Card.Content>
 		<NativeDialog aria-labelledby="guest-delete-account-title">
-			{#snippet trigger({ open })}
-				<Button variant="destructive" size="sm" onclick={open}>
+			{#snippet trigger({ id })}
+				<Button variant="destructive" size="sm" commandfor={id} command="show-modal">
 					{m['GuestSettingsPage.GuestSettingsDangerZone.deleteAccount']()}
 				</Button>
 			{/snippet}
 
-			{#snippet children({ close })}
+			{#snippet children({ id, close })}
 				<form
 					class="flex flex-col gap-5 p-6"
 					onsubmit={(event) => {
@@ -100,7 +100,7 @@
 						confirmLabel={m['GuestSettingsPage.GuestSettingsDangerZone.deleteAccount']()}
 						confirmType="submit"
 						confirmDisabled={!isConfirmed}
-						onCancel={close}
+						cancelCommandFor={id}
 					/>
 				</form>
 			{/snippet}

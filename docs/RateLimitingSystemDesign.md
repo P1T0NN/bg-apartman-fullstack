@@ -19,7 +19,9 @@ budget, never the normal fairness mechanism.
 Application rate limiting is not DDoS protection. Volumetric abuse, connection
 limits, bot challenges, and trustworthy IP controls belong at an owned HTTP,
 CDN, WAF, or hosting boundary. A direct browser-to-Convex mutation must not
-trust a client-provided IP, user agent, user ID, or rate-limit key.
+treat a client-provided IP, user agent, user ID, or guest id as authorization;
+an anonymous fairness key must always be paired with a server-owned global
+backstop.
 
 ## Current implementation
 
@@ -27,10 +29,12 @@ The template mounts `@convex-dev/rate-limiter` and applies it through the
 public and authenticated function builders.
 
 - Authenticated actor keys use `ctx.auth` and `tokenIdentifier`.
-- Actor-scoped limits are only consumed when an authenticated identity exists.
-- Explicit `scope: 'global'` limits are available for shared resources.
-- Anonymous Better Auth sessions and the anonymous fallback bucket are not
-  currently used.
+- Anonymous callers are keyed by the transport `guestId` that `Form` attaches.
+  The guest id is a fairness key only and is always paired with a looser global
+  backstop that caps guest-id rotation.
+- Calls without a guest id consume only the global backstop.
+- There is no primary global bucket; a global bucket is a backstop, never the
+  fairness mechanism.
 
 The default policy uses fixed windows:
 
@@ -48,15 +52,17 @@ single custom bucket.
 
 ## Key rules
 
-Rate-limit keys must be derived on the server:
+Rate-limit keys are server-owned, except the anonymous guest id, which is an
+untrusted fairness hint that never authorizes:
 
-| Key                  | Use                                                     |
-| -------------------- | ------------------------------------------------------- |
-| Authenticated actor  | Per-user mutations, uploads, exports, and actions       |
-| Tenant               | Shared team or organization budgets after authorization |
-| Resource             | Normalized email, phone number, invite, or other target |
-| Trusted edge/network | Broad bot and burst controls at an owned boundary       |
-| Endpoint/global      | Shared provider or system safety budget                 |
+| Key                  | Use                                                          |
+| -------------------- | ------------------------------------------------------------ |
+| Authenticated actor  | Per-user mutations, uploads, exports, and actions            |
+| Anonymous guest id   | Per-browser fairness, always paired with the global backstop |
+| Tenant               | Shared team or organization budgets after authorization      |
+| Resource             | Normalized email, phone number, invite, or other target      |
+| Trusted edge/network | Broad bot and burst controls at an owned boundary            |
+| Endpoint/global      | Shared provider or system safety budget                      |
 
 Never accept identity or quota configuration from the client. Resource keys
 should avoid raw personal data; use a keyed digest or HMAC with a server-only

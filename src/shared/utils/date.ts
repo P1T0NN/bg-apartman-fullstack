@@ -9,6 +9,10 @@ import {
 // UTILS
 import { linearFind } from '../lib/algorithms/index.js';
 
+// UI callers pass getLocale() explicitly to date-formatting functions. This
+// module is also shared with the Convex backend, so keep Paraglide imports out
+// of it to avoid bundling unnecessary localization code into Convex functions.
+
 export const DAY_IN_MS = 86_400_000;
 
 const relativeTimeUnits = [
@@ -32,6 +36,14 @@ export function formatDateTime(timestamp: number, locale: string): string {
 	return new Intl.DateTimeFormat(locale, {
 		dateStyle: 'medium',
 		timeStyle: 'short',
+		timeZone: 'UTC'
+	}).format(timestamp);
+}
+
+export function formatMonth(timestamp: number, locale: string): string {
+	return new Intl.DateTimeFormat(locale, {
+		month: 'long',
+		year: 'numeric',
 		timeZone: 'UTC'
 	}).format(timestamp);
 }

@@ -55,11 +55,13 @@
 		</a>
 	{:else}
 		<div class="flex min-w-0 items-center gap-3">
-			<span class="icon-[lucide--mail] size-5 shrink-0 text-muted-foreground" aria-hidden="true"
+			<span
+				class="icon-[lucide--mail] size-5 shrink-0 text-muted-foreground"
+				aria-hidden="true"
 			></span>
-			<span class="truncate"
-				>{feedback.email ?? m['AdminFeedbackPage.AdminFeedbackTableItem.guest']()}</span
-			>
+			<span class="truncate">
+				{feedback.email ?? m['AdminFeedbackPage.AdminFeedbackTableItem.guest']()}
+			</span>
 		</div>
 	{/if}
 </TableCell>

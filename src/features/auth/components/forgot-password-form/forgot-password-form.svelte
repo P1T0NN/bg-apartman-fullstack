@@ -88,18 +88,18 @@
 		</Field.Field>
 
 		<Field.Field>
-			<Field.Label for="confirm-password"
-				>{m['AuthFeature.ForgotPasswordForm.confirmPassword']()}</Field.Label
-			>
+			<Field.Label for="confirm-password">
+				{m['AuthFeature.ForgotPasswordForm.confirmPassword']()}
+			</Field.Label>
 			<PasswordInput id="confirm-password" required bind:value={confirmPassword} />
 		</Field.Field>
 	{/if}
 	{#snippet footer()}
 		<Card.Footer class="flex justify-center">
 			<Field.Description>
-				<a href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN} class="text-sm font-medium"
-					>{m['AuthFeature.ForgotPasswordForm.backToSignIn']()}</a
-				>
+				<a href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN} class="text-sm font-medium">
+					{m['AuthFeature.ForgotPasswordForm.backToSignIn']()}
+				</a>
 			</Field.Description>
 		</Card.Footer>
 	{/snippet}

@@ -15,9 +15,9 @@ This project uses the audit-log component for admin audit events. Keep these rec
 | API                  | Use it when                                                   | Typical examples                                        |
 | -------------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
 | `auditLog.log`       | An important event does not need before/after document state  | Login, logout, export, role change, unauthorized access |
-| `auditLog.logChange` | A resource was changed and the old and new safe state matters | Booking updated, user profile changed, settings updated     |
+| `auditLog.logChange` | A resource was changed and the old and new safe state matters | Booking updated, user profile changed, settings updated |
 | `auditLog.logBulk`   | Several related events should be recorded together            | Importing many records, a batch permission update       |
-| `queryByResource`    | Showing the history of one resource                           | “Who changed this booking?”                                |
+| `queryByResource`    | Showing the history of one resource                           | “Who changed this booking?”                             |
 | `queryByActor`       | Showing one user’s activity                                   | Admin activity review                                   |
 | `queryBySeverity`    | Reviewing warnings or security events                         | Failed operations, suspicious actions                   |
 | `queryByAction`      | Reviewing one event type                                      | All role changes or deletions                           |
@@ -44,9 +44,9 @@ For this booking website, a sensible event set includes:
 
 | Event                          | API         | Severity                |
 | ------------------------------ | ----------- | ----------------------- |
-| Booking created                   | `log`       | `info`                  |
-| Booking updated                   | `logChange` | `info`                  |
-| Booking cancelled                   | `log`       | `warning`               |
+| Booking created                | `log`       | `info`                  |
+| Booking updated                | `logChange` | `info`                  |
+| Booking cancelled              | `log`       | `warning`               |
 | Admin role changed             | `log`       | `warning`               |
 | Unauthorized admin access      | `log`       | `critical`              |
 | Repeated failed authentication | `log`       | `warning` or `critical` |
@@ -146,7 +146,7 @@ The React hooks in the component README are not directly usable in this Svelte p
 | ------------------------------------------- | -------------------------------------------------------- |
 | Per-user request throttling                 | The existing rate-limiter component                      |
 | Product metrics, funnels, or page telemetry | Analytics                                                |
-| Current booking state                       | The booking domain records                              |
+| Current booking state                       | The booking domain records                               |
 | Debugging stack traces                      | Application/server logging                               |
 | Durable workflows or retries                | A workflow/job component                                 |
 | User-facing activity feed only              | A purpose-built activity table if its semantics differ   |

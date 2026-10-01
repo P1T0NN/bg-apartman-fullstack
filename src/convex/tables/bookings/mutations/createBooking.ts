@@ -21,7 +21,6 @@ import type { BackendErrorData } from '../../../../shared/types/types.js';
 export const createBooking = mutation({
 	rateLimit: {
 		name: 'bookings:create',
-		scope: 'global',
 		config: { kind: 'token bucket', rate: 10, period: MINUTE, capacity: 5 }
 	},
 	args: {
@@ -38,7 +37,7 @@ export const createBooking = mutation({
 	},
 	returns: v.id('bookings'),
 	handler: async (ctx, args) => {
-		const accommodation = await ctx.db.get(args.accommodationId);
+		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
 		if (!accommodation) {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
@@ -70,7 +69,7 @@ export const createBooking = mutation({
 		const bookingId = await ctx.db.insert('bookings', booking);
 
 		if (ownerId) {
-			const stored = await ctx.db.get(bookingId);
+			const stored = await ctx.db.get('bookings', bookingId);
 			if (stored) await bookingOwnerAggregate.insert(ctx, stored);
 		}
 

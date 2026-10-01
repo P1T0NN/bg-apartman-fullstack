@@ -20,7 +20,9 @@
 
 <TableCell>
 	<div class="flex min-w-0 items-center gap-3">
-		<span class="icon-[lucide--mail] size-5 shrink-0 text-muted-foreground" aria-hidden="true"
+		<span
+			class="icon-[lucide--mail] size-5 shrink-0 text-muted-foreground"
+			aria-hidden="true"
 		></span>
 		<span class="truncate font-medium">{newsletter.email}</span>
 	</div>
@@ -39,6 +41,6 @@
 	{#if newsletter.unsubscribedAt}
 		{formatDateTime(newsletter.unsubscribedAt, getLocale())}
 	{:else}
-		<span aria-hidden="true">—</span>
+		<span aria-hidden="true">&mdash;</span>
 	{/if}
 </TableCell>

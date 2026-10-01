@@ -228,16 +228,16 @@
 	{/if}
 
 	{#if context.errors.latitude || context.errors.longitude}
-		<Field.Error
-			>{m['AddAccommodationPage.AddAccommodationFormLocation.mapPinRequired']()}</Field.Error
-		>
+		<Field.Error>
+			{m['AddAccommodationPage.AddAccommodationFormLocation.mapPinRequired']()}
+		</Field.Error>
 	{/if}
 </section>
 
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}
-		>{m['AddAccommodationPage.AddAccommodationFormLocation.previous']()}</Button
-	>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}>
+		{m['AddAccommodationPage.AddAccommodationFormLocation.previous']()}
+	</Button>
 
 	<AddAccommodationContinueButton errors={context.errors} />
 </div>

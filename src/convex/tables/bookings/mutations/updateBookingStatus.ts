@@ -7,6 +7,7 @@ import { authenticatedMutation } from '../../../builders/convexFunctionBuilders.
 
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
+import { completeBooking } from '../helpers/completeBooking.js';
 
 // CONFIG
 import {
@@ -27,7 +28,7 @@ export const updateBookingStatus = authenticatedMutation({
 	},
 	returns: v.null(),
 	handler: async (ctx, args) => {
-		const booking = await ctx.db.get(args.id);
+		const booking = await ctx.db.get('bookings', args.id);
 		if (!booking || booking.hostId !== getOwnerId(ctx.identity)) {
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_NOT_FOUND' });
 		}
@@ -38,7 +39,8 @@ export const updateBookingStatus = authenticatedMutation({
 			throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING_STATUS' });
 		}
 
-		await ctx.db.patch(args.id, { status: args.status });
+		if (args.status === 'completed') await completeBooking(ctx, booking, getOwnerId(ctx.identity));
+		else await ctx.db.patch('bookings', args.id, { status: args.status });
 
 		return null;
 	}

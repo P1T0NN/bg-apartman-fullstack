@@ -4,6 +4,8 @@
 	import ScrollTextIcon from '@lucide/svelte/icons/scroll-text';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import StarIcon from '@lucide/svelte/icons/star';
+	import { m } from '@/lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { useCachedConvexQuery } from '@/hooks/useCachedConvexQuery.svelte.js';
 
@@ -67,6 +69,10 @@
 					</NativeSidebarLink>
 				</NativeSidebarSection>
 				<NativeSidebarSection title="Support">
+					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.REVIEWS}>
+						<StarIcon aria-hidden="true" />
+						<span>{m['AdminReviewsPage.pageTitle']()}</span>
+					</NativeSidebarLink>
 					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.FEEDBACK}>
 						<InboxIcon aria-hidden="true" />
 						<span>Feedback</span>

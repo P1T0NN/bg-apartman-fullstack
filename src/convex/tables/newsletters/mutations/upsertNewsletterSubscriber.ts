@@ -21,7 +21,7 @@ export const upsertNewsletterSubscriber = internalMutation({
 			.unique();
 
 		if (existing) {
-			await ctx.db.patch(existing._id, {
+			await ctx.db.patch('newsletters', existing._id, {
 				status: 'subscribed',
 				subscribedAt: Date.now(),
 				unsubscribedAt: undefined
@@ -34,7 +34,7 @@ export const upsertNewsletterSubscriber = internalMutation({
 			status: 'subscribed',
 			subscribedAt: Date.now()
 		});
-		const subscriber = await ctx.db.get(id);
+		const subscriber = await ctx.db.get('newsletters', id);
 		if (!subscriber) throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 		await newsletterAggregate.insert(ctx, subscriber);
 		return null;

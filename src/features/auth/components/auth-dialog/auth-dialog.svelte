@@ -47,7 +47,7 @@
 </script>
 
 <NativeDialog bind:this={dialog} aria-labelledby={`${uid}-title`}>
-	{#snippet children({ close })}
+	{#snippet children({ id })}
 		<div class="relative">
 			<h2 id={`${uid}-title`} class="sr-only">{m['AuthFeature.AuthDialog.title']()}</h2>
 			<Button
@@ -55,7 +55,8 @@
 				size="icon-sm"
 				class="absolute top-3 right-3"
 				aria-label={m['AuthFeature.AuthDialog.close']()}
-				onclick={close}
+				commandfor={id}
+				command="close"
 			>
 				<span class="icon-[lucide--x]" aria-hidden="true"></span>
 			</Button>

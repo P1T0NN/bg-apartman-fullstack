@@ -5,6 +5,9 @@ import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';
 import { m } from '@/lib/paraglide/messages';
 
+// HOOKS
+import { useGuestLocal } from '@/features/guests/hooks/useGuestLocal.svelte.js';
+
 // UTILS
 import { optimizeToWebp } from '@/features/storage/utils/optimizeToWebp.js';
 import { aggregateUploadProgress } from '@/features/uploadFile/utils/aggregateUploadProgress.js';
@@ -65,6 +68,7 @@ export function useForm<Mutation extends FunctionReference<'mutation' | 'action'
 	captcha: CaptchaApi
 ) {
 	const options = $derived(getOptions());
+	const guest = useGuestLocal();
 
 	const resolveExtraFields = (
 		uploadedFiles: string[],
@@ -293,7 +297,8 @@ export function useForm<Mutation extends FunctionReference<'mutation' | 'action'
 				...parsed.data,
 				uploadedFiles: uploadedFiles.length ? uploadedFiles : undefined,
 				retainedFiles: uploadEnabled ? retainedFiles : undefined,
-				turnstileToken: captchaAction ? captchaToken : undefined
+				turnstileToken: captchaAction ? captchaToken : undefined,
+				guestId: guest.ensureGuestId()
 			};
 
 			// SAFETY: Zod validates the payload; Form adds transport fields and Convex validates the final args.

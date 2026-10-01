@@ -27,7 +27,9 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 	const country = args.location.country?.trim() ?? '';
 	const guests = (args.adults ?? 0) + (args.children ?? 0);
 	const filters = accommodationSearchFiltersSchema.parse(args.stayFilters ?? {});
+
 	const { type, minPrice = 0, maxPrice = 0, beds = 0, bathrooms = 0 } = filters;
+
 	const bedrooms = Math.max(args.rooms ?? 0, filters.bedrooms ?? 0);
 	const bounds = args.bounds;
 

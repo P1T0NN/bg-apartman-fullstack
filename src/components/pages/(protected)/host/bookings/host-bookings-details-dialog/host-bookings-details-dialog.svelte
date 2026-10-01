@@ -27,18 +27,19 @@
 </script>
 
 <NativeDialog aria-labelledby={dialogId}>
-	{#snippet trigger({ open })}
+	{#snippet trigger({ id })}
 		<Button
 			variant="ghost"
 			size="sm"
-			onclick={open}
+			commandfor={id}
+			command="show-modal"
 			aria-label={m['HostBookingsPage.HostBookingsDetailsDialog.detailsLabel']({ name: guestName })}
 		>
 			{m['HostBookingsPage.HostBookingsDetailsDialog.details']()}
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id })}
 		<div class="flex min-w-0 flex-col gap-5 p-4 sm:p-6">
 			<div class="flex items-start gap-3">
 				<NativeAvatar name={guestName} size="lg" />
@@ -78,7 +79,7 @@
 
 			<div class="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
 				<HostBookingsItemActions {booking} />
-				<Button type="button" variant="outline" size="sm" onclick={close}>
+				<Button type="button" variant="outline" size="sm" commandfor={id} command="close">
 					{m['HostBookingsPage.HostBookingsDetailsDialog.close']()}
 				</Button>
 			</div>

@@ -25,6 +25,8 @@ export const feedbacks = defineTable({
 	// Lowercased "<title> <message>" maintained by feedback writes; powers admin search.
 	searchText: v.string()
 })
+	// Retained for _creationTime ordering; the admin list sorts newest first.
+	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_type', ['type'])
 	.index('by_category', ['category'])
 	.index('by_type_category', ['type', 'category'])

@@ -20,10 +20,11 @@
 </script>
 
 <NativeDialog aria-labelledby={headingId}>
-	{#snippet trigger({ open })}
+	{#snippet trigger({ id })}
 		<button
 			type="button"
-			onclick={open}
+			commandfor={id}
+			command="show-modal"
 			class="group flex w-full min-w-0 cursor-pointer flex-col gap-1 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 		>
 			<span class="truncate font-medium group-hover:underline">{feedback.title}</span>
@@ -31,12 +32,12 @@
 		</button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id })}
 		<div class="flex flex-col gap-4 p-6">
 			<h2 id={headingId} class="text-lg font-semibold">{feedback.title}</h2>
 			<p class="text-sm whitespace-pre-wrap">{feedback.message}</p>
 			<div class="flex justify-end">
-				<Button variant="outline" size="sm" onclick={close}>
+				<Button variant="outline" size="sm" commandfor={id} command="close">
 					{m['AdminFeedbackPage.FeedbackMessageDialog.close']()}
 				</Button>
 			</div>

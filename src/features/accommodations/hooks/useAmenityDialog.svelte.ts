@@ -34,11 +34,10 @@ export function useAmenityDialog(options: {
 		state.selectedOnly = false;
 	}
 
-	function open(openDialog: () => void) {
+	function resetDraft() {
 		// A fresh draft is created each time the dialog is opened.
 		state.draft = [...selected];
 		resetFilters();
-		openDialog();
 	}
 
 	function save() {
@@ -50,7 +49,7 @@ export function useAmenityDialog(options: {
 		toggle,
 		toggleSelectedOnly,
 		resetFilters,
-		open,
+		resetDraft,
 		save
 	};
 }

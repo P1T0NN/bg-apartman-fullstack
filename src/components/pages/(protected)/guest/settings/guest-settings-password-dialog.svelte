@@ -63,21 +63,19 @@
 	}
 </script>
 
-<NativeDialog aria-labelledby="guest-change-password-title">
-	{#snippet trigger({ open })}
-		<Button
-			variant="outline"
-			size="sm"
-			onclick={() => {
-				reset();
-				open();
-			}}
-		>
+<NativeDialog
+	aria-labelledby="guest-change-password-title"
+	onbeforetoggle={(event) => {
+		if (event.newState === 'open') reset();
+	}}
+>
+	{#snippet trigger({ id })}
+		<Button variant="outline" size="sm" commandfor={id} command="show-modal">
 			{m['GuestSettingsPage.GuestSettingsSecurityCard.changePassword']()}
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id, close })}
 		<form
 			class="flex flex-col gap-5 p-6"
 			onsubmit={(event) => {
@@ -163,11 +161,20 @@
 			</Field.Field>
 
 			<div class="flex justify-end gap-2">
-				<Button type="button" variant="outline" size="sm" disabled={submitting} onclick={close}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={submitting}
+					commandfor={id}
+					command="close"
+				>
 					{m['GuestSettingsPage.GuestSettingsPasswordDialog.cancel']()}
 				</Button>
 				<Button type="submit" size="sm" disabled={submitting}>
-					{#if submitting}<Spinner data-icon="inline-start" />{/if}
+					{#if submitting}
+						<Spinner data-icon="inline-start" />
+					{/if}
 					{m['GuestSettingsPage.GuestSettingsPasswordDialog.submit']()}
 				</Button>
 			</div>

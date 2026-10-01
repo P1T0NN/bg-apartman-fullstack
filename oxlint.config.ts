@@ -1,4 +1,5 @@
 // LIBRARIES
+import convexPlugin from '@convex-dev/eslint-plugin';
 import { defineConfig } from 'oxlint';
 
 export default defineConfig({
@@ -14,9 +15,13 @@ export default defineConfig({
 		'.pi/**',
 		'.roo/**',
 		'.windsurf/**',
+		'src/convex/_generated/**',
+		'src/convex/betterAuth/component/_generated/**',
+		'src/convex/betterAuth/component/generatedSchema.ts',
 		'tools/oxlint/anti-slop/**'
 	],
 	jsPlugins: [
+		{ name: '@convex-dev', specifier: '@convex-dev/eslint-plugin' },
 		{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' },
 		{
 			name: 'anti-slop-effect',
@@ -40,5 +45,11 @@ export default defineConfig({
 		'anti-slop/no-widen-then-assert': 'error',
 		'anti-slop/require-safety-comment-for-type-assertion': 'error',
 		'anti-slop-effect/no-service-constructor-imports': 'error'
-	}
+	},
+	overrides: [
+		{
+			files: ['src/convex/**/*.ts'],
+			rules: convexPlugin.configs.recommended[0].rules
+		}
+	]
 });

@@ -6,6 +6,7 @@ import { internalMutation } from './_generated/server.js';
 
 // AGGREGATES
 import { accommodationOwnerAggregate } from './tables/accommodations/aggregates/accommodationOwnerAggregate.js';
+import { reviewAggregate } from './tables/reviews/aggregates/reviewAggregate.js';
 
 // DATA
 import { AMENITY_KEYS } from '../shared/features/accommodations/data/accommodationsData.js';
@@ -101,6 +102,41 @@ const HOUSE_RULES = [
 	'Please remove your shoes at the entrance. No parties. Check out on time.',
 	'Pets welcome on request. Keep noise down after 22:00 and leave the kitchen clean.',
 	'No smoking inside. Separate waste and lock the door when leaving.'
+] as const;
+
+const SEED_GUEST_PREFIX = 'seed-guest-';
+
+const SEED_REVIEWER_NAMES = [
+	'Mila Petrović',
+	'Nikola Jovanović',
+	'Sara Ilić',
+	'Luka Marković',
+	'Ema Stojanović',
+	'Vuk Nikolić',
+	'Ana Pavlović',
+	'Iva Milošević',
+	'Filip Đorđević',
+	'Tea Kovačević',
+	'Mina Popović',
+	'Stefan Ristić'
+] as const;
+
+// Weighted toward positive ratings so seeded averages look realistic.
+const SEED_REVIEW_RATINGS = [5, 5, 5, 4, 4, 4, 3, 3, 2] as const;
+
+const SEED_REVIEW_COMMENTS = [
+	'Great location and a very clean apartment. The host replied quickly and check-in was easy.',
+	'Comfortable stay, exactly as described. Would book again for a city trip.',
+	'Nice place with everything we needed. The neighbourhood is quiet at night.',
+	'Spacious and bright, with a well-equipped kitchen. A short walk to the centre.',
+	'Good value for the price. The bed was comfortable and the wifi was fast.',
+	'Lovely apartment and a thoughtful host. We especially enjoyed the balcony.',
+	'Clean and tidy, though the street was a bit noisy in the morning.',
+	'The photos match the apartment. Check-in instructions were clear and simple.',
+	'Perfect base for exploring the city. Plenty of restaurants and shops nearby.',
+	'We had a pleasant stay. A minor issue with the hot water, but the host fixed it quickly.',
+	'The apartment is in a great spot for sightseeing. Everything was spotless when we arrived.',
+	'Comfortable beds and a quiet building. The host left us some local tips, which was a nice touch.'
 ] as const;
 
 function createRandom(seed: number): () => number {
@@ -212,7 +248,7 @@ export const seedAccommodations = internalMutation({
 			if (random() < 0.5) listing.maximumStay = minimumStay + 10 + Math.floor(random() * 20);
 
 			const id = await ctx.db.insert('accommodations', listing);
-			const accommodation = await ctx.db.get(id);
+			const accommodation = await ctx.db.get('accommodations', id);
 			if (accommodation === null) throw new Error('Seed insert did not persist.');
 			await accommodationOwnerAggregate.insert(ctx, accommodation);
 		}
@@ -236,9 +272,112 @@ export const clearSeededAccommodations = internalMutation({
 
 		for (const accommodation of seeded) {
 			await accommodationOwnerAggregate.delete(ctx, accommodation);
-			await ctx.db.delete(accommodation._id);
+			await ctx.db.delete('accommodations', accommodation._id);
 		}
 
 		return seeded.length;
+	}
+});
+
+/** Dev-only: attach completed bookings and published reviews to seeded accommodations. */
+export const seedReviews = internalMutation({
+	args: {
+		ownerId: v.optional(v.string()),
+		maxAccommodations: v.optional(v.number()),
+		maxReviewsPerAccommodation: v.optional(v.number())
+	},
+	returns: v.number(),
+	handler: async (ctx, args) => {
+		const ownerId = args.ownerId?.trim() || SEED_OWNER_ID;
+		const maxAccommodations = Math.min(Math.max(Math.floor(args.maxAccommodations ?? 200), 1), 500);
+		const maxReviews = Math.min(Math.max(Math.floor(args.maxReviewsPerAccommodation ?? 8), 0), 20);
+		const accommodations = await ctx.db
+			.query('accommodations')
+			.withIndex('by_owner_id', (query) => query.eq('ownerId', ownerId))
+			.take(maxAccommodations);
+
+		const now = Date.now();
+		let inserted = 0;
+
+		for (const [index, accommodation] of accommodations.entries()) {
+			const random = createRandom(90_000 + index);
+			const reviewCount = Math.floor(random() * (maxReviews + 1));
+
+			for (let reviewIndex = 0; reviewIndex < reviewCount; reviewIndex += 1) {
+				const guestIndex = Math.floor(random() * SEED_REVIEWER_NAMES.length);
+				const guestOwnerId = `${SEED_GUEST_PREFIX}${guestIndex}`;
+				const [firstName = 'Guest', ...rest] = pick(SEED_REVIEWER_NAMES, random).split(' ');
+				const lastName = rest.join(' ') || 'Guest';
+				const email = `${guestOwnerId}@example.com`;
+				const stayEndOffsetDays = 10 + Math.floor(random() * 300);
+				const nights = 1 + Math.floor(random() * 6);
+				const checkOutDate = new Date(now - stayEndOffsetDays * 86_400_000)
+					.toISOString()
+					.slice(0, 10);
+				const checkInDate = new Date(Date.parse(checkOutDate) - nights * 86_400_000)
+					.toISOString()
+					.slice(0, 10);
+
+				const bookingId = await ctx.db.insert('bookings', {
+					ownerId: guestOwnerId,
+					hostId: accommodation.ownerId,
+					status: 'completed',
+					completedAt: now - stayEndOffsetDays * 86_400_000,
+					completedBy: accommodation.ownerId,
+					accommodationId: accommodation._id,
+					firstName,
+					lastName,
+					email,
+					phone: '+381600000000',
+					checkInDate,
+					checkOutDate,
+					adults: 1 + Math.floor(random() * 3),
+					children: Math.floor(random() * 2),
+					searchText: `${lastName} ${email}`.toLowerCase()
+				});
+				const reviewId = await ctx.db.insert('reviews', {
+					bookingId,
+					accommodationId: accommodation._id,
+					ownerId: guestOwnerId,
+					authorName: firstName,
+					stayMonth: checkInDate.slice(0, 7),
+					rating: pick(SEED_REVIEW_RATINGS, random),
+					comment: pick(SEED_REVIEW_COMMENTS, random),
+					status: 'published'
+				});
+				await ctx.db.patch('bookings', bookingId, { reviewId });
+				const review = await ctx.db.get('reviews', reviewId);
+				if (review) await reviewAggregate.insert(ctx, review);
+				inserted += 1;
+			}
+		}
+
+		return inserted;
+	}
+});
+
+/** Dev-only: delete seeded reviews and their bookings. Repeat until this returns zero. */
+export const clearSeededReviews = internalMutation({
+	args: {},
+	returns: v.number(),
+	handler: async (ctx) => {
+		let deleted = 0;
+
+		for (let guestIndex = 0; guestIndex < SEED_REVIEWER_NAMES.length; guestIndex += 1) {
+			const ownerId = `${SEED_GUEST_PREFIX}${guestIndex}`;
+			const reviews = await ctx.db
+				.query('reviews')
+				.withIndex('by_owner_id', (query) => query.eq('ownerId', ownerId))
+				.take(100);
+
+			for (const review of reviews) {
+				await reviewAggregate.delete(ctx, review);
+				await ctx.db.delete('reviews', review._id);
+				await ctx.db.delete('bookings', review.bookingId);
+				deleted += 1;
+			}
+		}
+
+		return deleted;
 	}
 });

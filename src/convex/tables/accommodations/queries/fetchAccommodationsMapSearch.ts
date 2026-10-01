@@ -9,6 +9,9 @@ import { buildAccommodationSearchQuery } from '../helpers/buildAccommodationSear
 // CONFIG
 import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
 
+// UTILS
+import { setEmptyPagination } from '../../../../shared/features/pagination/utils/setEmptyPagination.js';
+
 // VALIDATORS
 import { accommodationMapPage, searchCriteriaArgs } from '../validators/accommodationValidators.js';
 import { boundsSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
@@ -23,14 +26,7 @@ export const fetchAccommodationsMap = query({
 		const bounds = args.bounds ? boundsSchema.parse(args.bounds) : undefined;
 		const accommodationsQuery = buildAccommodationSearchQuery(ctx, { ...args, bounds });
 
-		if (!accommodationsQuery) {
-			return {
-				items: [],
-				nextCursor: null,
-				hasNextPage: false,
-				pageSize: args.paginationOpts.numItems
-			};
-		}
+		if (!accommodationsQuery) return setEmptyPagination(args.paginationOpts.numItems);
 
 		const page = await getPagination(accommodationsQuery, {
 			paginationOpts: {

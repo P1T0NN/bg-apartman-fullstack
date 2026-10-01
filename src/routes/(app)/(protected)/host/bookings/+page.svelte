@@ -68,12 +68,14 @@
 					href: PROTECTED_PAGE_ENDPOINTS.ADD_ACCOMMODATION
 				}}
 	>
-		{#snippet icon()}<span
+		{#snippet icon()}
+			<span
 				class={isFiltering
 					? 'icon-[lucide--search] size-5'
 					: 'icon-[lucide--calendar-check] size-5'}
 				aria-hidden="true"
-			></span>{/snippet}
+			></span>
+		{/snippet}
 	</EmptyData>
 {/snippet}
 
@@ -92,9 +94,9 @@
 			<div class="min-w-0 overflow-x-auto">
 				<Tabs.List aria-label={m['HostBookingsPage.statusTabsLabel']()}>
 					<Tabs.Trigger value="">{m['HostBookingsPage.allStatuses']()}</Tabs.Trigger>
-					{#each BOOKING_STATUSES as status (status)}<Tabs.Trigger value={status}
-							>{BOOKING_STATUS_LABELS[status]()}</Tabs.Trigger
-						>{/each}
+					{#each BOOKING_STATUSES as status (status)}
+						<Tabs.Trigger value={status}>{BOOKING_STATUS_LABELS[status]()}</Tabs.Trigger>
+					{/each}
 				</Tabs.List>
 			</div>
 
@@ -129,7 +131,9 @@
 							<ErrorComponent message={m['ErrorMessages.loadFailed']()} />
 						{/snippet}
 
-						{#snippet empty()}{@render emptyState()}{/snippet}
+						{#snippet empty()}
+							{@render emptyState()}
+						{/snippet}
 					</DataTable>
 				{:else}
 					<DataList pagination={bookings} key={(booking) => booking._id} class="gap-3">

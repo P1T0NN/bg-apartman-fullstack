@@ -19,6 +19,7 @@ app.use(aggregate, { name: 'bookingOwnerAggregate' });
 app.use(aggregate, { name: 'userTotalAggregate' });
 app.use(aggregate, { name: 'newslettersAggregate' });
 app.use(aggregate, { name: 'feedbacksAggregate' });
+app.use(aggregate, { name: 'reviewsAggregate' });
 app.use(r2);
 app.use(auditLog);
 

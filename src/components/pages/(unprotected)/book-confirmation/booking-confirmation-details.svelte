@@ -39,9 +39,9 @@
 						{m['AccommodationPage.AccommodationDetailsRules.checkIn']()}
 					</dt>
 					<dd class="mt-2 text-lg font-semibold">
-						<time datetime={confirmation.checkInDate}
-							>{formatDate(Date.parse(confirmation.checkInDate), getLocale())}</time
-						>
+						<time datetime={confirmation.checkInDate}>
+							{formatDate(Date.parse(confirmation.checkInDate), getLocale())}
+						</time>
 					</dd>
 				</div>
 				<div>
@@ -49,9 +49,9 @@
 						{m['BookingPage.BookingConfirmation.checkOut']()}
 					</dt>
 					<dd class="mt-2 text-lg font-semibold">
-						<time datetime={confirmation.checkOutDate}
-							>{formatDate(Date.parse(confirmation.checkOutDate), getLocale())}</time
-						>
+						<time datetime={confirmation.checkOutDate}>
+							{formatDate(Date.parse(confirmation.checkOutDate), getLocale())}
+						</time>
 					</dd>
 				</div>
 			</dl>
@@ -67,7 +67,7 @@
 						{confirmation.adults + confirmation.children}
 					</dd>
 					<dd class="mt-1 text-xs leading-5 text-muted-foreground">
-						{m['BookingPage.BookingCheckout.adults']()}: {confirmation.adults} · {m[
+						{m['BookingPage.BookingCheckout.adults']()}: {confirmation.adults} &middot; {m[
 							'BookingPage.BookingCheckout.children'
 						]()}: {confirmation.children}
 					</dd>

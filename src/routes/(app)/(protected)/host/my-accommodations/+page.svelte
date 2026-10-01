@@ -114,7 +114,8 @@
 						}}
 			>
 				{#snippet icon()}
-					<span class={isFiltering ? 'icon-[lucide--search] size-5' : 'icon-[lucide--house] size-5'}
+					<span
+						class={isFiltering ? 'icon-[lucide--search] size-5' : 'icon-[lucide--house] size-5'}
 					></span>
 				{/snippet}
 			</EmptyData>

@@ -9,7 +9,7 @@ export type ConvexPaginationQueryArgs<Query extends FunctionReference<'query'>> 
 >;
 
 export type ConvexPaginationItem<Query extends FunctionReference<'query'>> =
-	FunctionReturnType<Query> extends { items: (infer Item)[] } ? Item : never;
+	NonNullable<FunctionReturnType<Query>> extends { items: (infer Item)[] } ? Item : never;
 
 export type PaginationResetValue =
 	| string

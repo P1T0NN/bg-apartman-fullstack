@@ -34,14 +34,15 @@
 <aside aria-labelledby="booking-summary-title" class="min-w-0 lg:sticky lg:top-24">
 	<Card.Root class="rounded-2xl shadow-sm">
 		<Card.Header>
-			<Card.Title
-				><h2 id="booking-summary-title">{m['BookingPage.BookingSummary.title']()}</h2></Card.Title
-			>
+			<Card.Title>
+				<h2 id="booking-summary-title">{m['BookingPage.BookingSummary.title']()}</h2>
+			</Card.Title>
 		</Card.Header>
 
 		<Card.Content class="flex flex-col gap-6">
 			<div class="flex items-center gap-4">
-				{#if accommodation.imageUrls[0]}<img
+				{#if accommodation.imageUrls[0]}
+					<img
 						src={accommodation.imageUrls[0]}
 						alt=""
 						class="size-20 shrink-0 rounded-xl object-cover"
@@ -99,11 +100,11 @@
 			</div>
 		</Card.Content>
 
-		<Card.Footer
-			><p class="text-xs leading-5 text-muted-foreground">
+		<Card.Footer>
+			<p class="text-xs leading-5 text-muted-foreground">
 				{m['BookingPage.BookingSummary.disclaimer']()}
-			</p></Card.Footer
-		>
+			</p>
+		</Card.Footer>
 	</Card.Root>
 
 	<p class="mt-4 flex items-start gap-2.5 px-1 text-xs leading-5 text-muted-foreground">

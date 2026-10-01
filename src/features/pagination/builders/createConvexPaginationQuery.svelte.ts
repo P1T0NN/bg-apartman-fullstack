@@ -55,7 +55,7 @@ export function createConvexPaginationQuery<Query extends FunctionReference<'que
 
 	const freshPage = $derived(
 		// SAFETY: Paginated query validators guarantee the shared page response shape.
-		result.data as ConvexPaginatedPage<ConvexPaginationItem<Query>> | undefined
+		(result.data ?? undefined) as ConvexPaginatedPage<ConvexPaginationItem<Query>> | undefined
 	);
 
 	return {

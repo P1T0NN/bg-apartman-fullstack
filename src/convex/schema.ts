@@ -6,14 +6,20 @@ import { v } from 'convex/values';
 // SCHEMAS
 import { accommodations } from './tables/accommodations/schema.js';
 import { bookings } from './tables/bookings/schema.js';
+import { bookingRecoveryTokens } from './tables/bookingRecoveryTokens/schema.js';
+import { bookingRecoverySessions } from './tables/bookingRecoverySessions/schema.js';
 import { favorites } from './tables/favorites/schema.js';
 import { feedbacks } from './tables/feedbacks/schema.js';
+import { reviews } from './tables/reviews/schema.js';
 
 export const tables = {
 	accommodations,
 	bookings,
+	bookingRecoveryTokens,
+	bookingRecoverySessions,
 	favorites,
 	feedbacks,
+	reviews,
 	newsletters: defineTable({
 		/** Normalized (trimmed, lowercased) subscriber email. */
 		email: v.string(),

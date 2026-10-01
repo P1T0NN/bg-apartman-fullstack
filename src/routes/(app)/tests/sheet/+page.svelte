@@ -31,18 +31,21 @@
 				<a
 					href="/tests/data-list"
 					class="rounded-md px-3 py-2 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring/40"
-					>Data list</a
 				>
+					Data list
+				</a>
 				<a
 					href="/tests/data-table"
 					class="rounded-md px-3 py-2 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring/40"
-					>Data table</a
 				>
+					Data table
+				</a>
 				<a
 					href="/tests/data-list-infinite"
 					class="rounded-md px-3 py-2 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring/40"
-					>Infinite list</a
 				>
+					Infinite list
+				</a>
 			</nav>
 		</div>
 	</NativeSheet>

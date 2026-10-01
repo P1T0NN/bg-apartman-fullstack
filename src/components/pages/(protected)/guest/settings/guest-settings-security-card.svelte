@@ -125,7 +125,9 @@
 						disabled={revoking !== null}
 						onclick={() => void revokeOtherSessions()}
 					>
-						{#if revoking === 'others'}<Spinner data-icon="inline-start" />{/if}
+						{#if revoking === 'others'}
+							<Spinner data-icon="inline-start" />
+						{/if}
 						{m['GuestSettingsPage.GuestSettingsSecurityCard.signOutOthers']()}
 					</Button>
 				{/if}

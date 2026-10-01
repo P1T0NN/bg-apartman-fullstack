@@ -18,5 +18,7 @@
 	disabled={form.state.submitting}
 	onclick={() => {
 		if (form.validate(errors)) form.next();
-	}}>{m['AddAccommodationPage.AddAccommodationContinueButton.continue']()}</Button
+	}}
 >
+	{m['AddAccommodationPage.AddAccommodationContinueButton.continue']()}
+</Button>

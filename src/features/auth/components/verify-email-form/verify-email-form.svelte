@@ -127,9 +127,9 @@
 
 		<Card.Footer class="flex justify-center">
 			<Field.Description>
-				<a href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN} class="text-sm font-medium"
-					>{m['AuthFeature.VerifyEmailForm.backToSignIn']()}</a
-				>
+				<a href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN} class="text-sm font-medium">
+					{m['AuthFeature.VerifyEmailForm.backToSignIn']()}
+				</a>
 			</Field.Description>
 		</Card.Footer>
 	{/snippet}

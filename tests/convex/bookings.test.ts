@@ -140,7 +140,8 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 		checkOutDate: '2999-10-27',
 		adults: 2,
 		children: 1,
-		...guest
+		...guest,
+		email: ' Alex@Example.COM '
 	});
 
 	const stored = await t.run((ctx) => ctx.db.query('bookings').take(10));
@@ -153,6 +154,7 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 		children: 1,
 		firstName: 'Alex',
 		lastName: 'Guest',
+		email: 'alex@example.com',
 		status: 'pending',
 		searchText: 'guest alex@example.com'
 	});
@@ -283,7 +285,14 @@ test('host manages bookings for their own accommodations', async () => {
 		host.mutation(updateBookingStatus, { id: bookingId, status: 'declined' })
 	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING_STATUS' } });
 
+	await expect(
+		host.mutation(updateBookingStatus, { id: bookingId, status: 'completed' })
+	).rejects.toMatchObject({ data: { code: 'BOOKING_NOT_FINISHED' } });
+	await t.run((ctx) =>
+		ctx.db.patch(bookingId, { checkInDate: '2020-10-24', checkOutDate: '2020-10-27' })
+	);
 	await host.mutation(updateBookingStatus, { id: bookingId, status: 'completed' });
+	expect((await t.run((ctx) => ctx.db.get(bookingId)))?.completedAt).toBeTypeOf('number');
 	await expect(
 		host.mutation(updateBookingStatus, { id: bookingId, status: 'cancelled' })
 	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING_STATUS' } });

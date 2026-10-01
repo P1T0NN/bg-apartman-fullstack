@@ -14,6 +14,14 @@ export const BOOKING_STATUSES = [
 
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
+/** Booking and recovery lookup share this normalization; preserve dots and plus tags. */
+export const bookingEmailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
+export const completeBookingAdminSchema = z.object({
+	bookingId: z.string().min(1),
+	reason: z.string().trim().min(1).max(500)
+});
+
 /** Allowed host-driven status changes; every other status is terminal. */
 export const BOOKING_STATUS_TRANSITIONS = {
 	pending: ['confirmed', 'declined', 'cancelled'],
@@ -42,7 +50,7 @@ export function createBookingSchema(limits: BookingStayLimits) {
 				children: z.coerce.number().int().min(0).max(100),
 				firstName: z.string().trim().min(1).max(100),
 				lastName: z.string().trim().min(1).max(100),
-				email: z.email().max(254),
+				email: bookingEmailSchema,
 				phone: z.string().trim().min(6).max(40),
 				specialRequests: z.preprocess(
 					(value) => (value === '' ? undefined : value),

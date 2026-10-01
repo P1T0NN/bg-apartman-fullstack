@@ -111,7 +111,9 @@
 
 			<div class="flex justify-end">
 				<Button type="submit" size="sm" disabled={!isDirty || saving}>
-					{#if saving}<Spinner data-icon="inline-start" />{/if}
+					{#if saving}
+						<Spinner data-icon="inline-start" />
+					{/if}
 					{m['GuestSettingsPage.GuestSettingsProfileCard.save']()}
 				</Button>
 			</div>

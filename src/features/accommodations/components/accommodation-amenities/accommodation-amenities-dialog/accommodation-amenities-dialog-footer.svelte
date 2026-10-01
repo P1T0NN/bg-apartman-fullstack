@@ -11,28 +11,27 @@
 	let {
 		dialog,
 		disabled = false,
-		onClose
+		dialogId
 	}: {
 		dialog: AmenityDialog;
 		disabled?: boolean;
-		onClose: () => void;
+		dialogId: string;
 	} = $props();
 </script>
 
 <footer
 	class="flex shrink-0 items-center justify-end gap-3 border-t px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8"
 >
-	<Button type="button" variant="outline" onclick={onClose}
-		>{m['AccommodationsFeature.AccommodationAmenitiesDialogFooter.cancel']()}</Button
-	>
+	<Button type="button" variant="outline" commandfor={dialogId} command="close">
+		{m['AccommodationsFeature.AccommodationAmenitiesDialogFooter.cancel']()}
+	</Button>
 	<Button
 		type="button"
 		class="flex-1 md:flex-none"
 		{disabled}
-		onclick={() => {
-			dialog.save();
-			onClose();
-		}}
+		onclick={dialog.save}
+		commandfor={dialogId}
+		command="close"
 	>
 		{m['AccommodationsFeature.AccommodationAmenitiesDialogFooter.save']()}
 	</Button>

@@ -47,9 +47,9 @@
 >
 	<Field.Legend class="mb-5 w-full">
 		<span class="flex flex-wrap items-baseline justify-between gap-2">
-			<span class="text-base font-semibold"
-				>{m['AddAccommodationPage.AccommodationProgress.amenities']()}</span
-			>
+			<span class="text-base font-semibold">
+				{m['AddAccommodationPage.AccommodationProgress.amenities']()}
+			</span>
 			<span class="text-sm font-normal text-muted-foreground tabular-nums" role="status">
 				{m['AccommodationsFeature.AccommodationAmenities.selected']({ count: selected.length })}
 			</span>

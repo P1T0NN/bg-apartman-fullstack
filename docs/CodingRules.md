@@ -64,6 +64,11 @@ caller, and state why it was required.
   feature contracts, schemas, and pure utilities). Keep secrets and server-only
   modules out of it.
 
+Never import Paraglide into Convex, including through shared modules. Frontend
+callers pass `getLocale()` as a locale argument when the backend needs it.
+Backend email copy lives in handwritten locale dictionaries under
+`src/convex/emails/translations`, with English fallback until more locales exist.
+
 ## Page component decomposition
 
 When creating or substantially changing a page, keep the route focused on data
@@ -184,10 +189,17 @@ These are the preferred wrappers when the browser has a suitable platform
 primitive. Fallback files are implementation details and should not be
 imported directly.
 
+For `NativeDialog`, use snippet `id` with `commandfor` and `command="show-modal"`
+or `command="close"` for direct button actions. Initialize drafts in
+`onbeforetoggle` when `newState === 'open'`. Keep `open`/`close` callbacks for
+state-dependent workflows, validation and closing after successful submissions.
+`ConfirmDialogActions` accepts `cancelCommandFor` to forward the dialog ID to
+its native Cancel button; `onCancel` remains available for other workflows.
+
 | Component                                                             | Native path and fallback                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NativeAvatar`                                                        | Image with initials fallback; use for user identity wherever a face may be missing.                                                                                                                                                                                                                                       |
-| `NativeDialog`                                                        | Native modal `<dialog>` with `showModal`, explicit close snippets, focus/backdrop behavior, and no click-outside/Esc dismissal.                                                                                                                                                                                           |
+| `NativeDialog`                                                        | Native modal `<dialog>`; snippets expose `id` for `commandfor` buttons (`show-modal`/`close`) alongside existing `open`/`close` callbacks. Accepts `onbeforetoggle`/`onclose` for lifecycle work; preserves focus/backdrop behavior and no click-outside/Esc dismissal.                                                   |
 | `NativePopover`                                                       | Popover API + CSS anchor positioning; light-dismiss and Esc are browser-owned.                                                                                                                                                                                                                                            |
 | `NativeSelect`                                                        | Styled native `<select>` when `appearance: base-select` is supported; otherwise shadcn `Select`. Forwards `name`, `required`, `disabled`, and the error `aria-*` attributes; `placeholderOnly` keeps the placeholder out of the option list. Its styles live in `@layer components`, so Tailwind utilities override them. |
 | `NativeSheet` (`NativeSheetFallback`)                                 | Native dialog command API and discrete slide transition; otherwise shadcn `Sheet`.                                                                                                                                                                                                                                        |
@@ -431,7 +443,8 @@ suggestions. Keep cursors opaque. Do not send owner ids or database predicates
 from the client.
 
 Convex rules: every function has argument and return validators; derive owner
-scope from identity; check ownership on every read/update/delete; use indexes
+scope from identity; check ownership on every read/update/delete; pass explicit
+table names to database operations (`db.get('table', id)`); use indexes
 and bounded pagination; use `ConvexError` for safe expected failures; do not
 scan for routine totals or expose raw infrastructure errors. Read the generated
 `src/convex/_generated/ai/guidelines.md` before changing Convex code.
@@ -510,3 +523,16 @@ subscriptions.
 - After every change run `bunx --bun oxlint`. For Convex or pagination changes,
   also run `bun run check` and `npx convex dev --once`; run
   `bun run test:convex` for the relevant behavior.
+
+## Formatting conventions
+
+Prettier owns formatting; `prettier.config.js` sets
+`htmlWhitespaceSensitivity: 'ignore'`, so every element or component puts its
+children on indented lines instead of hugging `>`, `</tag>`, or `{/snippet}`.
+
+- Author `{#snippet}`, `{#each}`, `{#if}`, and `{#await}` blocks with the first
+  tag on its own indented line, and close with `{/...}` on its own line.
+  Prettier preserves the authored form for block content, so it cannot expand a
+  one-line block for you.
+- Run `bun run format` after changes; `prettier --check .` must pass. Generated
+  Paraglide output and caches are ignored in `.prettierignore`.

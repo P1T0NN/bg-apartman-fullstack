@@ -28,7 +28,7 @@
 		</h1>
 		<Badge variant="secondary">{m['BookingPage.BookingHeader.preview']()}</Badge>
 	</div>
-	
+
 	<p class="max-w-prose text-sm leading-6 text-muted-foreground">
 		{m['BookingPage.BookingHeader.description']()}
 	</p>

@@ -5,6 +5,8 @@
 	import { Button } from '@/components/ui/button/index.js';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
 	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
+	import MyReviewDetailsDialog from '@/components/pages/(protected)/guest/my-reviews/my-review-details-dialog/my-review-details-dialog.svelte';
+	import ReviewDialog from '@/features/reviews/components/review-dialog/review-dialog.svelte';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
@@ -13,6 +15,7 @@
 	import { formatFullName } from '@/shared/utils/formatFullName.js';
 	import { formatDate } from '@/shared/utils/date.js';
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+	import { canReviewBooking } from '@/shared/features/reviews/utils/canReviewBooking.js';
 
 	// TYPES
 	import type { FunctionReturnType } from 'convex/server';
@@ -20,11 +23,13 @@
 	import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
 
 	let {
-		booking
+		booking,
+		today
 	}: {
 		booking: FunctionReturnType<
 			typeof api.tables.bookings.queries.fetchMyBookings.fetchMyBookings
 		>['items'][number];
+		today: string;
 	} = $props();
 	let failedImageUrl = $state('');
 
@@ -112,9 +117,9 @@
 						{m['MyBookingsPage.MyBookingItem.checkIn']()}
 					</dt>
 					<dd class="mt-1 text-sm font-medium">
-						<time datetime={booking.checkInDate}
-							>{formatDate(Date.parse(booking.checkInDate), getLocale())}</time
-						>
+						<time datetime={booking.checkInDate}>
+							{formatDate(Date.parse(booking.checkInDate), getLocale())}
+						</time>
 					</dd>
 				</div>
 				<div>
@@ -122,35 +127,35 @@
 						{m['MyBookingsPage.MyBookingItem.checkOut']()}
 					</dt>
 					<dd class="mt-1 text-sm font-medium">
-						<time datetime={booking.checkOutDate}
-							>{formatDate(Date.parse(booking.checkOutDate), getLocale())}</time
-						>
+						<time datetime={booking.checkOutDate}>
+							{formatDate(Date.parse(booking.checkOutDate), getLocale())}
+						</time>
 					</dd>
 				</div>
 				<div class="col-span-2 sm:col-span-1">
 					<dt class="text-xs text-muted-foreground">{m['MyBookingsPage.MyBookingItem.trip']()}</dt>
 					<dd class="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm font-medium">
-						<span
-							><Plural
+						<span>
+							<Plural
 								count={nights}
 								forms={{
 									one: m['MyBookingsPage.MyBookingItem.night'](),
 									other: m['MyBookingsPage.MyBookingItem.nights']()
 								}}
 								locale={getLocale()}
-							/></span
-						>
+							/>
+						</span>
 						<span class="text-muted-foreground" aria-hidden="true">&middot;</span>
-						<span
-							><Plural
+						<span>
+							<Plural
 								count={booking.adults + booking.children}
 								forms={{
 									one: m['MyBookingsPage.MyBookingItem.guest'](),
 									other: m['MyBookingsPage.MyBookingItem.guests']()
 								}}
 								locale={getLocale()}
-							/></span
-						>
+							/>
+						</span>
 					</dd>
 				</div>
 			</dl>
@@ -161,6 +166,16 @@
 		class="flex flex-col gap-4 border-t bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6"
 	>
 		<p class="max-w-prose text-sm leading-5 text-muted-foreground">{status.hint()}</p>
+		{#if booking.reviewId}
+			<MyReviewDetailsDialog reviewId={booking.reviewId} />
+		{:else if booking.accommodation && canReviewBooking(booking, today)}
+			<ReviewDialog
+				bookingId={booking._id}
+				accommodationName={booking.accommodation.name}
+				checkInDate={booking.checkInDate}
+				checkOutDate={booking.checkOutDate}
+			/>
+		{/if}
 		{#if booking.accommodation}
 			<Button
 				href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(booking.accommodationId)}

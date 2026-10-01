@@ -121,8 +121,8 @@
 </Field.Group>
 
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}
-		>{m['AddAccommodationPage.AddAccommodationFormRules.previous']()}</Button
-	>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}>
+		{m['AddAccommodationPage.AddAccommodationFormRules.previous']()}
+	</Button>
 	<AddAccommodationContinueButton errors={context.errors} />
 </div>

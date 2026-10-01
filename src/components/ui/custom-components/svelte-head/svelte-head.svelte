@@ -61,7 +61,7 @@
 		description ??
 			(resolvedTitle === m['Components.SvelteHead.home']()
 				? COMPANY_DATA.DESCRIPTION
-				: `${resolvedTitle} — ${COMPANY_DATA.DESCRIPTION}`)
+				: `${resolvedTitle} \u2014 ${COMPANY_DATA.DESCRIPTION}`)
 	);
 
 	const isCustomImage = $derived(image !== undefined && image !== COMPANY_DATA.OG_IMAGE);
@@ -131,7 +131,7 @@
 	<meta property="og:description" content={resolvedDescription} />
 	<meta property="og:url" content={canonical} />
 	<meta property="og:image" content={imageUrl} />
-	<meta property="og:image:alt" content="{resolvedTitle} — {COMPANY_DATA.NAME}" />
+	<meta property="og:image:alt" content="{resolvedTitle} &mdash; {COMPANY_DATA.NAME}" />
 	{#if !isCustomImage}
 		<meta property="og:image:width" content={String(COMPANY_DATA.OG_IMAGE_WIDTH)} />
 		<meta property="og:image:height" content={String(COMPANY_DATA.OG_IMAGE_HEIGHT)} />

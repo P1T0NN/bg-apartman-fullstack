@@ -10,6 +10,8 @@
 </script>
 
 <Button type="submit" size="lg" class="mt-6 min-h-12 w-full sm:w-auto" disabled={submitting}>
-	{#if submitting}<Spinner />{/if}
+	{#if submitting}
+		<Spinner />
+	{/if}
 	{m['BookingPage.BookingCheckout.confirm']()}
 </Button>

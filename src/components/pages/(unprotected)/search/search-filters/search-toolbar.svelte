@@ -28,12 +28,12 @@
 			class="ms-auto min-[68.75rem]:hidden"
 			aria-pressed={search.showMap}
 			onclick={search.toggleMap}
-			><span
+		>
+			<span
 				class={search.showMap ? 'icon-[lucide--list]' : 'icon-[lucide--map]'}
 				aria-hidden="true"
-			></span>{search.showMap
-				? m['SearchPage.SearchToolbar.list']()
-				: m['SearchPage.SearchToolbar.map']()}</Button
-		>
+			></span>
+			{search.showMap ? m['SearchPage.SearchToolbar.list']() : m['SearchPage.SearchToolbar.map']()}
+		</Button>
 	{/if}
 </div>

@@ -78,18 +78,19 @@
 
 			<div>
 				<NativeDialog>
-					{#snippet trigger({ open })}
+					{#snippet trigger({ id })}
 						<Button
 							variant="destructive"
 							size="sm"
-							onclick={open}
+							commandfor={id}
+							command="show-modal"
 							disabled={pendingAction !== null}
 						>
 							{m['AdminUserPage.AdminUserTabsSettingsDangerZone.deleteAccount']()}
 						</Button>
 					{/snippet}
 
-					{#snippet children({ close })}
+					{#snippet children({ id, close })}
 						<form
 							class="flex flex-col gap-5 p-6"
 							onsubmit={(event) => {
@@ -130,7 +131,7 @@
 								confirmLabel={m['AdminUserPage.AdminUserTabsSettingsDangerZone.deleteAccount']()}
 								confirmType="submit"
 								confirmDisabled={deleteConfirmation.trim() !== user.email}
-								onCancel={close}
+								cancelCommandFor={id}
 							/>
 						</form>
 					{/snippet}

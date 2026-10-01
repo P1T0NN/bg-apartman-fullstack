@@ -53,13 +53,19 @@
 </script>
 
 <NativeDialog aria-labelledby={dialogId}>
-	{#snippet trigger({ open })}
-		<Button variant="success" size="sm" disabled={disabled || pending} onclick={open}>
+	{#snippet trigger({ id })}
+		<Button
+			variant="success"
+			size="sm"
+			disabled={disabled || pending}
+			commandfor={id}
+			command="show-modal"
+		>
 			{m['HostBookingsPage.HostBookingsConfirmButton.confirm']()}
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id, close })}
 		<div class="flex min-w-0 flex-col gap-5 p-4 sm:p-6">
 			<div class="flex flex-col gap-1.5">
 				<h2 id={dialogId} class="text-lg font-semibold break-words">
@@ -71,11 +77,13 @@
 			</div>
 
 			<div class="flex flex-wrap justify-end gap-2">
-				<Button variant="outline" size="sm" disabled={pending} onclick={close}>
+				<Button variant="outline" size="sm" disabled={pending} commandfor={id} command="close">
 					{m['HostBookingsPage.HostBookingsConfirmButton.keep']()}
 				</Button>
 				<Button variant="success" size="sm" disabled={pending} onclick={() => void confirm(close)}>
-					{#if pending}<Spinner data-icon="inline-start" />{/if}
+					{#if pending}
+						<Spinner data-icon="inline-start" />
+					{/if}
 					{m['HostBookingsPage.HostBookingsConfirmButton.confirmSubmit']()}
 				</Button>
 			</div>

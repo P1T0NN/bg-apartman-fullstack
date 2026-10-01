@@ -31,7 +31,6 @@ const MIN_RESPONSE_DURATION_MS = 2_000;
 export const subscribeToNewsletter = action({
 	rateLimit: {
 		name: 'newsletters:subscribe',
-		scope: 'global',
 		silent: true,
 		config: { kind: 'token bucket', rate: 60, period: MINUTE, capacity: 20 }
 	},

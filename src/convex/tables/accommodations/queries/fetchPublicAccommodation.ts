@@ -8,22 +8,28 @@ import { accommodations } from '../schema.js';
 
 // STORAGE
 import { resolveStoredFileUrls } from '../../../storage/r2.js';
+import { getAccommodationReviewSummary } from '../../reviews/helpers/getAccommodationReviewSummary.js';
+import { reviewSummary } from '../../reviews/validators/reviewValidators.js';
 
 export const fetchPublicAccommodation = query({
 	args: { id: v.id('accommodations') },
 	returns: v.union(
 		docValidator('accommodations', accommodations)
 			.omit('ownerId', 'imageKeys')
-			.extend({ imageUrls: v.array(v.string()) }),
+			.extend({ imageUrls: v.array(v.string()), reviews: reviewSummary }),
 		v.null()
 	),
 	handler: async (ctx, { id }) => {
-		const accommodation = await ctx.db.get(id);
+		const accommodation = await ctx.db.get('accommodations', id);
 
 		if (!accommodation || accommodation.status !== 'published') return null;
 
 		const { ownerId: _ownerId, imageKeys, ...details } = accommodation;
-		
-		return { ...details, imageUrls: await resolveStoredFileUrls(imageKeys) };
+
+		const [imageUrls, summary] = await Promise.all([
+			resolveStoredFileUrls(imageKeys),
+			getAccommodationReviewSummary(ctx, id)
+		]);
+		return { ...details, imageUrls, reviews: summary };
 	}
 });

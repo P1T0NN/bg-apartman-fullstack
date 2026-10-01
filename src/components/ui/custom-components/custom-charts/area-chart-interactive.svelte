@@ -202,7 +202,8 @@
 			((value: Date | string) => formatDate(value, locale, { month: 'short', day: 'numeric' }))
 	);
 	const resolvedTooltipLabelFormatter = $derived(
-		tooltipLabelFormatter ?? ((value: Date | string) => formatDate(value, locale, { month: 'long' }))
+		tooltipLabelFormatter ??
+			((value: Date | string) => formatDate(value, locale, { month: 'long' }))
 	);
 	const resolvedAreaProps = $derived({
 		curve: curveMonotoneX,

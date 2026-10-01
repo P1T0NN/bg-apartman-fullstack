@@ -61,6 +61,7 @@ function setup() {
 	actionRetrierTest.register(t, 'r2/actionRetrier');
 	rateLimiterTest.register(t);
 	aggregateTest.register(t, 'accommodationOwnerAggregate');
+	aggregateTest.register(t, 'reviewsAggregate');
 	return t;
 }
 

@@ -60,13 +60,19 @@
 </script>
 
 <NativeDialog>
-	{#snippet trigger({ open })}
-		<Button variant="destructive" size="sm" onclick={open} disabled={pendingAction !== null}>
+	{#snippet trigger({ id })}
+		<Button
+			variant="destructive"
+			size="sm"
+			commandfor={id}
+			command="show-modal"
+			disabled={pendingAction !== null}
+		>
 			{m['AdminUserPage.BanUserDialog.banUser']()}
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id, close })}
 		<form
 			class="flex flex-col gap-5 p-6"
 			onsubmit={(event) => {
@@ -115,7 +121,7 @@
 				cancelLabel={m['AdminUserPage.BanUserDialog.cancel']()}
 				confirmLabel={m['AdminUserPage.BanUserDialog.banUser']()}
 				confirmType="submit"
-				onCancel={close}
+				cancelCommandFor={id}
 			/>
 		</form>
 	{/snippet}

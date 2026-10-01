@@ -20,7 +20,9 @@
 				<Skeleton class="h-4 w-36" /><Skeleton class="h-3 w-24" />
 			</div>
 			<Skeleton class="h-10 w-32" />
-			{#if layout === 'table'}<Skeleton class="h-6 w-20 rounded-full" />{/if}
+			{#if layout === 'table'}
+				<Skeleton class="h-6 w-20 rounded-full" />
+			{/if}
 			<div class="flex gap-2">
 				<Skeleton class="h-9 w-20 rounded-full" /><Skeleton class="h-9 w-20 rounded-full" />
 			</div>

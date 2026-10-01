@@ -33,14 +33,17 @@
 	class="flex flex-col gap-4"
 	aria-label={m['AddAccommodationPage.AddAccommodationFormReview.preview']()}
 >
-	{#if form.state.files[0]}<img
+	{#if form.state.files[0]}
+		<img
 			src={form.state.files[0].url}
 			alt={String(context.values.name)}
 			class="aspect-video w-full rounded-xl object-cover"
 		/>
-	{:else}<p class="rounded-xl bg-muted p-12 text-center text-muted-foreground">
+	{:else}
+		<p class="rounded-xl bg-muted p-12 text-center text-muted-foreground">
 			{m['AddAccommodationPage.AddAccommodationFormReview.noPhotos']()}
-		</p>{/if}
+		</p>
+	{/if}
 	<h3 class="text-xl font-semibold">
 		{String(context.values.name) || m['AddAccommodationPage.untitled']()}
 	</h3>
@@ -75,9 +78,9 @@
 	<p class="whitespace-pre-wrap">{String(context.values.description)}</p>
 	<p class="text-lg font-semibold">
 		<Price value={Math.round(Number(context.values.nightlyPrice) * 100)} />
-		<span class="text-sm font-normal text-muted-foreground"
-			>{m['AddAccommodationPage.AddAccommodationFormReview.night']()}</span
-		>
+		<span class="text-sm font-normal text-muted-foreground">
+			{m['AddAccommodationPage.AddAccommodationFormReview.night']()}
+		</span>
 	</p>
 	<p>
 		{m['AddAccommodationPage.AddAccommodationFormReview.smokingAllowed']()}:
@@ -128,31 +131,31 @@
 	class="flex flex-wrap gap-2"
 	aria-label={m['AddAccommodationPage.AddAccommodationFormReview.sections']()}
 >
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(0)}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.basics']()}</Button
-	>
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(1)}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.location']()}</Button
-	>
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(2)}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.amenities']()}</Button
-	>
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(3)}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.photos']()}</Button
-	>
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(4)}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.pricing']()}</Button
-	>
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(5)}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.rules']()}</Button
-	>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(0)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.basics']()}
+	</Button>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(1)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.location']()}
+	</Button>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(2)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.amenities']()}
+	</Button>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(3)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.photos']()}
+	</Button>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(4)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.pricing']()}
+	</Button>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(5)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.rules']()}
+	</Button>
 </nav>
 {#if !validation.success}
 	<Field.Error>{validation.error.issues.map((issue) => issue.message).join(' ')}</Field.Error>
 {/if}
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">
-	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}
-		>{m['AddAccommodationPage.AddAccommodationFormReview.previous']()}</Button
-	>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.previous']()}
+	</Button>
 	<AddAccommodationSaveButton disabled={!validation.success} />
 </div>

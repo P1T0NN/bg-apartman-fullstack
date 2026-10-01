@@ -17,10 +17,30 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.invalidAccommodation']();
 		case 'INVALID_BOOKING':
 			return m['BackendMessages.invalidBooking']();
+		case 'INVALID_BOOKING_RECOVERY_REQUEST':
+			return m['BackendMessages.invalidBookingRecoveryRequest']();
+		case 'INVALID_BOOKING_RECOVERY_TOKEN':
+			return m['BackendMessages.invalidBookingRecoveryToken']();
+		case 'BOOKING_EMAIL_UNVERIFIED':
+			return m['BackendMessages.bookingEmailUnverified']();
+		case 'BOOKING_EMAIL_MISMATCH':
+			return m['BackendMessages.bookingEmailMismatch']();
+		case 'BOOKING_ALREADY_CLAIMED':
+			return m['BackendMessages.bookingAlreadyClaimed']();
 		case 'BOOKING_NOT_FOUND':
 			return m['BackendMessages.bookingNotFound']();
 		case 'INVALID_BOOKING_STATUS':
 			return m['BackendMessages.invalidBookingStatus']();
+		case 'BOOKING_NOT_FINISHED':
+			return m['BackendMessages.bookingNotFinished']();
+		case 'INVALID_REVIEW':
+			return m['BackendMessages.invalidReview']();
+		case 'REVIEW_ALREADY_EXISTS':
+			return m['BackendMessages.reviewAlreadyExists']();
+		case 'REVIEW_NOT_ELIGIBLE':
+			return m['BackendMessages.reviewNotEligible']();
+		case 'REVIEW_NOT_FOUND':
+			return m['BackendMessages.reviewNotFound']();
 		case 'ACCOMMODATION_NOT_FOUND':
 			return m['BackendMessages.accommodationNotFound']();
 		case 'INVALID_FEEDBACK':

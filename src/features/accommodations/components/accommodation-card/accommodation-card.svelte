@@ -9,6 +9,7 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import AccommodationCardRating from './accommodation-card-rating.svelte';
 	import FavoriteButton from '@/features/favorites/components/favorite-button/favorite-button.svelte';
 	import ImageGallerySmall from '@/components/ui/custom-components/image-gallery/image-gallery-small.svelte';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
@@ -53,7 +54,7 @@
 
 	<div class="flex flex-1 flex-col gap-2 px-1">
 		<p class="text-xs text-muted-foreground capitalize">
-			{accommodation.type} · {accommodation.address.city}
+			{accommodation.type} &middot; {accommodation.address.city}
 		</p>
 
 		<h2 class="text-base leading-snug font-semibold">
@@ -67,6 +68,8 @@
 			</Link>
 		</h2>
 
+		<AccommodationCardRating reviews={accommodation.reviews} />
+
 		<p class="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
 			<Plural
 				count={accommodation.maxGuests}
@@ -76,7 +79,7 @@
 				}}
 			/>
 
-			<span aria-hidden="true">·</span>
+			<span aria-hidden="true">&middot;</span>
 
 			<Plural
 				count={accommodation.bedrooms}
@@ -86,7 +89,7 @@
 				}}
 			/>
 
-			<span aria-hidden="true">·</span>
+			<span aria-hidden="true">&middot;</span>
 
 			<Plural
 				count={accommodation.beds}
@@ -96,7 +99,7 @@
 				}}
 			/>
 
-			<span aria-hidden="true">·</span>
+			<span aria-hidden="true">&middot;</span>
 
 			<Plural
 				count={accommodation.bathrooms}
@@ -110,9 +113,9 @@
 		<div class="mt-auto pt-2">
 			<p class="text-base font-semibold tabular-nums">
 				<Price value={accommodation.pricePerNightMinor} />
-				<span class="text-sm font-normal"
-					>{m['AccommodationsFeature.AccommodationCard.night']()}</span
-				>
+				<span class="text-sm font-normal">
+					{m['AccommodationsFeature.AccommodationCard.night']()}
+				</span>
 			</p>
 		</div>
 	</div>

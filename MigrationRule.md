@@ -299,7 +299,7 @@ The exact starter implementation uses these categories:
 | `convex-helpers`                    | custom builders, triggers, validator helpers, pagination helpers |
 | `@convex-dev/aggregate`             | table aggregates and optimized-query totals                      |
 | `@convex-dev/rate-limiter`          | public/authenticated/admin mutation and action rate limits       |
-| `@convex-dev/sharded-counter`       | optional sharded counters when the target feature requires them                    |
+| `@convex-dev/sharded-counter`       | optional sharded counters when the target feature requires them  |
 | authentication provider/component   | `requireIdentity`, `auth: 'user'`, and `auth: 'admin'`           |
 | `convex-test`, Vitest, edge runtime | Convex tests only                                                |
 

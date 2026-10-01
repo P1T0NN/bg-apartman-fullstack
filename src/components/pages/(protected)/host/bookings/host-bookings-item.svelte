@@ -53,47 +53,49 @@
 {#snippet stay()}
 	<div class="flex flex-col gap-2">
 		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold">
-			<time datetime={booking.checkInDate}
-				>{formatDate(Date.parse(booking.checkInDate), getLocale())}</time
-			>
+			<time datetime={booking.checkInDate}>
+				{formatDate(Date.parse(booking.checkInDate), getLocale())}
+			</time>
 			<span class="text-muted-foreground" aria-hidden="true">&rarr;</span>
 			<span class="sr-only">{m['HostBookingsPage.HostBookingsItem.until']()}</span>
-			<time datetime={booking.checkOutDate}
-				>{formatDate(Date.parse(booking.checkOutDate), getLocale())}</time
-			>
+			<time datetime={booking.checkOutDate}>
+				{formatDate(Date.parse(booking.checkOutDate), getLocale())}
+			</time>
 		</div>
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-			<span
-				><Plural
+			<span>
+				<Plural
 					count={nights}
 					forms={{
 						one: m['HostBookingsPage.HostBookingsItem.night'](),
 						other: m['HostBookingsPage.HostBookingsItem.nights']()
 					}}
 					locale={getLocale()}
-				/></span
-			>
+				/>
+			</span>
 			<span
 				title={m['HostBookingsPage.HostBookingsItem.guestBreakdown']({
 					adults: booking.adults,
 					children: booking.children
 				})}
-				><Plural
+			>
+				<Plural
 					count={guests}
 					forms={{
 						one: m['HostBookingsPage.HostBookingsItem.guest'](),
 						other: m['HostBookingsPage.HostBookingsItem.guests']()
 					}}
 					locale={getLocale()}
-				/></span
-			>
+				/>
+			</span>
 		</div>
 		{#if booking.specialRequests}
 			<p class="inline-flex items-center gap-1.5 text-xs font-medium">
 				<span
 					class="icon-[lucide--message-square] size-3.5 text-muted-foreground"
 					aria-hidden="true"
-				></span>{m['HostBookingsPage.HostBookingsItem.specialRequest']()}
+				></span>
+				{m['HostBookingsPage.HostBookingsItem.specialRequest']()}
 			</p>
 		{/if}
 	</div>
@@ -114,10 +116,14 @@
 						class="size-full object-cover"
 						onerror={() => (failedImageUrl = booking.accommodation?.imageUrl ?? '')}
 					/>
-				{:else}<span
+				{:else}
+					<span
 						class="flex size-full items-center justify-center text-muted-foreground"
-						aria-hidden="true"><span class="icon-[lucide--house] size-4"></span></span
-					>{/if}
+						aria-hidden="true"
+					>
+						<span class="icon-[lucide--house] size-4"></span>
+					</span>
+				{/if}
 			</div>
 			<p class="min-w-0 text-sm font-medium wrap-break-word">{booking.accommodation.name}</p>
 		</div>
@@ -131,9 +137,11 @@
 {#snippet status()}
 	<div class="flex flex-col items-start gap-2">
 		<BookingStatusBadge status={booking.status} />
-		{#if isPending}<p class="max-w-36 text-xs leading-5 text-muted-foreground">
+		{#if isPending}
+			<p class="max-w-36 text-xs leading-5 text-muted-foreground">
 				{m['HostBookingsPage.HostBookingsItem.awaitingResponse']()}
-			</p>{/if}
+			</p>
+		{/if}
 	</div>
 {/snippet}
 

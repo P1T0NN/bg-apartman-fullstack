@@ -14,7 +14,7 @@ export async function enrichBookingPage(
 	const onlyPublished = options.onlyPublished ?? true;
 	return Promise.all(
 		items.map(async (booking) => {
-			const accommodation = await ctx.db.get(booking.accommodationId);
+			const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
 
 			const isHidden = !accommodation || (onlyPublished && accommodation.status !== 'published');
 

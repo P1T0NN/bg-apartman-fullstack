@@ -4,6 +4,8 @@ import { page } from '$app/state';
 import { browser } from '$app/environment';
 import { createSubscriber } from 'svelte/reactivity';
 
+const SEARCH_PARAMS_CHANGE_EVENT = 'app:search-params-change';
+
 /**
  * Universal URL search-params plumbing. `keys` are the params this hook
  * *owns*: `write` updates only them and preserves every other param, the
@@ -11,8 +13,8 @@ import { createSubscriber } from 'svelte/reactivity';
  * key. Callers keep their own `$state` (debounce, min-chars, mode) on top.
  *
  * Writes are shallow (`pushState`/`replaceState`). Reads use the browser's
- * current URL and react to back/forward, even when `page.url` is unchanged.
- * Callers keep their own state for values they write between history events.
+ * current URL and react to shallow writes and back/forward, even when
+ * `page.url` is unchanged.
  *
  * `get(key)` — raw read (`string | null`, matches `URLSearchParams.get`).
  * `read(key)` — read with `''` fallback (the string url-mode state wants).
@@ -27,7 +29,14 @@ export function useSearchParams(
 	{ history = 'replace' }: { history?: 'replace' | 'push' } = {}
 ) {
 	const getKeys = Array.isArray(keys) ? () => keys : keys;
-	const subscribeToHistory = createSubscriber((update) => onPopState(update));
+	const subscribeToHistory = createSubscriber((update) => {
+		const unsubscribe = onPopState(update);
+		window.addEventListener(SEARCH_PARAMS_CHANGE_EVENT, update);
+		return () => {
+			unsubscribe();
+			window.removeEventListener(SEARCH_PARAMS_CHANGE_EVENT, update);
+		};
+	});
 	const get = (key: string): string | null => {
 		subscribeToHistory();
 		// Track full SvelteKit navigations as well as shallow history changes.
@@ -64,6 +73,8 @@ export function useSearchParams(
 		if (url !== currentUrl) {
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- This shared helper intentionally performs shallow URL navigation.
 			(history === 'push' ? pushState : replaceState)(url, {});
+			// Shallow navigation does not update page.url or emit popstate.
+			window.dispatchEvent(new Event(SEARCH_PARAMS_CHANGE_EVENT));
 		}
 	}
 

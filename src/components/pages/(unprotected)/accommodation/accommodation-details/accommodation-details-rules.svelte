@@ -22,7 +22,7 @@
 					<dt class="text-muted-foreground">
 						{m['AccommodationPage.AccommodationDetailsRules.checkIn']()}
 					</dt>
-					<dd>{accommodation.checkInStart} – {accommodation.checkInEnd}</dd>
+					<dd>{accommodation.checkInStart} &ndash; {accommodation.checkInEnd}</dd>
 				</div>
 				<div class="flex flex-wrap justify-between gap-2">
 					<dt class="text-muted-foreground">
@@ -58,9 +58,11 @@
 			</ul>
 		</div>
 	</div>
-	{#if accommodation.houseRules}<p class="mt-6 max-w-prose text-sm leading-6 whitespace-pre-line">
+	{#if accommodation.houseRules}
+		<p class="mt-6 max-w-prose text-sm leading-6 whitespace-pre-line">
 			{accommodation.houseRules}
-		</p>{/if}
+		</p>
+	{/if}
 	<div class="mt-8">
 		<h3 class="font-semibold">{m['AccommodationPage.AccommodationDetailsRules.cancellation']()}</h3>
 		<p class="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">

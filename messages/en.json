@@ -1,6 +1,195 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"example_message": "Hello world {username}",
+	"FindBookingPage": {
+		"FindBookingClaimButton": {
+			"add": "Add to my account",
+			"failed": "We couldn't continue. Allow session storage in this browser and try again."
+		},
+		"requestAcknowledged": "If we find bookings for this email, we'll send you a secure link.",
+		"FindBookingHeader": {
+			"title": "Find your booking",
+			"description": "Access your bookings securely with your email address. No sign-in needed."
+		},
+		"FindBookingForm": {
+			"email": "Email address",
+			"emailPlaceholder": "you@example.com",
+			"emailHint": "Enter the email address you used when booking to request a secure link.",
+			"submit": "Send booking link",
+			"submitting": "Sending link…",
+			"checkInbox": "Check your inbox",
+			"inboxHint": "Open the link in your email to view your bookings. If it doesn't arrive, check your spam folder and the email address above."
+		},
+		"FindBookingDetails": {
+			"invalidTitle": "This link is no longer valid",
+			"invalidDescription": "The link is invalid or has expired. Request a new link to view your bookings.",
+			"requestNewLink": "Request a new link",
+			"useAnotherEmail": "Use another email address",
+			"emptyTitle": "No bookings found",
+			"emptyDescription": "There are currently no bookings for this verified email address."
+		},
+		"FindBookingDetailsListHeader": {
+			"title": "Your bookings",
+			"description": "Bookings for the email address you verified. The status shows whether the host has confirmed your stay."
+		},
+		"FindBookingDetailsItem": {
+			"alreadyLinked": "This booking is already linked to an account. You can manage it from My bookings in that account.",
+			"checkIn": "Check-in",
+			"checkOut": "Check-out",
+			"guests": "Guests",
+			"adult": "adult",
+			"adults": "adults",
+			"child": "child",
+			"children": "children"
+		},
+		"FindBookingDetailsDialog": {
+			"view": "View details",
+			"viewLabel": "View booking details for {name}",
+			"close": "Close"
+		},
+		"FindBookingDetailsDialogHeader": {
+			"title": "Booking details"
+		},
+		"FindBookingDetailsDialogContent": {
+			"checkIn": "Check-in",
+			"checkOut": "Check-out",
+			"guests": "Guests",
+			"adult": "adult",
+			"adults": "adults",
+			"child": "child",
+			"children": "children",
+			"guestName": "Guest name",
+			"email": "Email address",
+			"phone": "Phone number",
+			"specialRequests": "Special requests"
+		},
+		"FindBookingDetailsLoading": {
+			"loading": "Loading your bookings"
+		}
+	},
+	"ClaimBookingPage": {
+		"ClaimBookingHeader": {
+			"title": "Add booking to your account",
+			"description": "Confirm this booking to manage it from My bookings. Your account must have the same verified email address as the booking."
+		},
+		"ClaimBookingContent": {
+			"noBookingTitle": "Choose a booking first",
+			"noBookingDescription": "Find your booking using the link in your email, then select Add to my account.",
+			"stay": "{checkIn} to {checkOut}",
+			"confirm": "Confirm and add booking",
+			"adding": "Adding booking…",
+			"added": "Booking added to your account.",
+			"alreadyAdded": "This booking is already in your account.",
+			"myBookings": "Go to My bookings",
+			"findBooking": "Find a booking"
+		},
+		"ClaimBookingContentLoading": {
+			"loading": "Checking your booking"
+		}
+	},
+	"ReviewsFeature": {
+		"ReviewDialog": {
+			"leaveReview": "Leave a review",
+			"deadline": "Leave your review by {date}.",
+			"cancel": "Cancel"
+		},
+		"ReviewDialogAccommodationInfo": {
+			"title": "Review your stay",
+			"stay": "Your stay: {checkIn} to {checkOut}"
+		},
+		"ReviewDialogForm": {
+			"comment": "Your experience",
+			"commentHint": "Share what worked well and what could be better. Maximum 2,000 characters. Keep personal contact details out of your review.",
+			"preview": "Preview your review",
+			"chooseRating": "Choose your rating",
+			"previewEmpty": "Your review text will appear here.",
+			"immutable": "Your review is public and cannot be edited after publishing. Each completed booking can be reviewed once.",
+			"publish": "Publish review",
+			"published": "Your review has been published."
+		},
+		"ReviewDialogRating": {
+			"rating": "Overall rating",
+			"stars": "{rating} / 5"
+		},
+		"Reviews": {
+			"title": "Guest reviews",
+			"average": "{average} out of 5",
+			"count": "{count} reviews",
+			"noReviews": "No reviews yet",
+			"firstReview": "Only guests with a completed booking can review this accommodation.",
+			"distribution": "Rating distribution",
+			"filterRating": "Show {rating}-star reviews ({count})",
+			"filtered": "Showing {rating}-star reviews",
+			"clearFilter": "Show all ratings",
+			"showAll": "Show all {count} reviews"
+		}
+	},
+	"MyReviewsPage": {
+		"MyReviewDetailsDialog": {
+			"title": "My review",
+			"view": "View your review",
+			"close": "Close",
+			"notFoundTitle": "Review not found",
+			"notFoundDescription": "This review is unavailable or doesn't belong to your account."
+		},
+		"MyReviewDetailsDialogHeader": {
+			"unavailable": "Accommodation no longer available",
+			"hidden": "Hidden from public view",
+			"published": "Published",
+			"stay": "Your stay: {checkIn} to {checkOut}"
+		},
+		"MyReviewDetailsDialogContent": {
+			"publishedNotice": "Your review is public. Published reviews cannot be edited, and each completed booking can be reviewed once.",
+			"hiddenNotice": "Our support team has hidden this review from public view. It no longer contributes to the accommodation's rating. You can still read it here, but this booking cannot be reviewed again.",
+			"contentLabel": "Your submitted review",
+			"rating": "{rating} out of 5",
+			"submitted": "Submitted {date}",
+			"viewAccommodation": "View accommodation reviews"
+		},
+		"pageTitle": "My reviews",
+		"emptyTitle": "You haven't reviewed a stay yet",
+		"emptyDescription": "After your host marks a stay completed, you have 90 days from checkout to share your experience. Find a completed stay in your bookings to write a review.",
+		"viewBookings": "View my bookings",
+		"MyReviewsHeader": {
+			"title": "My reviews",
+			"description": "Reviews you've written, newest first. Open a review to see your full experience and its public visibility.",
+			"reviewStay": "Find a stay to review"
+		},
+		"MyReviewItem": {
+			"unavailable": "Accommodation no longer available",
+			"hidden": "Hidden from public view",
+			"published": "Published",
+			"rating": "{rating} out of 5 stars",
+			"submitted": "Submitted {date}",
+			"view": "View review"
+		}
+	},
+	"AdminReviewsPage": {
+		"AdminReviewSupport": {
+			"title": "Resolve a completed stay",
+			"description": "Use this only after verifying that a guest checked in and departed. Enter the booking ID from their booking link and record your evidence. Only confirmed bookings on or after their checkout date can be completed. The 90-day review window still applies.",
+			"bookingId": "Booking ID",
+			"reason": "Verification and reason",
+			"submit": "Confirm stay completed"
+		},
+		"pageTitle": "Reviews",
+		"status": "Review visibility",
+		"all": "All reviews",
+		"empty": "No reviews match this view",
+		"AdminReviewsHeader": {
+			"title": "Review moderation",
+			"description": "Hide reviews only for policy violations, spam or exposed personal information. Hidden reviews do not count towards public ratings. A booking remains reviewed even when its review is hidden."
+		},
+		"AdminReviewItem": {
+			"reason": "Moderation reason",
+			"hidden": "Hidden",
+			"published": "Published",
+			"hide": "Hide review",
+			"restore": "Restore review",
+			"lastReason": "Last moderation reason: {reason}",
+			"unavailable": "Removed accommodation"
+		}
+	},
 	"BookingPage": {
 		"title": "Plan your booking",
 		"BookingHeader": {
@@ -67,6 +256,17 @@
 		}
 	},
 	"AccommodationPage": {
+		"AccommodationReviewsItem": {
+			"verified": "Verified stay",
+			"stayed": "Stayed {month}",
+			"rating": "{rating} out of 5 stars",
+			"readMore": "Read more",
+			"showLess": "Show less",
+			"published": "Published {date}"
+		},
+		"AccommodationReviews": {
+			"noMatching": "No reviews match this rating"
+		},
 		"title": "Accommodation details",
 		"error": "We could not load this accommodation. Please try again.",
 		"notFound": "This stay is no longer available",
@@ -74,6 +274,7 @@
 		"priceDetails": "Price details",
 		"AccommodationHeader": {
 			"back": "Back to search",
+			"reviewSummary": "{average} / 5 - {count} reviews",
 			"entire": "Entire property",
 			"private": "Private room",
 			"shared": "Shared room",
@@ -92,6 +293,7 @@
 		},
 		"AccommodationNavigation": {
 			"label": "Explore this accommodation",
+			"reviews": "Reviews",
 			"overview": "Overview",
 			"amenities": "Amenities",
 			"location": "Location",
@@ -100,6 +302,9 @@
 		"AccommodationDetailsOverview": {
 			"overview": "Your stay at a glance"
 		},
+		"AccommodationReviewBookings": {
+			"chooseStay": "Review a completed stay:"
+		},
 		"AccommodationDetailsAmenities": {
 			"amenities": "What this place offers",
 			"moreAmenities": "Show {count} more amenities",
@@ -107,7 +312,7 @@
 		},
 		"AccommodationDetailsLocation": {
 			"location": "Where you will stay",
-			"mapLoading": "Loading the location map…",
+			"mapLoading": "Loading the location map...",
 			"mapError": "The map could not load. You can still open this location in Google Maps.",
 			"openMap": "Open in Google Maps"
 		},
@@ -138,6 +343,9 @@
 			"reviewRules": "Review stay requirements",
 			"planBooking": "Plan your booking",
 			"priceHint": "This is the listed rate, not a confirmed trip total. Availability, additional fees and cancellation terms must be confirmed before booking."
+		},
+		"AccommodationReviewBookingItem": {
+			"leaveReview": "Leave a review"
 		}
 	},
 	"AuthFeature": {
@@ -336,6 +544,9 @@
 			"bathrooms": "bathrooms",
 			"night": "per night"
 		},
+		"AccommodationCardRating": {
+			"reviewSummary": "{average} / 5 - {count} reviews"
+		},
 		"AccommodationRuleCard": {
 			"enabled": "Enabled",
 			"disabled": "Disabled"
@@ -403,7 +614,7 @@
 		"empty": "There are no accommodations in this area",
 		"emptyHint": "Move or zoom out on the map, or change your destination, guests, rooms, or filters.",
 		"mapTitle": "Google Map of {destination}",
-		"mapLoading": "Loading the map…",
+		"mapLoading": "Loading the map...",
 		"mapError": "We couldn't load the map.",
 		"SearchFilters": {
 			"filters": "Filters",
@@ -458,7 +669,7 @@
 			"details": "View stay",
 			"close": "Close stay details",
 			"rules": "House rules",
-			"checkIn": "Check-in: {start}–{end}",
+			"checkIn": "Check-in: {start}-{end}",
 			"checkOut": "Check-out: {time}",
 			"minimum": "Minimum stay: {count} nights"
 		},
@@ -619,7 +830,7 @@
 			"access": "Access",
 			"description": "Manage this user's role and account access.",
 			"role": "Role",
-			"pendingRoleChange": "Pending — save to change the role to {role}.",
+			"pendingRoleChange": "Pending - save to change the role to {role}.",
 			"adminsCanManage": "Admins can manage users from this area.",
 			"accountAccess": "Account access",
 			"banned": "Banned",
@@ -746,7 +957,7 @@
 			"hint": "Start typing to find your street, or enter your address manually.",
 			"clear": "Clear location",
 			"suggestions": "Location suggestions",
-			"loading": "Looking up your address…",
+			"loading": "Looking up your address...",
 			"unavailable": "Address suggestions are unavailable. You can enter your address manually.",
 			"noResults": "No matching streets. You can enter your address manually."
 		},
@@ -769,7 +980,7 @@
 			"increase": "Increase {label}"
 		},
 		"NativeSelect": {
-			"select": "Select…"
+			"select": "Select..."
 		},
 		"NativeSheet": {
 			"close": "Close"
@@ -834,6 +1045,7 @@
 			"switchToTravelling": "Switch to travelling"
 		},
 		"GuestSidebar": {
+			"reviews": "My reviews",
 			"travelling": "Travelling",
 			"navigationLabel": "Travelling navigation",
 			"openNavigation": "Open travelling navigation",
@@ -890,8 +1102,18 @@
 		"invalidUpload": "The selected file is invalid.",
 		"invalidAccommodation": "Some listing details are missing or invalid. Review each section and check your available dates.",
 		"invalidBooking": "Some booking details are missing or invalid. Check your dates, guests and contact details.",
+		"invalidBookingRecoveryRequest": "Enter a valid email address used for your booking.",
+		"invalidBookingRecoveryToken": "This booking link is invalid or has expired. Request a new link.",
+		"bookingEmailUnverified": "Verify your account email address before adding this booking.",
+		"bookingEmailMismatch": "Sign in with an account whose verified email matches the booking email address.",
+		"bookingAlreadyClaimed": "This booking already belongs to another account.",
 		"bookingNotFound": "That booking no longer exists.",
 		"invalidBookingStatus": "That status change is not allowed for this booking.",
+		"bookingNotFinished": "A stay can only be completed on or after its checkout date. Confirm that the guest actually stayed and departed.",
+		"invalidReview": "Check the rating, review text and any moderation reason, then try again.",
+		"reviewAlreadyExists": "You have already reviewed this booking. You can review another completed stay.",
+		"reviewNotEligible": "This booking is not eligible for a review. Reviews require a completed stay and must be submitted within 90 days after checkout.",
+		"reviewNotFound": "That review could not be found.",
 		"accommodationNotFound": "This accommodation is no longer available. Return to search and choose another stay.",
 		"invalidFeedback": "Some feedback details are missing or invalid. Review the form and try again.",
 		"feedbackNotFound": "That feedback no longer exists.",
@@ -960,8 +1182,8 @@
 			"mapTitle": "Pin your accommodation",
 			"mapHint": "Drag the pin or click the map to correct its position.",
 			"mapWaiting": "Enter a street, city and country to find the location on the map.",
-			"mapLoading": "Loading the map…",
-			"mapSearching": "Finding this address on the map…",
+			"mapLoading": "Loading the map...",
+			"mapSearching": "Finding this address on the map...",
 			"mapNoResult": "We couldn't locate this address. Click the map to place the pin.",
 			"mapUnavailable": "The map is unavailable. Check your Google Maps settings.",
 			"mapPinTitle": "Accommodation location. Drag to adjust.",
@@ -1102,11 +1324,11 @@
 		"MyAccommodationTabListingSection": {
 			"property": "Property",
 			"booking": "Booking details",
-			"basicsSummary": "{type} · {guests} guests · {bedrooms} bedrooms · {beds} beds",
+			"basicsSummary": "{type} - {guests} guests - {bedrooms} bedrooms - {beds} beds",
 			"amenitiesSummary": "{count} amenities selected",
 			"photosSummary": "{count} photos",
-			"pricingSummary": "{price} / night · {nights}-night minimum",
-			"rulesSummary": "Check-in {start}–{end} · Check-out {checkout}"
+			"pricingSummary": "{price} / night - {nights}-night minimum",
+			"rulesSummary": "Check-in {start}-{end} - Check-out {checkout}"
 		},
 		"MyAccommodationTabListingEditor": {
 			"back": "Back to listing",
@@ -1144,8 +1366,8 @@
 			"imported": "Synced booking",
 			"blocked": "Blocked",
 			"selected": "Selected dates",
-			"exampleRange": "26–28 October",
-			"rangeHint": "3 nights · Sample date selection",
+			"exampleRange": "26-28 October",
+			"rangeHint": "3 nights - Sample date selection",
 			"availability": "Availability",
 			"reason": "Block reason",
 			"maintenance": "Maintenance",
@@ -1158,7 +1380,7 @@
 			"rules": "Availability rules",
 			"rulesHint": "Defaults for future bookings. These are sample settings.",
 			"stayLength": "Length of stay",
-			"stayValue": "2–30 nights",
+			"stayValue": "2-30 nights",
 			"advanceNotice": "Advance notice",
 			"noticeValue": "At least 1 day",
 			"preparation": "Preparation time",
@@ -1193,7 +1415,7 @@
 			"viewInvoices": "View invoices",
 			"calendar": "Calendar connections",
 			"calendarHint": "Keep availability aligned with your listings on other platforms.",
-			"syncedExample": "Synced · example",
+			"syncedExample": "Synced - example",
 			"lastSync": "Example sync: 27 Sep 2026, 10:30",
 			"refresh": "Sync now",
 			"notConnected": "Not connected",
@@ -1220,7 +1442,7 @@
 		"emptyDescription": "Bookings you make will appear here.",
 		"findAccommodation": "Find accommodation",
 		"MyBookingsHeader": {
-			"bookingsFound": "Saved bookings: {count} · Newest requests first",
+			"bookingsFound": "Saved bookings: {count} - Newest requests first",
 			"filteredLabel": "Search results",
 			"description": "See where you're staying, when you're going and whether your booking is confirmed."
 		},
@@ -1258,6 +1480,11 @@
 		}
 	},
 	"HostBookingsPage": {
+		"HostBookingsCompleteButton": {
+			"title": "Confirm the stay is finished",
+			"description": "Complete this booking only if the guest checked in, stayed and has now checked out. This enables the guest to leave a review. Cancelled bookings and no-shows must not be completed.",
+			"cancel": "Keep booking confirmed"
+		},
 		"pageTitle": "Bookings",
 		"searchPlaceholder": "Search by guest last name or email...",
 		"noMatchingBookings": "No matching bookings",

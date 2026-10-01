@@ -31,5 +31,7 @@
 	onclick={onSelect}
 >
 	<span class="font-medium">{label}</span>
-	{#if secondaryText}<span class="text-xs text-muted-foreground">{secondaryText}</span>{/if}
+	{#if secondaryText}
+		<span class="text-xs text-muted-foreground">{secondaryText}</span>
+	{/if}
 </button>

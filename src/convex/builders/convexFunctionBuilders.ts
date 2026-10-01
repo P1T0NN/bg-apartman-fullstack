@@ -2,6 +2,7 @@
 import {
 	customAction,
 	customCtx,
+	customCtxAndArgs,
 	customMutation,
 	customQuery
 } from 'convex-helpers/server/customFunctions';
@@ -38,51 +39,75 @@ import type { Doc } from '../_generated/dataModel.js';
 import type { RateLimitedFunctionOptions } from '../rateLimits/types/rateLimitTypes.js';
 import type { BackendErrorData } from '../../shared/types/types.js';
 
-const publicMutationContext = customCtx(
-	async (ctx: MutationCtx, options: RateLimitedFunctionOptions) => {
-		const rateLimitOk = await enforceRateLimit(ctx, options.rateLimit);
-		return { rateLimitOk };
+/** Transport arg Form sends so anonymous limits can key on the browser guest id. */
+const guestIdArgs = { guestId: v.optional(v.string()) };
+
+const publicMutationContext = customCtxAndArgs({
+	args: guestIdArgs,
+	input: async (
+		ctx: MutationCtx,
+		args: { guestId?: string },
+		options: RateLimitedFunctionOptions
+	) => {
+		const rateLimitOk = await enforceRateLimit(ctx, options.rateLimit, undefined, args.guestId);
+		return { ctx: { rateLimitOk }, args: {} };
 	}
-);
+});
 
-const publicActionContext = customCtx(
-	async (ctx: ActionCtx, options: RateLimitedFunctionOptions) => {
-		const rateLimitOk = await enforceRateLimit(ctx, options.rateLimit);
-		return { rateLimitOk };
+const publicActionContext = customCtxAndArgs({
+	args: guestIdArgs,
+	input: async (
+		ctx: ActionCtx,
+		args: { guestId?: string },
+		options: RateLimitedFunctionOptions
+	) => {
+		const rateLimitOk = await enforceRateLimit(ctx, options.rateLimit, undefined, args.guestId);
+		return { ctx: { rateLimitOk }, args: {} };
 	}
-);
+});
 
-const getAuthenticatedMutationContext = async (
-	ctx: MutationCtx,
-	options: RateLimitedFunctionOptions
-) => {
-	const identity = await requireIdentity(ctx);
-	await enforceRateLimit(ctx, options.rateLimit, identity);
-	return { identity };
-};
-
-const authenticatedMutationContext = customCtx(getAuthenticatedMutationContext);
-
-const authenticatedActionContext = customCtx(
-	async (ctx: ActionCtx, options: RateLimitedFunctionOptions) => {
+const authenticatedMutationContext = customCtxAndArgs({
+	args: guestIdArgs,
+	input: async (
+		ctx: MutationCtx,
+		_args: { guestId?: string },
+		options: RateLimitedFunctionOptions
+	) => {
 		const identity = await requireIdentity(ctx);
 		await enforceRateLimit(ctx, options.rateLimit, identity);
-
-		return { identity };
+		return { ctx: { identity }, args: {} };
 	}
-);
+});
+
+const authenticatedActionContext = customCtxAndArgs({
+	args: guestIdArgs,
+	input: async (
+		ctx: ActionCtx,
+		_args: { guestId?: string },
+		options: RateLimitedFunctionOptions
+	) => {
+		const identity = await requireIdentity(ctx);
+		await enforceRateLimit(ctx, options.rateLimit, identity);
+		return { ctx: { identity }, args: {} };
+	}
+});
 
 const authenticatedQueryContext = customCtx(async (ctx: QueryCtx) => ({
 	identity: await requireIdentity(ctx)
 }));
 
-const adminMutationContext = customCtx(
-	async (ctx: MutationCtx, options: RateLimitedFunctionOptions) => {
+const adminMutationContext = customCtxAndArgs({
+	args: guestIdArgs,
+	input: async (
+		ctx: MutationCtx,
+		_args: { guestId?: string },
+		options: RateLimitedFunctionOptions
+	) => {
 		const identity = await requireAdminIdentity(ctx);
 		await enforceRateLimit(ctx, options.rateLimit, identity);
-		return { identity };
+		return { ctx: { identity }, args: {} };
 	}
-);
+});
 
 const adminQueryContext = customCtx(async (ctx: QueryCtx) => ({
 	identity: await requireAdminIdentity(ctx)
@@ -94,11 +119,12 @@ export const authenticatedMutation = customMutation(rawMutation, authenticatedMu
 const authenticatedUploadContext = (rateLimited: boolean) => ({
 	args: {
 		uploadedFiles: v.optional(v.array(v.string())),
-		retainedFiles: v.optional(v.array(v.string()))
+		retainedFiles: v.optional(v.array(v.string())),
+		guestId: v.optional(v.string())
 	},
 	input: async (
 		ctx: MutationCtx,
-		args: { uploadedFiles?: string[]; retainedFiles?: string[] },
+		args: { uploadedFiles?: string[]; retainedFiles?: string[]; guestId?: string },
 		options: RateLimitedFunctionOptions
 	) => {
 		const identity = await requireIdentity(ctx);
@@ -138,7 +164,7 @@ const authenticatedUploadContext = (rateLimited: boolean) => ({
 				retainedFiles: args.retainedFiles ?? null
 			},
 			onSuccess: async () => {
-				for (const upload of uploads) await ctx.db.delete(upload._id);
+				for (const upload of uploads) await ctx.db.delete('storageUploads', upload._id);
 			}
 		};
 	}

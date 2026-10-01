@@ -7,6 +7,31 @@ import { bookings } from '../schema.js';
 
 const bookingDoc = docValidator('bookings', bookings);
 
+/** Guest-facing details returned only after verifying recovery access. */
+export const recoveredBooking = bookingDoc
+	.pick(
+		'_id',
+		'accommodationId',
+		'status',
+		'firstName',
+		'lastName',
+		'email',
+		'phone',
+		'specialRequests',
+		'checkInDate',
+		'checkOutDate',
+		'adults',
+		'children'
+	)
+	.extend({ accommodationName: v.string(), isClaimable: v.boolean() });
+
+export const recoveredBookingPage = v.object({
+	items: v.array(recoveredBooking),
+	nextCursor: v.union(v.string(), v.null()),
+	hasNextPage: v.boolean(),
+	pageSize: v.number()
+});
+
 export const bookingItem = bookingDoc.extend({
 	accommodation: v.union(
 		v.object({

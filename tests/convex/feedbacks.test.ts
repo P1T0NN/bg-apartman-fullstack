@@ -117,3 +117,27 @@ test('feedback captures guest and signed-in submitters and stays filterable', as
 	});
 	expect(scopedSearch.items.map((item) => item.title)).toEqual(['How do I change my email?']);
 });
+
+test('signed-in callers are keyed by identity on a public mutation, not by guest id', async () => {
+	const t = setup();
+	const guestId = 'shared-browser';
+	const feedbackArgs = () => ({
+		type: 'bug' as const,
+		category: 'other' as const,
+		title: 'Broken page',
+		message: 'The page fails to load every time I open it.',
+		guestId
+	});
+
+	// Exhaust the anonymous bucket for this browser (capacity 10).
+	for (let i = 0; i < 10; i++) {
+		await t.mutation(createFeedback, feedbackArgs());
+	}
+	await expect(t.mutation(createFeedback, feedbackArgs())).rejects.toMatchObject({
+		data: { kind: 'RateLimited' }
+	});
+
+	// The same browser signed in uses its identity bucket, so it is not throttled.
+	const member = t.withIdentity({ subject: 'user-1', tokenIdentifier: 'issuer|user-1' });
+	await expect(member.mutation(createFeedback, feedbackArgs())).resolves.toBeNull();
+});

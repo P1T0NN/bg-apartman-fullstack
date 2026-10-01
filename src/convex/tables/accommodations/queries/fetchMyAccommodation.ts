@@ -19,7 +19,7 @@ export const fetchMyAccommodation = authenticatedQuery({
 		v.null()
 	),
 	handler: async (ctx, { id }) => {
-		const accommodation = await ctx.db.get(id);
+		const accommodation = await ctx.db.get('accommodations', id);
 		if (!accommodation || accommodation.ownerId !== getOwnerId(ctx.identity)) return null;
 
 		return {

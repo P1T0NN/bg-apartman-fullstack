@@ -20,7 +20,7 @@ export const cleanupDeletedUserData = internalMutation({
 			.take(CLEANUP_BATCH_SIZE);
 		for (const upload of uploads) {
 			await r2.deleteObject(ctx, upload.key);
-			await ctx.db.delete(upload._id);
+			await ctx.db.delete('storageUploads', upload._id);
 		}
 		if (uploads.length === CLEANUP_BATCH_SIZE) {
 			await ctx.scheduler.runAfter(

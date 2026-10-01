@@ -6,6 +6,9 @@ import { literals } from 'convex-helpers/validators';
 // SCHEMAS
 import { accommodations } from '../schema.js';
 
+// VALIDATORS
+import { reviewSummary } from '../../reviews/validators/reviewValidators.js';
+
 // DATA
 import { AMENITY_KEYS } from '../../../../shared/features/accommodations/data/accommodationsData.js';
 import { ACCOMMODATION_TYPES } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
@@ -85,6 +88,7 @@ export const updateAccommodationValidator = accommodations.validator
 	});
 
 export const accommodationSearchPage = accommodationPage.extend({
+	items: v.array(accommodationListItem.extend({ reviews: reviewSummary })),
 	/** Ids from this page that the signed-in viewer has saved; empty when signed out. */
 	favoriteIds: v.array(v.id('accommodations'))
 });

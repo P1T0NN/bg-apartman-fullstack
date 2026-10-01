@@ -1,6 +1,3 @@
-// LIBRARIES
-import { z } from 'zod';
-
 // CONFIG
 import { GUESTS_CONFIG } from '@/shared/features/guests/config.js';
 
@@ -8,16 +5,7 @@ import { GUESTS_CONFIG } from '@/shared/features/guests/config.js';
 import { useLocalStorage } from '@/hooks/useLocalStorage.svelte.js';
 
 // UTILS
-import { isUuid } from '@/shared/utils/isUuid.js';
-
-const storedGuestIdSchema = z.string().refine(isUuid);
-
-function parseStoredGuestId(raw: string | null): string | undefined {
-	if (raw === null) return undefined;
-
-	const parsed = storedGuestIdSchema.safeParse(JSON.parse(raw));
-	return parsed.success ? parsed.data : undefined;
-}
+import { parseStoredUuid } from '@/shared/utils/parseStoredUuid.js';
 
 /**
  * Browser continuity for guest checkout. Owns the untrusted localStorage
@@ -34,7 +22,7 @@ export function useGuestLocal() {
 	const stored = useLocalStorage<string | undefined>(
 		GUESTS_CONFIG.STORAGE_KEY,
 		undefined,
-		parseStoredGuestId
+		parseStoredUuid
 	);
 	let sessionGuestId = $state<string | undefined>(undefined);
 

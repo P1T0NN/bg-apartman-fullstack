@@ -42,13 +42,13 @@
 </script>
 
 <NativeDialog aria-labelledby={`resolve-feedback-${feedbackId}`}>
-	{#snippet trigger({ open })}
-		<Button variant="outline" size="sm" onclick={open}>
+	{#snippet trigger({ id })}
+		<Button variant="outline" size="sm" commandfor={id} command="show-modal">
 			{m['AdminFeedbackPage.ResolveFeedbackDialog.resolve']()}
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id, close })}
 		<form
 			class="flex flex-col gap-5 p-6"
 			onsubmit={(event) => {
@@ -66,11 +66,20 @@
 			</div>
 
 			<div class="flex justify-end gap-2">
-				<Button type="button" variant="outline" size="sm" disabled={pending} onclick={close}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={pending}
+					commandfor={id}
+					command="close"
+				>
 					{m['AdminFeedbackPage.ResolveFeedbackDialog.cancel']()}
 				</Button>
 				<Button type="submit" size="sm" disabled={pending}>
-					{#if pending}<Spinner data-icon="inline-start" />{/if}
+					{#if pending}
+						<Spinner data-icon="inline-start" />
+					{/if}
 					{m['AdminFeedbackPage.ResolveFeedbackDialog.resolve']()}
 				</Button>
 			</div>

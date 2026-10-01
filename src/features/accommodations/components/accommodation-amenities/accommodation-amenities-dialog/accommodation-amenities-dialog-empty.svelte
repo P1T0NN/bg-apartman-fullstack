@@ -16,17 +16,17 @@
 
 <Empty.Root>
 	<Empty.Header>
-		<Empty.Media variant="icon"
-			><span class="icon-[lucide--search]" aria-hidden="true"></span></Empty.Media
-		>
-		<Empty.Title
-			>{query
+		<Empty.Media variant="icon">
+			<span class="icon-[lucide--search]" aria-hidden="true"></span>
+		</Empty.Media>
+		<Empty.Title>
+			{query
 				? m['AccommodationsFeature.AccommodationAmenitiesDialogEmpty.noMatches']()
-				: m['AccommodationsFeature.AccommodationAmenitiesDialogEmpty.noneSelected']()}</Empty.Title
-		>
-		<Empty.Description
-			>{m['AccommodationsFeature.AccommodationAmenitiesDialogEmpty.emptyHint']()}</Empty.Description
-		>
+				: m['AccommodationsFeature.AccommodationAmenitiesDialogEmpty.noneSelected']()}
+		</Empty.Title>
+		<Empty.Description>
+			{m['AccommodationsFeature.AccommodationAmenitiesDialogEmpty.emptyHint']()}
+		</Empty.Description>
 	</Empty.Header>
 	<Empty.Content>
 		<Button type="button" variant="outline" onclick={dialog.resetFilters}>

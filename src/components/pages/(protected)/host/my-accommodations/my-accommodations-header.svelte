@@ -1,7 +1,7 @@
 <script lang="ts">
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages';
-	
+
 	// COMPONENTS
 	import Spinner from '@/components/ui/spinner/spinner.svelte';
 

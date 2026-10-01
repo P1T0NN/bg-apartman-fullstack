@@ -58,15 +58,21 @@
 </script>
 
 <NativeDialog aria-labelledby={dialogId}>
-	{#snippet trigger({ open })}
-		<Button variant="outline" size="sm" disabled={disabled || pending} onclick={open}>
+	{#snippet trigger({ id })}
+		<Button
+			variant="outline"
+			size="sm"
+			disabled={disabled || pending}
+			commandfor={id}
+			command="show-modal"
+		>
 			{isDecline
 				? m['HostBookingsPage.HostBookingsCancelButton.decline']()
 				: m['HostBookingsPage.HostBookingsCancelButton.cancel']()}
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id, close })}
 		<div class="flex min-w-0 flex-col gap-5 p-4 sm:p-6">
 			<div class="flex flex-col gap-1.5">
 				<h2 id={dialogId} class="text-lg font-semibold break-words">
@@ -82,7 +88,7 @@
 			</div>
 
 			<div class="flex flex-wrap justify-end gap-2">
-				<Button variant="outline" size="sm" disabled={pending} onclick={close}>
+				<Button variant="outline" size="sm" disabled={pending} commandfor={id} command="close">
 					{m['HostBookingsPage.HostBookingsCancelButton.keep']()}
 				</Button>
 				<Button
@@ -91,7 +97,9 @@
 					disabled={pending}
 					onclick={() => void update(close)}
 				>
-					{#if pending}<Spinner data-icon="inline-start" />{/if}
+					{#if pending}
+						<Spinner data-icon="inline-start" />
+					{/if}
 					{isDecline
 						? m['HostBookingsPage.HostBookingsCancelButton.decline']()
 						: m['HostBookingsPage.HostBookingsCancelButton.cancel']()}

@@ -25,9 +25,9 @@
 				<h3 class="font-medium">
 					{m['MyAccommodationPage.MyAccommodationTabSettings.billingOverview']()}
 				</h3>
-				<Badge variant="outline"
-					>{m['MyAccommodationPage.MyAccommodationTabSettings.notConfigured']()}</Badge
-				>
+				<Badge variant="outline">
+					{m['MyAccommodationPage.MyAccommodationTabSettings.notConfigured']()}
+				</Badge>
 			</div>
 			<dl class="grid gap-x-6 gap-y-5 p-5 sm:grid-cols-2">
 				<div>
@@ -73,10 +73,10 @@
 				<p class="text-sm text-muted-foreground">
 					{m['MyAccommodationPage.MyAccommodationTabSettings.invoicesEmpty']()}
 				</p>
-				<Button variant="outline" size="sm" disabled
-					><span class="icon-[lucide--receipt]" data-icon="inline-start" aria-hidden="true"
-					></span>{m['MyAccommodationPage.MyAccommodationTabSettings.viewInvoices']()}</Button
-				>
+				<Button variant="outline" size="sm" disabled>
+					<span class="icon-[lucide--receipt]" data-icon="inline-start" aria-hidden="true"></span>
+					{m['MyAccommodationPage.MyAccommodationTabSettings.viewInvoices']()}
+				</Button>
 			</div>
 		</div>
 	</section>
@@ -95,43 +95,47 @@
 		<div class="flex flex-col gap-4">
 			<div class="divide-y overflow-hidden rounded-xl border">
 				<div class="flex flex-wrap items-center gap-4 p-5">
-					<span class="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted"
-						><span class="icon-[lucide--calendar-check-2] size-5" aria-hidden="true"></span></span
-					>
+					<span class="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted">
+						<span class="icon-[lucide--calendar-check-2] size-5" aria-hidden="true"></span>
+					</span>
 					<div class="flex min-w-0 flex-1 flex-col gap-1">
 						<div class="flex flex-wrap items-center gap-2">
 							<h3 class="font-medium">Airbnb</h3>
-							<Badge variant="secondary"
-								>{m['MyAccommodationPage.MyAccommodationTabSettings.syncedExample']()}</Badge
-							>
+							<Badge variant="secondary">
+								{m['MyAccommodationPage.MyAccommodationTabSettings.syncedExample']()}
+							</Badge>
 						</div>
 						<p class="text-sm text-muted-foreground">
 							{m['MyAccommodationPage.MyAccommodationTabSettings.lastSync']()}
 						</p>
 					</div>
-					<Button variant="outline" size="sm" disabled
-						><span class="icon-[lucide--refresh-cw]" data-icon="inline-start" aria-hidden="true"
-						></span>{m['MyAccommodationPage.MyAccommodationTabSettings.refresh']()}</Button
-					>
+					<Button variant="outline" size="sm" disabled>
+						<span
+							class="icon-[lucide--refresh-cw]"
+							data-icon="inline-start"
+							aria-hidden="true"
+						></span>
+						{m['MyAccommodationPage.MyAccommodationTabSettings.refresh']()}
+					</Button>
 				</div>
 				<div class="flex flex-wrap items-center gap-4 p-5">
-					<span class="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted"
-						><span class="icon-[lucide--calendar-plus-2] size-5" aria-hidden="true"></span></span
-					>
+					<span class="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted">
+						<span class="icon-[lucide--calendar-plus-2] size-5" aria-hidden="true"></span>
+					</span>
 					<div class="flex min-w-0 flex-1 flex-col gap-1">
 						<div class="flex flex-wrap items-center gap-2">
 							<h3 class="font-medium">Booking.com</h3>
-							<Badge variant="outline"
-								>{m['MyAccommodationPage.MyAccommodationTabSettings.notConnected']()}</Badge
-							>
+							<Badge variant="outline">
+								{m['MyAccommodationPage.MyAccommodationTabSettings.notConnected']()}
+							</Badge>
 						</div>
 						<p class="text-sm text-muted-foreground">
 							{m['MyAccommodationPage.MyAccommodationTabSettings.connectHint']()}
 						</p>
 					</div>
-					<Button variant="outline" size="sm" disabled
-						>{m['MyAccommodationPage.MyAccommodationTabSettings.connect']()}</Button
-					>
+					<Button variant="outline" size="sm" disabled>
+						{m['MyAccommodationPage.MyAccommodationTabSettings.connect']()}
+					</Button>
 				</div>
 				<div class="flex flex-wrap items-center justify-between gap-4 bg-muted/20 p-5">
 					<div>
@@ -142,10 +146,10 @@
 							{m['MyAccommodationPage.MyAccommodationTabSettings.exportHint']()}
 						</p>
 					</div>
-					<Button variant="outline" size="sm" disabled
-						><span class="icon-[lucide--link]" data-icon="inline-start" aria-hidden="true"
-						></span>{m['MyAccommodationPage.MyAccommodationTabSettings.copyLink']()}</Button
-					>
+					<Button variant="outline" size="sm" disabled>
+						<span class="icon-[lucide--link]" data-icon="inline-start" aria-hidden="true"></span>
+						{m['MyAccommodationPage.MyAccommodationTabSettings.copyLink']()}
+					</Button>
 				</div>
 			</div>
 			<p class="max-w-prose text-xs leading-relaxed text-muted-foreground">
@@ -177,9 +181,9 @@
 						{m['MyAccommodationPage.MyAccommodationTabSettings.unpublishHint']()}
 					</p>
 				</div>
-				<Button variant="outline" disabled
-					>{m['MyAccommodationPage.MyAccommodationTabSettings.unpublish']()}</Button
-				>
+				<Button variant="outline" disabled>
+					{m['MyAccommodationPage.MyAccommodationTabSettings.unpublish']()}
+				</Button>
 			</div>
 			<div class="flex flex-wrap items-center justify-between gap-4 p-5">
 				<div class="max-w-sm">
@@ -190,9 +194,9 @@
 						{m['MyAccommodationPage.MyAccommodationTabSettings.deleteHint']()}
 					</p>
 				</div>
-				<Button variant="destructive" disabled
-					>{m['MyAccommodationPage.MyAccommodationTabSettings.delete']()}</Button
-				>
+				<Button variant="destructive" disabled>
+					{m['MyAccommodationPage.MyAccommodationTabSettings.delete']()}
+				</Button>
 			</div>
 		</div>
 	</section>

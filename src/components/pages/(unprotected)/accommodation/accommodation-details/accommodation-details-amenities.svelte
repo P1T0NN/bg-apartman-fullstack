@@ -23,25 +23,24 @@
 
 	{#if amenities.length}
 		<ul class="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-			{#each amenities.slice(0, 6) as amenity (amenity.key)}<AccommodationDetailsAmenityItem
-					label={amenity.label}
-					icon={amenity.icon}
-				/>{/each}
+			{#each amenities.slice(0, 6) as amenity (amenity.key)}
+				<AccommodationDetailsAmenityItem label={amenity.label} icon={amenity.icon} />
+			{/each}
 		</ul>
 
 		{#if amenities.length > 6}
 			<details class="mt-4">
 				<summary
 					class="w-fit cursor-pointer rounded-lg border px-4 py-3 text-sm font-medium hover:bg-accent"
-					>{m['AccommodationPage.AccommodationDetailsAmenities.moreAmenities']({
-						count: amenities.length - 6
-					})}</summary
 				>
+					{m['AccommodationPage.AccommodationDetailsAmenities.moreAmenities']({
+						count: amenities.length - 6
+					})}
+				</summary>
 				<ul class="mt-4 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-					{#each amenities.slice(6) as amenity (amenity.key)}<AccommodationDetailsAmenityItem
-							label={amenity.label}
-							icon={amenity.icon}
-						/>{/each}
+					{#each amenities.slice(6) as amenity (amenity.key)}
+						<AccommodationDetailsAmenityItem label={amenity.label} icon={amenity.icon} />
+					{/each}
 				</ul>
 			</details>
 		{/if}

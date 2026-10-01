@@ -7,9 +7,16 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { buildAccommodationSearchQuery } from '../helpers/buildAccommodationSearchQuery.js';
 import { resolveImageUrls } from '../utils/resolveImageUrls.js';
 import { getFavoriteIds } from '../../favorites/helpers/getFavoriteIds.js';
+import { getAccommodationReviewSummaries } from '../../reviews/helpers/getAccommodationReviewSummaries.js';
+
+// DATA
+import { EMPTY_REVIEW_SUMMARY } from '../../../../shared/features/reviews/data/reviewsData.js';
 
 // CONFIG
 import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
+
+// UTILS
+import { setEmptyPagination } from '../../../../shared/features/pagination/utils/setEmptyPagination.js';
 
 // VALIDATORS
 import { listPageArgs } from '../../../validators/listPageArgs.js';
@@ -31,13 +38,7 @@ export const fetchAccommodationsSearch = query({
 		const accommodationsQuery = buildAccommodationSearchQuery(ctx, { ...args, bounds });
 
 		if (!accommodationsQuery) {
-			return {
-				items: [],
-				nextCursor: null,
-				hasNextPage: false,
-				pageSize: paginationOpts.numItems,
-				favoriteIds: []
-			};
+			return { ...setEmptyPagination(paginationOpts.numItems), favoriteIds: [] };
 		}
 
 		const page = await getPagination(accommodationsQuery, {
@@ -50,15 +51,29 @@ export const fetchAccommodationsSearch = query({
 			}
 		});
 
+		const items = await resolveImageUrls(page.items);
 		const identity = await ctx.auth.getUserIdentity();
-		const favoriteIds = identity
-			? await getFavoriteIds(
-					ctx,
-					getOwnerId(identity),
-					page.items.map((item) => item._id)
-				)
-			: [];
+		const [summaries, favoriteIds] = await Promise.all([
+			getAccommodationReviewSummaries(
+				ctx,
+				items.map((item) => item._id)
+			),
+			identity
+				? getFavoriteIds(
+						ctx,
+						getOwnerId(identity),
+						items.map((item) => item._id)
+					)
+				: []
+		]);
 
-		return { ...page, items: await resolveImageUrls(page.items), favoriteIds };
+		return {
+			...page,
+			items: items.map((item, index) => ({
+				...item,
+				reviews: summaries[index] ?? EMPTY_REVIEW_SUMMARY
+			})),
+			favoriteIds
+		};
 	}
 });

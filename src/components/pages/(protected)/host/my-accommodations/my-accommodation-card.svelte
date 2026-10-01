@@ -31,7 +31,9 @@
 			/>
 		{:else}
 			<div class="flex size-full items-center justify-center">
-				<span class="icon-[lucide--image-off] size-6 text-muted-foreground" aria-hidden="true"
+				<span
+					class="icon-[lucide--image-off] size-6 text-muted-foreground"
+					aria-hidden="true"
 				></span>
 			</div>
 		{/if}

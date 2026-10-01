@@ -75,10 +75,16 @@
 <NativeDialog
 	aria-labelledby={titleId}
 	class="h-dvh max-h-dvh max-w-none overflow-hidden rounded-none border-0 md:h-[85dvh] md:max-h-[85dvh] md:w-[calc(100%-3rem)] md:max-w-225 md:rounded-2xl md:border"
+	onbeforetoggle={(event) => {
+		if (event.newState === 'open') dialog.resetDraft();
+	}}
 >
-	{#snippet trigger({ open })}
-		<Button type="button" variant="outline" {disabled} onclick={() => dialog.open(open)}>
-			<span class="icon-[lucide--sliders-horizontal]" aria-hidden="true" data-icon="inline-start"
+	{#snippet trigger({ id })}
+		<Button type="button" variant="outline" {disabled} commandfor={id} command="show-modal">
+			<span
+				class="icon-[lucide--sliders-horizontal]"
+				aria-hidden="true"
+				data-icon="inline-start"
 			></span>
 
 			{triggerLabel ??
@@ -88,9 +94,9 @@
 		</Button>
 	{/snippet}
 
-	{#snippet children({ close })}
+	{#snippet children({ id })}
 		<div class="flex h-full min-h-0 flex-col">
-			<AccommodationAmenitiesDialogHeader {dialog} {titleId} onClose={close} />
+			<AccommodationAmenitiesDialogHeader {dialog} {titleId} dialogId={id} />
 
 			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 md:px-8 md:py-6">
 				<p class="sr-only" role="status">
@@ -117,7 +123,7 @@
 				</div>
 			</div>
 
-			<AccommodationAmenitiesDialogFooter {dialog} {disabled} onClose={close} />
+			<AccommodationAmenitiesDialogFooter {dialog} {disabled} dialogId={id} />
 		</div>
 	{/snippet}
 </NativeDialog>

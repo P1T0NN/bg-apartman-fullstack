@@ -13,12 +13,12 @@
 <section aria-label={m['AccommodationPage.AccommodationGallery.photos']()}>
 	{#if images.length}
 		<NativeDialog aria-labelledby="accommodation-photos-title" class="max-w-3xl p-4 sm:p-6">
-			{#snippet trigger({ open })}
-				<AccommodationGalleryDialogTrigger {images} {name} {open} />
+			{#snippet trigger({ id })}
+				<AccommodationGalleryDialogTrigger {images} {name} dialogId={id} />
 			{/snippet}
 
-			{#snippet children({ close })}
-				<AccommodationGalleryDialog {images} {name} {close} />
+			{#snippet children({ id })}
+				<AccommodationGalleryDialog {images} {name} dialogId={id} />
 			{/snippet}
 		</NativeDialog>
 	{:else}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	// SVELTEKIT IMPORTS
 	import { page } from '$app/state';
+	import { getLocale } from '@/lib/paraglide/runtime.js';
 
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages';
@@ -12,8 +13,16 @@
 	import Link from '@/components/ui/custom-components/link/link.svelte';
 	import ShareValue from '@/components/ui/custom-components/share-value/share-value.svelte';
 
+	// UTILS
+	import { formatRatingAverage } from '@/shared/features/reviews/utils/formatRatingAverage.js';
+
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
+
+	// LUCIDE ICONS
+	// Lucide is imported directly instead of iconify because filled stars use `fill-current`,
+	// and iconify/tailwind icons render via a CSS mask that cannot be filled.
+	import Star from '@lucide/svelte/icons/star';
 
 	let { accommodation }: { accommodation: PublicAccommodation } = $props();
 </script>
@@ -44,6 +53,25 @@
 				<span class="icon-[lucide--map-pin] size-4 shrink-0" aria-hidden="true"></span>
 				{accommodation.address.city}, {accommodation.address.country}
 			</a>
+			{#if accommodation.reviews.count}
+				<a
+					href="#reviews"
+					class="mt-2 flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+				>
+					<Star class="size-4 fill-current" aria-hidden="true" />
+					{m['AccommodationPage.AccommodationHeader.reviewSummary']({
+						average: formatRatingAverage(accommodation.reviews.average ?? 0, getLocale()),
+						count: accommodation.reviews.count
+					})}
+				</a>
+			{:else}
+				<a
+					href="#reviews"
+					class="mt-2 flex min-h-11 w-fit items-center rounded-sm text-sm text-muted-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+				>
+					{m['ReviewsFeature.Reviews.noReviews']()}
+				</a>
+			{/if}
 		</div>
 
 		<ShareValue

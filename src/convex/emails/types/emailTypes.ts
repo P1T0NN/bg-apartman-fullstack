@@ -14,6 +14,12 @@ export type DeleteAccountEmailData = {
 	url: string;
 };
 
+export type BookingRecoveryEmailData = {
+	email: string;
+	url: string;
+	locale: string;
+};
+
 export type SendEmailOptions = {
 	to: EmailRecipient;
 	subject: string;

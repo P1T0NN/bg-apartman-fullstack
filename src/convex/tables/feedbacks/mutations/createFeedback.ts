@@ -23,7 +23,6 @@ import type { BackendErrorData } from '../../../../shared/types/types.js';
 export const createFeedback = mutation({
 	rateLimit: {
 		name: 'feedbacks:create',
-		scope: 'global',
 		config: { kind: 'token bucket', rate: 30, period: MINUTE, capacity: 10 }
 	},
 	args: {
@@ -56,7 +55,7 @@ export const createFeedback = mutation({
 					}
 				: submission
 		);
-		const feedback = await ctx.db.get(id);
+		const feedback = await ctx.db.get('feedbacks', id);
 		if (!feedback) throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 		await feedbackAggregate.insert(ctx, feedback);
 		return null;

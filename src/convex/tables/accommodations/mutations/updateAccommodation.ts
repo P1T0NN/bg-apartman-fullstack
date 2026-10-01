@@ -29,7 +29,7 @@ export const updateAccommodation = authenticatedUploadMutation({
 	args: updateAccommodationValidator.fields,
 	returns: v.null(),
 	handler: async (ctx, args) => {
-		const existing = await ctx.db.get(args.id);
+		const existing = await ctx.db.get('accommodations', args.id);
 		if (!existing || existing.ownerId !== getOwnerId(ctx.identity)) {
 			throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 		}
@@ -59,15 +59,15 @@ export const updateAccommodation = authenticatedUploadMutation({
 		if (!parsed.success) throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
 
 		const { nightlyPrice: validatedPrice, ...data } = parsed.data;
-		await ctx.db.patch(args.id, {
+		await ctx.db.patch('accommodations', args.id, {
 			...data,
 			pricePerNightMinor: Math.round(validatedPrice * 100),
 			updatedAt: Date.now()
 		});
 
-		const updated = await ctx.db.get(args.id);
+		const updated = await ctx.db.get('accommodations', args.id);
 		if (!updated) throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
-		
+
 		await accommodationOwnerAggregate.replace(ctx, existing, updated);
 
 		return null;

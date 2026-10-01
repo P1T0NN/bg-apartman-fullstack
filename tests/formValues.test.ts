@@ -122,7 +122,6 @@ describe('form submission values', () => {
 		expect(formValidationErrors(checkbox.error.issues).consent).toBeTruthy();
 	});
 
-
 	it('rejects unsafe paths and refuses to overwrite scalar or array parents', () => {
 		for (const name of [
 			'__proto__.polluted',

@@ -1,5 +1,6 @@
 // TYPES
 import type { Doc, Id } from '@convex/_generated/dataModel';
+import type { ReviewSummary } from '../../reviews/types/reviewTypes.js';
 import type {
 	FieldConfig,
 	FormSchema,
@@ -8,6 +9,7 @@ import type {
 
 export type PublicAccommodation = Omit<Doc<'accommodations'>, 'ownerId' | 'imageKeys'> & {
 	imageUrls: string[];
+	reviews: ReviewSummary;
 };
 
 /** Accommodation row returned by the list queries: only list fields, with resolved image urls. */
@@ -33,6 +35,8 @@ export type AccommodationListItem = Omit<
 > & {
 	address: { city: string; country: string };
 	imageUrls: string[];
+	/** Attached by the search query; owner and favorites list rows omit it. */
+	reviews?: ReviewSummary;
 };
 
 /** Lightweight location and price data used to cluster every map search result. */

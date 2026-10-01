@@ -12,11 +12,11 @@
 	let {
 		dialog,
 		titleId,
-		onClose
+		dialogId
 	}: {
 		dialog: AmenityDialog;
 		titleId: string;
-		onClose: () => void;
+		dialogId: string;
 	} = $props();
 </script>
 
@@ -29,7 +29,8 @@
 			type="button"
 			variant="ghost"
 			size="icon"
-			onclick={onClose}
+			commandfor={dialogId}
+			command="close"
 			aria-label={m['AccommodationsFeature.AccommodationAmenitiesDialogHeader.close']()}
 		>
 			<span class="icon-[lucide--x]" aria-hidden="true"></span>

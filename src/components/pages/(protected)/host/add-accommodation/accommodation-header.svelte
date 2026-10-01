@@ -32,7 +32,7 @@
 				total: sections.length
 			})}
 		</p>
-		
+
 		<p class="text-lg font-medium">{sections[form.state.step].label}</p>
 
 		<Progress

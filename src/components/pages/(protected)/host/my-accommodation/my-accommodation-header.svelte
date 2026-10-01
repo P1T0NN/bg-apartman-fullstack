@@ -29,11 +29,11 @@
 		<div class="flex flex-col gap-2">
 			<div class="flex flex-wrap items-center gap-3">
 				<h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">{accommodation.name}</h1>
-				<Badge variant="secondary"
-					>{m['MyAccommodationPage.MyAccommodationHeader.published']()}</Badge
-				>
+				<Badge variant="secondary">
+					{m['MyAccommodationPage.MyAccommodationHeader.published']()}
+				</Badge>
 			</div>
-			
+
 			<p class="flex items-center gap-1.5 text-sm text-muted-foreground">
 				<span class="icon-[lucide--map-pin] size-4" aria-hidden="true"></span>
 				{accommodation.address.city}, {accommodation.address.country}

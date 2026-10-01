@@ -87,9 +87,9 @@
 
 		<Field.Description class="flex items-center justify-between">
 			<span>{m['AuthFeature.SignInForm.rememberSession']()}</span>
-			<a href={UNPROTECTED_PAGE_ENDPOINTS.FORGOT_PASSWORD}
-				>{m['AuthFeature.SignInForm.forgotYourPassword']()}</a
-			>
+			<a href={UNPROTECTED_PAGE_ENDPOINTS.FORGOT_PASSWORD}>
+				{m['AuthFeature.SignInForm.forgotYourPassword']()}
+			</a>
 		</Field.Description>
 	</Field.Field>
 	{#snippet actionsFooter()}

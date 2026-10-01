@@ -74,11 +74,10 @@
 </script>
 
 <div class="flex w-full flex-col gap-6">
-	<Button class="w-fit" onclick={onclose}
-		><span class="icon-[lucide--arrow-left]" data-icon="inline-start" aria-hidden="true"></span>{m[
-			'MyAccommodationPage.MyAccommodationTabListingEditor.back'
-		]()}</Button
-	>
+	<Button class="w-fit" onclick={onclose}>
+		<span class="icon-[lucide--arrow-left]" data-icon="inline-start" aria-hidden="true"></span>
+		{m['MyAccommodationPage.MyAccommodationTabListingEditor.back']()}
+	</Button>
 
 	<div>
 		<h2
@@ -111,7 +110,9 @@
 		resetOnSuccess={false}
 	>
 		{#snippet customFields(context)}
-			{#if section.id === 'amenities'}<AccommodationAmenities {context} />{/if}
+			{#if section.id === 'amenities'}
+				<AccommodationAmenities {context} />
+			{/if}
 			{#if section.id === 'rules'}
 				<Field.Group>
 					{#each ruleToggles as rule (rule.name)}
@@ -174,9 +175,9 @@
 		<div
 			class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4"
 		>
-			<Button type="button" variant="outline" onclick={onclose}
-				>{m['MyAccommodationPage.MyAccommodationTabListingEditor.cancel']()}</Button
-			>
+			<Button type="button" variant="outline" onclick={onclose}>
+				{m['MyAccommodationPage.MyAccommodationTabListingEditor.cancel']()}
+			</Button>
 			<MyAccommodationTabListingSaveButton {submitting} />
 		</div>
 	</Form>

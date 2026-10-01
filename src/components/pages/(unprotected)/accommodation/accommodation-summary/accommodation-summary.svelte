@@ -23,22 +23,24 @@
 <aside id="stay-price" aria-labelledby="stay-price-title" class="scroll-mt-24">
 	<Card.Root class="rounded-2xl shadow-sm">
 		<Card.Header>
-			<Card.Title
-				><h2 id="stay-price-title">
+			<Card.Title>
+				<h2 id="stay-price-title">
 					{m['AccommodationPage.AccommodationSummary.title']()}
-				</h2></Card.Title
-			>
-			<Card.Description>{m['AccommodationPage.AccommodationSummary.listedRate']()}</Card.Description
-			>
+				</h2>
+			</Card.Title>
+			<Card.Description>
+				{m['AccommodationPage.AccommodationSummary.listedRate']()}
+			</Card.Description>
 		</Card.Header>
 
 		<Card.Content>
 			<p class="flex flex-wrap items-baseline gap-2">
-				<span class="text-3xl font-semibold tracking-tight tabular-nums"
-					><Price value={accommodation.pricePerNightMinor} /></span
-				><span class="text-sm text-muted-foreground"
-					>{m['AccommodationsFeature.AccommodationCard.night']()}</span
-				>
+				<span class="text-3xl font-semibold tracking-tight tabular-nums">
+					<Price value={accommodation.pricePerNightMinor} />
+				</span>
+				<span class="text-sm text-muted-foreground">
+					{m['AccommodationsFeature.AccommodationCard.night']()}
+				</span>
 			</p>
 
 			<dl class="mt-6 flex flex-col gap-4 border-t pt-5 text-sm">
@@ -58,7 +60,8 @@
 					</dd>
 				</div>
 
-				{#if accommodation.maximumStay}<div class="flex justify-between gap-4">
+				{#if accommodation.maximumStay}
+					<div class="flex justify-between gap-4">
 						<dt class="text-muted-foreground">
 							{m['AccommodationPage.AccommodationSummary.maximum']()}
 						</dt>
@@ -87,8 +90,10 @@
 		<Card.Footer class="flex-col items-stretch gap-3">
 			<Button
 				href={UNPROTECTED_PAGE_ENDPOINTS.BOOK_ACCOMMODATION(accommodation._id) + page.url.search}
-				class="min-h-11">{m['AccommodationPage.AccommodationSummary.planBooking']()}</Button
+				class="min-h-11"
 			>
+				{m['AccommodationPage.AccommodationSummary.planBooking']()}
+			</Button>
 			<p class="text-xs leading-5 text-muted-foreground">
 				{m['AccommodationPage.AccommodationSummary.priceHint']()}
 			</p>

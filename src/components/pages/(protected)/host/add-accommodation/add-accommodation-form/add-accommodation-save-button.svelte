@@ -14,6 +14,8 @@
 </script>
 
 <Button type="submit" disabled={disabled || form.state.submitting}>
-	{#if form.state.submitting}<Spinner />{/if}
+	{#if form.state.submitting}
+		<Spinner />
+	{/if}
 	{m['AddAccommodationPage.AddAccommodationSaveButton.save']()}
 </Button>

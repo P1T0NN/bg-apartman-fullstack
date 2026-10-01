@@ -71,16 +71,19 @@
 <NativeDialog
 	aria-labelledby={`${uid}-title`}
 	class="h-dvh max-h-dvh max-w-2xl rounded-none sm:h-auto sm:max-h-[90dvh] sm:rounded-2xl"
+	onbeforetoggle={(event) => {
+		if (event.newState === 'open') {
+			draft = structuredClone($state.snapshot(search.criteria));
+			invalid = false;
+		}
+	}}
 >
-	{#snippet trigger({ open })}
+	{#snippet trigger({ id })}
 		<Button
 			type="button"
 			variant={search.activeFilters.length ? 'secondary' : 'outline'}
-			onclick={() => {
-				draft = structuredClone($state.snapshot(search.criteria));
-				invalid = false;
-				open();
-			}}
+			commandfor={id}
+			command="show-modal"
 		>
 			<span class="icon-[lucide--sliders-horizontal]" aria-hidden="true"></span>
 			{m['SearchPage.SearchFilters.filters']()}{search.activeFilters.length
@@ -88,14 +91,14 @@
 				: ''}
 		</Button>
 	{/snippet}
-	{#snippet children({ close })}
+	{#snippet children({ id, close })}
 		<div class="sticky top-0 flex items-center justify-between border-b bg-popover p-5">
 			<h2 id={`${uid}-title`} class="text-xl font-semibold">
 				{m['SearchPage.SearchFilters.filters']()}
 			</h2>
-			<Button variant="ghost" type="button" onclick={close}
-				>{m['SearchPage.SearchFilters.close']()}</Button
-			>
+			<Button variant="ghost" type="button" commandfor={id} command="close">
+				{m['SearchPage.SearchFilters.close']()}
+			</Button>
 		</div>
 		<div class="flex flex-col gap-8 p-5 sm:p-8">
 			<fieldset id={`${uid}-price`} class="scroll-mt-24">
@@ -139,7 +142,8 @@
 				</Slider.Root>
 				<div class="grid grid-cols-2 gap-4">
 					<div class="flex flex-col gap-2">
-						<label class="text-sm" for={`${uid}-min`}>{search.labels.minPrice}</label><Input
+						<label class="text-sm" for={`${uid}-min`}>{search.labels.minPrice}</label>
+						<Input
 							id={`${uid}-min`}
 							bind:ref={minPriceInput}
 							type="number"
@@ -151,7 +155,8 @@
 						/>
 					</div>
 					<div class="flex flex-col gap-2">
-						<label class="text-sm" for={`${uid}-max`}>{search.labels.maxPrice}</label><Input
+						<label class="text-sm" for={`${uid}-max`}>{search.labels.maxPrice}</label>
+						<Input
 							id={`${uid}-max`}
 							bind:ref={maxPriceInput}
 							type="number"
@@ -170,8 +175,8 @@
 				</div>
 			</fieldset>
 			<div id={`${uid}-type`} class="flex scroll-mt-24 flex-col gap-3">
-				<label class="font-semibold" for={`${uid}-type-select`}>{search.labels.type}</label
-				><NativeSelect
+				<label class="font-semibold" for={`${uid}-type-select`}>{search.labels.type}</label>
+				<NativeSelect
 					id={`${uid}-type-select`}
 					options={ACCOMMODATION_FILTER_DEFS[0].options}
 					value={draft.type}
@@ -185,14 +190,18 @@
 				<fieldset id={`${uid}-${field}`} class="scroll-mt-24">
 					<legend class="mb-3 font-semibold">{search.labels[field]}</legend>
 					<div class="flex flex-wrap gap-2">
-						{#each [0, 1, 2, 3, 4, 5] as number (number)}<Button
+						{#each [0, 1, 2, 3, 4, 5] as number (number)}
+							<Button
 								type="button"
 								variant={draft[field] === number ? 'default' : 'outline'}
 								aria-pressed={draft[field] === number}
 								onclick={() => {
 									draft[field] = number;
-								}}>{number ? `${number}+` : m['SearchPage.SearchFilters.any']()}</Button
-							>{/each}
+								}}
+							>
+								{number ? `${number}+` : m['SearchPage.SearchFilters.any']()}
+							</Button>
+						{/each}
 					</div>
 				</fieldset>
 			{/each}
@@ -233,9 +242,11 @@
 					{/if}
 				</div>
 			</fieldset>
-			{#if invalid}<p role="alert" class="text-sm text-destructive">
+			{#if invalid}
+				<p role="alert" class="text-sm text-destructive">
 					{m['SearchPage.SearchFilters.invalid']()}
-				</p>{/if}
+				</p>
+			{/if}
 		</div>
 		<div class="sticky bottom-0 flex items-center justify-between gap-4 border-t bg-popover p-5">
 			<Button
@@ -243,10 +254,12 @@
 				variant="ghost"
 				onclick={() => {
 					draft = clearSearchFilters(draft);
-				}}>{m['SearchPage.SearchFilters.clear']()}</Button
-			><Button type="button" onclick={() => apply(close)}
-				>{m['SearchPage.SearchFilters.show']()}</Button
+				}}
 			>
+				{m['SearchPage.SearchFilters.clear']()}
+			</Button><Button type="button" onclick={() => apply(close)}>
+				{m['SearchPage.SearchFilters.show']()}
+			</Button>
 		</div>
 	{/snippet}
 </NativeDialog>

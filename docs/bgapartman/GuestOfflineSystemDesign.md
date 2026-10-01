@@ -404,7 +404,9 @@ count, price snapshot, statuses) — outside this document.
   `claimMethod`; add the indexes from §4.
 - Create through a public builder in
   `src/convex/builders/convexFunctionBuilders.ts` with Zod validation, CAPTCHA,
-  and rate limiting keyed on trusted request context, never on `guestId`.
+  and rate limiting keyed by the transport `guestId` for anonymous fairness,
+  always paired with the server-owned global backstop; the guest id never
+  authorizes.
 - Store `guestId` only as an untrusted hint; never read by it.
 - Make retried submissions idempotent (client submission key + server check) so
   one checkout cannot create two bookings.

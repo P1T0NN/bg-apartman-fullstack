@@ -11,6 +11,7 @@
 		cancelLabel,
 		confirmLabel,
 		onCancel,
+		cancelCommandFor,
 		onConfirm,
 		confirmType = 'button',
 		confirmDisabled = false,
@@ -20,7 +21,9 @@
 		pending?: boolean;
 		cancelLabel: string;
 		confirmLabel: string;
-		onCancel: () => void;
+		onCancel?: () => void;
+		/** NativeDialog ID for the Cancel button's native close command. */
+		cancelCommandFor?: string;
 		/** Omit for a `submit` confirm button inside a dialog form. */
 		onConfirm?: () => void | Promise<void>;
 		/** `submit` keeps the confirm button working inside a dialog form. */
@@ -32,7 +35,15 @@
 </script>
 
 <div class={cn('flex justify-end gap-2', className)}>
-	<Button type="button" variant="outline" size="sm" onclick={onCancel} disabled={pending}>
+	<Button
+		type="button"
+		variant="outline"
+		size="sm"
+		onclick={onCancel}
+		commandfor={cancelCommandFor}
+		command={cancelCommandFor ? 'close' : undefined}
+		disabled={pending}
+	>
 		{cancelLabel}
 	</Button>
 	<Button

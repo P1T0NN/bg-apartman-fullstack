@@ -15,10 +15,10 @@ export const fetchBookingConfirmation = query({
 	args: { id: v.id('bookings') },
 	returns: v.union(bookingConfirmation, v.null()),
 	handler: async (ctx, { id }) => {
-		const booking = await ctx.db.get(id);
+		const booking = await ctx.db.get('bookings', id);
 		if (!booking) return null;
 
-		const accommodation = await ctx.db.get(booking.accommodationId);
+		const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
 		if (!accommodation) return null;
 
 		return {

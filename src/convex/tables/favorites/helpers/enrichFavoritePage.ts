@@ -17,7 +17,7 @@ export async function withPublishedAccommodationImageUrls({
 	items: Favorite[];
 }): Promise<AccommodationListItem[]> {
 	const accommodations = await Promise.all(
-		items.map((favorite) => ctx.db.get(favorite.accommodationId))
+		items.map((favorite) => ctx.db.get('accommodations', favorite.accommodationId))
 	);
 
 	const published = accommodations.filter(

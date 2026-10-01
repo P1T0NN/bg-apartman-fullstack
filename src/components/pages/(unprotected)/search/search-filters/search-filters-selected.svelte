@@ -33,14 +33,16 @@
 					? search.criteria[key]
 							.map((value) => amenities.find((item) => item.key === value)?.label ?? value)
 							.join(', ')
-					: search.criteria[key]}<span class="icon-[lucide--x]" aria-hidden="true"></span>
+					: search.criteria[key]}
+				<span class="icon-[lucide--x]" aria-hidden="true"></span>
 			</Button>
 		{/each}
 		<Button
 			size="sm"
 			variant="ghost"
 			onclick={() => search.setCriteria(clearSearchFilters(search.criteria))}
-			>{m['SearchPage.SearchFiltersSelected.clear']()}</Button
 		>
+			{m['SearchPage.SearchFiltersSelected.clear']()}
+		</Button>
 	</div>
 {/if}
