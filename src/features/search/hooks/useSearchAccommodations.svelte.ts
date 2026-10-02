@@ -14,6 +14,7 @@ import { normalizePageSize } from '@/shared/features/pagination/utils/normalizeP
 import type { FunctionArgs, FunctionReturnType } from 'convex/server';
 import type { Attachment } from 'svelte/attachments';
 import type { Id } from '@convex/_generated/dataModel';
+import type { AccommodationSort } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 const searchQuery =
 	api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
@@ -38,10 +39,20 @@ type FailedRequest = { cursor: string | null; append: boolean };
  */
 export function useSearchAccommodations(
 	args: () => SearchArgs,
-	options: { pageSize?: number; isMapMoving?: () => boolean } = {}
+	options: {
+		pageSize?: number;
+		isMapMoving?: () => boolean;
+		sort?: () => AccommodationSort;
+	} = {}
 ) {
 	const pageSize = normalizePageSize(options.pageSize);
-	const key = $derived(JSON.stringify(args()));
+	const mapKey = $derived(JSON.stringify(args()));
+	const key = $derived(
+		JSON.stringify({
+			...args(),
+			sort: options.sort?.() ?? 'recommended'
+		})
+	);
 
 	let data = $state.raw<SearchItem[]>([]);
 	let mapData = $state.raw<MapSearchItem[]>([]);
@@ -66,6 +77,7 @@ export function useSearchAccommodations(
 		// SAFETY: The query validator requires paginationOpts, which Convex validates before the handler runs.
 		const requestArgs = {
 			...untrack(args),
+			sort: untrack(() => options.sort?.() ?? 'recommended'),
 			paginationOpts: { cursor, numItems: pageSize }
 		} as FunctionArgs<SearchQuery>;
 
@@ -151,7 +163,7 @@ export function useSearchAccommodations(
 				nextPageCursor = result.nextCursor;
 			} while (nextPageCursor !== null);
 
-			if (request !== mapRequestId || requestedMapKey !== key || argsKey !== key) return;
+			if (request !== mapRequestId || requestedMapKey !== mapKey || argsKey !== mapKey) return;
 
 			mapData = items;
 		} catch (cause) {
@@ -220,13 +232,16 @@ export function useSearchAccommodations(
 	}
 
 	function retryMap(): void {
-		if (failedMapKey !== key) return;
-		void fetchMapData(key);
+		if (failedMapKey !== mapKey) return;
+		void fetchMapData(mapKey);
 	}
 
 	return {
 		get key() {
 			return key;
+		},
+		get mapKey() {
+			return mapKey;
 		},
 		get data() {
 			return data;
@@ -241,10 +256,10 @@ export function useSearchAccommodations(
 			return loadingMore;
 		},
 		get mapLoading() {
-			return mapLoading || requestedMapKey !== key;
+			return mapLoading || requestedMapKey !== mapKey;
 		},
 		get mapError() {
-			return requestedMapKey !== key || options.isMapMoving?.() ? undefined : mapError;
+			return requestedMapKey !== mapKey || options.isMapMoving?.() ? undefined : mapError;
 		},
 		get error() {
 			return requestedKey !== key || options.isMapMoving?.() ? undefined : error;

@@ -75,6 +75,9 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 	const base = {
 		...details,
 		ownerId: 'filter-test',
+		recommendationSortKey: -3,
+		guestRatingAverage: 0,
+		guestReviewCount: 0,
 		pricePerNightMinor: 8025,
 		maxGuests: 6,
 		bedrooms: 2,
@@ -151,7 +154,7 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 	for (const query of [listQuery, mapQuery]) {
 		const first = await t.query(query, {
 			location: { country: 'Serbia', city: 'Belgrade' },
-			stayFilters: { amenities: ['wifi'] },
+			stayFilters: { amenities: ['wifi'], minPrice: 80.25 },
 			paginationOpts: { cursor: null, numItems: 1, maximumRowsRead: 1 }
 		});
 		expect(first.items).toEqual([]);
@@ -185,6 +188,163 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 			).rejects.toThrow();
 		}
 	}
+});
+
+test('recommendation, price and guest rating order filtered results before cursor pagination', async () => {
+	const t = setup();
+	const query =
+		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
+	const { nightlyPrice: _price, ...details } = listing;
+	const base = {
+		...details,
+		imageKeys: [],
+		ownerId: 'sorting-test',
+		pricePerNightMinor: 9000,
+		recommendationSortKey: -4.5,
+		guestRatingAverage: 0,
+		guestReviewCount: 0,
+		bedrooms: 3,
+		amenities: ['wifi'],
+		status: 'published' as const,
+		updatedAt: 1
+	};
+	const rows = [
+		base,
+		{
+			...base,
+			pricePerNightMinor: 2000,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			address: { ...base.address, city: 'Novi Sad' }
+		},
+		{ ...base, pricePerNightMinor: 4000 },
+		{ ...base, pricePerNightMinor: 1000, recommendationSortKey: -5, bedrooms: 2 },
+		{
+			...base,
+			pricePerNightMinor: 3000,
+			recommendationSortKey: -4,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			address: { ...base.address, country: 'Croatia', city: 'Zagreb' }
+		},
+		{ ...base, pricePerNightMinor: 30000, recommendationSortKey: -5, latitude: 45 },
+		{ ...base, pricePerNightMinor: 500, recommendationSortKey: -5, amenities: [] },
+		{ ...base, pricePerNightMinor: 5000, recommendationSortKey: -4 }
+	];
+	const ids = await t.run(async (ctx) => {
+		const inserted = [];
+		const ratings = [
+			[4.8, 20],
+			[0, 2],
+			[4.8, 50],
+			[5, 500],
+			[4.9, 5],
+			[5, 3],
+			[5, 500],
+			[0, 0]
+		];
+		for (const [index, row] of rows.entries()) {
+			inserted.push(
+				await ctx.db.insert('accommodations', {
+					...row,
+					guestRatingAverage: ratings[index][0],
+					guestReviewCount: ratings[index][1]
+				})
+			);
+		}
+		return inserted;
+	});
+	const scopes = [
+		{
+			criteria: { location: { country: 'Serbia' } },
+			recommended: [5, 2, 0, 7, 1],
+			guestRating: [5, 2, 0, 1, 7],
+			ascending: [1, 2, 7, 0, 5]
+		},
+		{
+			criteria: { location: { country: 'Serbia', city: 'Belgrade' } },
+			recommended: [5, 2, 0, 7],
+			guestRating: [5, 2, 0, 7],
+			ascending: [2, 7, 0, 5]
+		},
+		{
+			criteria: {
+				location: { country: 'Serbia', city: 'Belgrade' },
+				bounds: { south: 44.8, north: 44.9, west: 20.4, east: 20.5 }
+			},
+			recommended: [2, 0, 4, 7, 1],
+			guestRating: [4, 2, 0, 1, 7],
+			ascending: [1, 4, 2, 7, 0]
+		}
+	];
+	for (const { criteria, recommended, ascending, guestRating } of scopes) {
+		for (const sort of ['recommended', 'price-asc', 'price-desc', 'guest-rating'] as const) {
+			let cursor: string | null = null;
+			const received: string[] = [];
+			do {
+				const page: FunctionReturnType<typeof query> = await t.query(query, {
+					...criteria,
+					sort,
+					stayFilters: { bedrooms: 3, amenities: ['wifi'] },
+					paginationOpts: { cursor, numItems: 2, maximumRowsRead: 3 }
+				});
+				expect(
+					page.items.every(
+						(item) =>
+							!('recommendationSortKey' in item) &&
+							!('guestRatingAverage' in item) &&
+							!('guestReviewCount' in item)
+					)
+				).toBe(true);
+				received.push(...page.items.map((item) => item._id));
+				cursor = page.nextCursor;
+			} while (cursor !== null);
+			const expected =
+				sort === 'guest-rating'
+					? guestRating
+					: sort === 'recommended'
+						? recommended
+						: sort === 'price-asc'
+							? ascending
+							: [...ascending].reverse();
+			expect(received).toEqual(expected.map((index) => ids[index]));
+		}
+	}
+	const defaultPage = await t.query(query, {
+		location: { country: 'Serbia' },
+		stayFilters: { bedrooms: 3, amenities: ['wifi'] },
+		paginationOpts: { cursor: null, numItems: 10 }
+	});
+	expect(defaultPage.items.map((item) => item._id)).toEqual(
+		[5, 2, 0, 7, 1].map((index) => ids[index])
+	);
+});
+
+test('recommendation backfill refreshes existing scores and can be safely rerun', async () => {
+	const t = setup();
+	const { nightlyPrice: _price, ...details } = listing;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...details,
+			imageKeys: [],
+			ownerId: 'backfill-test',
+			recommendationSortKey: -1,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			pricePerNightMinor: 8025,
+			status: 'published',
+			updatedAt: 1
+		})
+	);
+	const migration =
+		internal.migrations.backfillAccommodationRecommendationScores
+			.backfillAccommodationRecommendationScores;
+	const args = { cursor: null, batchSize: 2, dryRun: false, oneBatchOnly: true };
+	await t.mutation(migration, args);
+	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.recommendationSortKey).toBe(-3);
+	await t.mutation(migration, args);
+	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.recommendationSortKey).toBe(-3);
 });
 
 test('dense map fixtures use distinct batches and clean only their owner in bounded steps', async () => {
@@ -265,6 +425,9 @@ test('public details resolve ordered photos without exposing owner or storage ke
 		ctx.db.insert('accommodations', {
 			...details,
 			ownerId: 'private-owner',
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
@@ -302,6 +465,9 @@ test('owner listing resolves ordered photos and rejects other identities', async
 		ctx.db.insert('accommodations', {
 			...details,
 			ownerId: 'host',
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
@@ -344,6 +510,9 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 		const docId = await ctx.db.insert('accommodations', {
 			...details,
 			ownerId: 'host',
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
@@ -431,6 +600,9 @@ test('publishing creates one complete accommodation and claims ordered photos at
 	const accommodation = await t.run((ctx) => ctx.db.get(id));
 	expect(accommodation).toMatchObject({
 		ownerId: 'host',
+		recommendationSortKey: -3,
+		guestRatingAverage: 0,
+		guestReviewCount: 0,
 		status: 'published',
 		imageKeys: reordered,
 		pricePerNightMinor: 8025,
@@ -695,6 +867,9 @@ test('map search scopes coordinates before pagination and validates bounds', asy
 				longitude,
 				maxGuests,
 				ownerId: 'host',
+				recommendationSortKey: -3,
+				guestRatingAverage: 0,
+				guestReviewCount: 0,
 				pricePerNightMinor: Math.round(nightlyPrice * 100),
 				status: 'published',
 				updatedAt: 1

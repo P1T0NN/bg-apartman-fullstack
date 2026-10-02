@@ -2,7 +2,7 @@
 import { createContext } from 'svelte';
 
 // TYPES
-import type { useSearchCriteria } from '@/features/search/hooks/useSearchCriteria.svelte.js';
+import type { useSortAccommodations } from '@/features/accommodations/hooks/useSortAccommodations.svelte.js';
 
 export const [getSearchContext, setSearchContext] =
-	createContext<ReturnType<typeof useSearchCriteria>>();
+	createContext<ReturnType<typeof useSortAccommodations>>();

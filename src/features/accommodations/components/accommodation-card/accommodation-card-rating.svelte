@@ -3,6 +3,9 @@
 	import { m } from '@/lib/paraglide/messages';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 
+	// COMPONENTS
+	import NativeTooltip from '@/components/ui/native-components/native-tooltip/native-tooltip.svelte';
+
 	// CONFIG
 	import { REVIEWS_CONFIG } from '@/shared/features/reviews/config.js';
 
@@ -18,6 +21,7 @@
 	import Star from '@lucide/svelte/icons/star';
 
 	let { reviews }: { reviews?: ReviewSummary } = $props();
+	const id = $props.id();
 
 	const ratingSummary = $derived(
 		reviews && reviews.count >= REVIEWS_CONFIG.MIN_RATING_REVIEWS ? reviews : undefined
@@ -25,11 +29,25 @@
 </script>
 
 {#if ratingSummary}
-	<p class="flex items-center gap-1 text-xs font-medium">
+	{@const average = formatRatingAverage(ratingSummary.average ?? 0, getLocale())}
+	{@const reviewCount = m['AccommodationsFeature.AccommodationCardRating.reviewCount']({
+		count: ratingSummary.count
+	})}
+	<div class="flex items-center gap-1 text-sm font-medium">
 		<Star class="size-3.5 fill-current" aria-hidden="true" />
-		{m['AccommodationsFeature.AccommodationCardRating.reviewSummary']({
-			average: formatRatingAverage(ratingSummary.average ?? 0, getLocale()),
-			count: ratingSummary.count
-		})}
-	</p>
+		<span class="sr-only">
+			{m['AccommodationsFeature.AccommodationCardRating.ratingLabel']({ average })}
+		</span>
+		<span aria-hidden="true">
+			{m['AccommodationsFeature.AccommodationCardRating.ratingScore']({ average })}
+		</span>
+		<div class="relative z-10 inline-flex font-normal text-muted-foreground">
+			<NativeTooltip {id} triggerLabel={reviewCount}>
+				{#snippet trigger()}
+					<span>({ratingSummary.count})</span>
+				{/snippet}
+				{reviewCount}
+			</NativeTooltip>
+		</div>
+	</div>
 {/if}

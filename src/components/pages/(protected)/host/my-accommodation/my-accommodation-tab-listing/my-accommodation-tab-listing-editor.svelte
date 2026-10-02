@@ -28,7 +28,10 @@
 
 	// SAFETY: Convex validates the untrusted route ID before running the mutation.
 	const accommodationId = $derived(page.params.id as Id<'accommodations'>);
-	const form = useFormChanges(() => structuredClone(section.values));
+	// SAFETY: Snapshot preserves this section's plain form values while copying nested data.
+	const form = useFormChanges(
+		() => $state.snapshot<object>(section.values) as typeof section.values
+	);
 
 	// svelte-ignore state_referenced_locally
 	// SAFETY: The listing factory seeds this section with the stored photo keys and URLs.

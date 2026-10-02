@@ -63,7 +63,10 @@ const accommodationListItem = accommodationDoc
 		'partiesAllowed',
 		'houseRules',
 		'status',
-		'updatedAt'
+		'updatedAt',
+		'recommendationSortKey',
+		'guestRatingAverage',
+		'guestReviewCount'
 	)
 	.extend({
 		address: v.object({ city: v.string(), country: v.string() }),
@@ -80,7 +83,15 @@ export const accommodationPage = v.object({
 
 /** Section-agnostic update payload: any subset of the editable listing fields plus the target id. */
 export const updateAccommodationValidator = accommodations.validator
-	.omit('ownerId', 'status', 'updatedAt', 'pricePerNightMinor')
+	.omit(
+		'ownerId',
+		'status',
+		'updatedAt',
+		'pricePerNightMinor',
+		'recommendationSortKey',
+		'guestRatingAverage',
+		'guestReviewCount'
+	)
 	.partial()
 	.extend({
 		id: v.id('accommodations'),

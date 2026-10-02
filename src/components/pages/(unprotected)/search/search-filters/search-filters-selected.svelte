@@ -5,15 +5,24 @@
 	// HOOKS
 	import { getSearchContext } from '@/features/search/context/searchContext.js';
 
-	// DATA
-	import { clearSearchFilters } from '@/features/search/data/searchCriteria.js';
-
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 	import { getAmenities } from '@/shared/features/accommodations/utils/getAmenities.js';
+	import { clearSearchFilters } from '@/shared/features/search/utils/clearSearchFilters.js';
 
 	const search = getSearchContext();
+
 	const amenities = $derived(getAmenities());
+
+	const labels = $derived({
+		minPrice: m['SearchPage.SearchFiltersPrice.minPrice']({ currency: 'EUR' }),
+		maxPrice: m['SearchPage.SearchFiltersPrice.maxPrice']({ currency: 'EUR' }),
+		type: m['SearchPage.SearchFiltersType.type'](),
+		bedrooms: m['SearchPage.SearchFiltersRoomCount.bedrooms'](),
+		beds: m['SearchPage.SearchFiltersRoomCount.beds'](),
+		bathrooms: m['SearchPage.SearchFiltersRoomCount.bathrooms'](),
+		amenities: m['SearchPage.SearchFiltersAmenities.amenities']()
+	});
 </script>
 
 {#if search.activeFilters.length}
@@ -22,14 +31,14 @@
 			<Button
 				size="sm"
 				variant="secondary"
-				aria-label={m['SearchPage.SearchFiltersSelected.remove']({ filter: search.labels[key] })}
+				aria-label={m['SearchPage.SearchFiltersSelected.remove']({ filter: labels[key] })}
 				onclick={() =>
 					search.setCriteria({
 						...search.criteria,
 						[key]: clearSearchFilters(search.criteria)[key]
 					})}
 			>
-				{search.labels[key]}: {Array.isArray(search.criteria[key])
+				{labels[key]}: {Array.isArray(search.criteria[key])
 					? search.criteria[key]
 							.map((value) => amenities.find((item) => item.key === value)?.label ?? value)
 							.join(', ')
@@ -37,6 +46,7 @@
 				<span class="icon-[lucide--x]" aria-hidden="true"></span>
 			</Button>
 		{/each}
+		
 		<Button
 			size="sm"
 			variant="ghost"

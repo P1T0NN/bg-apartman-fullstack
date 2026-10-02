@@ -23,6 +23,7 @@
 
 	// HOOKS
 	import { useClaimBooking } from '@/features/bookings/hooks/useClaimBooking.svelte.js';
+	
 	// UTILS
 	import { toastMessage } from '@/utils/toastMessage.js';
 	import { getBackendErrorMessage } from '@/utils/getBackendErrorMessage.js';
@@ -44,7 +45,6 @@
 
 			toastMessage({ type: 'success', message: m['ClaimBookingPage.ClaimBookingContent.added']() });
 
-			// eslint-disable-next-line svelte/no-navigation-without-resolve -- Endpoint constants already call resolve().
 			await goto(PROTECTED_PAGE_ENDPOINTS.MY_BOOKINGS);
 		} catch (error) {
 			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
@@ -53,7 +53,6 @@
 
 	async function recover() {
 		claim.clear();
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- Endpoint constants already call resolve().
 		await goto(UNPROTECTED_PAGE_ENDPOINTS.FIND_BOOKING);
 	}
 </script>

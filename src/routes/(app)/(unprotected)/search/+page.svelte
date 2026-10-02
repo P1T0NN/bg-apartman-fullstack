@@ -12,7 +12,7 @@
 
 	// COMPONENTS
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
-	import NativeSelect from '@/components/ui/native-components/native-select/native-select.svelte';
+	import SearchToolbarSortSelect from '@/components/pages/(unprotected)/search/search-filters/search-toolbar/search-toolbar-sort-select.svelte';
 	import DataList from '@/components/ui/custom-components/data-list/data-list.svelte';
 	import EmptyData from '@/components/ui/custom-components/empty-data/empty-data.svelte';
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
@@ -27,7 +27,7 @@
 	// HOOKS
 	import { useSearchAccommodations } from '@/features/search/hooks/useSearchAccommodations.svelte.js';
 	import { setSearchContext } from '@/features/search/context/searchContext.js';
-	import { useSearchCriteria } from '@/features/search/hooks/useSearchCriteria.svelte.js';
+	import { useSortAccommodations } from '@/features/accommodations/hooks/useSortAccommodations.svelte.js';
 	import { useFavorites } from '@/features/favorites/hooks/useFavorites.svelte.js';
 	import { setFavoritesContext } from '@/features/favorites/context/favoritesContext.js';
 
@@ -57,7 +57,9 @@
 		viewport = { location: locationKey, bounds, moving };
 	}
 
-	const search = useSearchCriteria({ hasLocation: () => hasLocation });
+	const search = useSortAccommodations({
+		hasLocation: () => hasLocation
+	});
 	setSearchContext(search);
 
 	function readNumber(key: string): number | undefined {
@@ -82,7 +84,11 @@
 				amenities: search.criteria.amenities
 			}
 		}),
-		{ pageSize: PAGINATION_CONFIG.DEFAULT_INFINITE_SCROLL_PAGE_SIZE, isMapMoving: () => mapMoving }
+		{
+			pageSize: PAGINATION_CONFIG.DEFAULT_INFINITE_SCROLL_PAGE_SIZE,
+			isMapMoving: () => mapMoving,
+			sort: () => search.criteria.sort
+		}
 	);
 
 	const session = authClient.useSession();
@@ -112,7 +118,7 @@
 <main
 	class="w-full px-4 py-5 sm:px-6 min-[68.75rem]:px-8"
 	{@attach accommodations.load(accommodations.key, viewerId)}
-	{@attach accommodations.loadMap(accommodations.key, Boolean(bounds))}
+	{@attach accommodations.loadMap(accommodations.mapKey, Boolean(bounds))}
 >
 	<div
 		class={cn(
@@ -145,13 +151,7 @@
 				<div class="flex items-end gap-2">
 					{#if hasLocation}
 						<div class="hidden min-[68.75rem]:block">
-							<NativeSelect
-								label={m['SearchPage.SearchToolbar.sort']()}
-								options={search.sorts}
-								value={search.criteria.sort}
-								onchange={(value) => search.setCriteria({ ...search.criteria, sort: value })}
-								includePlaceholderOption={false}
-							/>
+							<SearchToolbarSortSelect />
 						</div>
 					{/if}
 					<SearchFilters />

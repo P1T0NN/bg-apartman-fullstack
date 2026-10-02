@@ -8,6 +8,12 @@ import { internalMutation } from './_generated/server.js';
 import { accommodationOwnerAggregate } from './tables/accommodations/aggregates/accommodationOwnerAggregate.js';
 import { reviewAggregate } from './tables/reviews/aggregates/reviewAggregate.js';
 
+// HELPERS
+import { updateAccommodationReviewSortKeys } from './tables/accommodations/helpers/updateAccommodationReviewSortKeys.js';
+
+// CONFIG
+import { ACCOMMODATION_CONFIG } from '../shared/features/accommodations/config.js';
+
 // DATA
 import { AMENITY_KEYS } from '../shared/features/accommodations/data/accommodationsData.js';
 import { ACCOMMODATION_TYPES } from '../shared/features/accommodations/types/accommodationTypes.js';
@@ -231,6 +237,9 @@ export const seedAccommodations = internalMutation({
 				beds,
 				bathrooms,
 				pricePerNightMinor: Math.round(30 + random() * 220) * 100,
+				recommendationSortKey: -ACCOMMODATION_CONFIG.recommendationBaselineAverage,
+				guestRatingAverage: 0,
+				guestReviewCount: 0,
 				amenities,
 				imageKeys: buildImageKeys(seedIndex),
 				checkInStart: pick(CHECK_IN_STARTS, random),
@@ -350,6 +359,7 @@ export const seedReviews = internalMutation({
 				if (review) await reviewAggregate.insert(ctx, review);
 				inserted += 1;
 			}
+			await updateAccommodationReviewSortKeys(ctx, accommodation._id);
 		}
 
 		return inserted;
@@ -362,6 +372,7 @@ export const clearSeededReviews = internalMutation({
 	returns: v.number(),
 	handler: async (ctx) => {
 		let deleted = 0;
+		const affectedAccommodations = new Set<Doc<'accommodations'>['_id']>();
 
 		for (let guestIndex = 0; guestIndex < SEED_REVIEWER_NAMES.length; guestIndex += 1) {
 			const ownerId = `${SEED_GUEST_PREFIX}${guestIndex}`;
@@ -374,8 +385,12 @@ export const clearSeededReviews = internalMutation({
 				await reviewAggregate.delete(ctx, review);
 				await ctx.db.delete('reviews', review._id);
 				await ctx.db.delete('bookings', review.bookingId);
+				affectedAccommodations.add(review.accommodationId);
 				deleted += 1;
 			}
+		}
+		for (const accommodationId of affectedAccommodations) {
+			await updateAccommodationReviewSortKeys(ctx, accommodationId);
 		}
 
 		return deleted;

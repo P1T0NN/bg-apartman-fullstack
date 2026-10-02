@@ -6,6 +6,9 @@ import { accommodationOwnerAggregate } from '../aggregates/accommodationOwnerAgg
 // HELPERS
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
+// CONFIG
+import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
+
 // SCHEMAS
 import { saveAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
 import { accommodations } from '../schema.js';
@@ -16,7 +19,17 @@ import type { BackendErrorData } from '../../../../shared/types/types.js';
 export const createAccommodation = authenticatedUploadMutation({
 	rateLimit: { name: 'accommodations:create' },
 	args: accommodations.validator
-		.omit('ownerId', 'status', 'updatedAt', 'pricePerNightMinor', 'latitude', 'longitude')
+		.omit(
+			'ownerId',
+			'status',
+			'updatedAt',
+			'pricePerNightMinor',
+			'latitude',
+			'longitude',
+			'recommendationSortKey',
+			'guestRatingAverage',
+			'guestReviewCount'
+		)
 		.extend({ nightlyPrice: v.number(), latitude: v.number(), longitude: v.number() }).fields,
 	returns: v.id('accommodations'),
 	handler: async (ctx, args) => {
@@ -41,6 +54,9 @@ export const createAccommodation = authenticatedUploadMutation({
 		const id = await ctx.db.insert('accommodations', {
 			...data,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			recommendationSortKey: -ACCOMMODATION_CONFIG.recommendationBaselineAverage,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
 			ownerId: getOwnerId(ctx.identity),
 			status: 'published',
 			updatedAt: Date.now()

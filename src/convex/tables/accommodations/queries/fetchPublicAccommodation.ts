@@ -15,7 +15,13 @@ export const fetchPublicAccommodation = query({
 	args: { id: v.id('accommodations') },
 	returns: v.union(
 		docValidator('accommodations', accommodations)
-			.omit('ownerId', 'imageKeys')
+			.omit(
+				'ownerId',
+				'imageKeys',
+				'recommendationSortKey',
+				'guestRatingAverage',
+				'guestReviewCount'
+			)
 			.extend({ imageUrls: v.array(v.string()), reviews: reviewSummary }),
 		v.null()
 	),
@@ -24,7 +30,14 @@ export const fetchPublicAccommodation = query({
 
 		if (!accommodation || accommodation.status !== 'published') return null;
 
-		const { ownerId: _ownerId, imageKeys, ...details } = accommodation;
+		const {
+			ownerId: _ownerId,
+			recommendationSortKey: _recommendationSortKey,
+			guestRatingAverage: _guestRatingAverage,
+			guestReviewCount: _guestReviewCount,
+			imageKeys,
+			...details
+		} = accommodation;
 
 		const [imageUrls, summary] = await Promise.all([
 			resolveStoredFileUrls(imageKeys),

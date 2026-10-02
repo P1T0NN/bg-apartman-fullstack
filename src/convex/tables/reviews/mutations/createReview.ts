@@ -10,6 +10,9 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 // AGGREGATES
 import { reviewAggregate } from '../aggregates/reviewAggregate.js';
 
+// HELPERS
+import { updateAccommodationReviewSortKeys } from '../../accommodations/helpers/updateAccommodationReviewSortKeys.js';
+
 // SCHEMAS
 import { createReviewSchema } from '../../../../shared/features/reviews/schemas/reviewSchemas.js';
 
@@ -62,6 +65,7 @@ export const createReview = authenticatedMutation({
 		});
 		const stored = await ctx.db.get('reviews', id);
 		if (stored) await reviewAggregate.insert(ctx, stored);
+		await updateAccommodationReviewSortKeys(ctx, booking.accommodationId);
 		await ctx.db.patch('bookings', booking._id, { reviewId: id });
 		return id;
 	}

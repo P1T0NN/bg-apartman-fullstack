@@ -43,7 +43,7 @@ type AccommodationFormState = {
 
 export function createAccommodationForm() {
 	const state = $state<AccommodationFormState>({
-		values: structuredClone(EMPTY_ACCOMMODATION),
+		values: $state.snapshot(EMPTY_ACCOMMODATION),
 		pinAddress: '',
 		files: [],
 		step: 0,

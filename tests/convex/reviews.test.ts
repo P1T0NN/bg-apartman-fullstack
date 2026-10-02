@@ -47,6 +47,9 @@ async function setup() {
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
 			amenities: [],
 			imageKeys: [],
 			checkInStart: '14:00',
@@ -176,6 +179,10 @@ test('one immutable review per booking, and another completed stay earns another
 	});
 	const details = await t.query(fetchPublic, { id: accommodationId });
 	expect(details?.reviews).toEqual({ count: 2, average: 4, distribution: [1, 0, 1, 0, 0] });
+	expect(details).not.toHaveProperty('recommendationSortKey');
+	expect(
+		(await t.run((ctx) => ctx.db.get('accommodations', accommodationId)))?.recommendationSortKey
+	).toBeCloseTo(-23 / 7);
 	const own = await guest.query(fetchBookingReview, { bookingId });
 	expect(own.review).toMatchObject({
 		authorName: 'Ana',
@@ -294,6 +301,9 @@ test('moderation atomically updates public scores without allowing replacement r
 		rating: 2,
 		comment: 'Private information needs moderation.'
 	});
+	const initialSortKey = (await t.run((ctx) => ctx.db.get('accommodations', accommodationId)))
+		?.recommendationSortKey;
+	expect(initialSortKey).toBeCloseTo(-17 / 6);
 	await expect(
 		guest.mutation(moderate, { id, status: 'hidden', reason: 'Not allowed' })
 	).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
@@ -302,6 +312,9 @@ test('moderation atomically updates public scores without allowing replacement r
 	).rejects.toMatchObject({ data: { code: 'INVALID_REVIEW' } });
 	await admin.mutation(moderate, { id, status: 'hidden', reason: 'Contains personal information' });
 	await admin.mutation(moderate, { id, status: 'hidden', reason: 'Same state is idempotent' });
+	expect(
+		(await t.run((ctx) => ctx.db.get('accommodations', accommodationId)))?.recommendationSortKey
+	).toBe(-3);
 	expect((await t.query(fetchPublic, { id: accommodationId }))?.reviews).toEqual({
 		count: 0,
 		average: null,
@@ -320,12 +333,45 @@ test('moderation atomically updates public scores without allowing replacement r
 		guest.mutation(createReview, { bookingId, rating: 5, comment: 'Replacement review.' })
 	).rejects.toMatchObject({ data: { code: 'REVIEW_ALREADY_EXISTS' } });
 	await admin.mutation(moderate, { id, status: 'published', reason: 'Reviewed and restored' });
+	expect(
+		(await t.run((ctx) => ctx.db.get('accommodations', accommodationId)))?.recommendationSortKey
+	).toBe(initialSortKey);
 	expect((await t.query(fetchPublic, { id: accommodationId }))?.reviews).toEqual({
 		count: 1,
 		average: 2,
 		distribution: [0, 0, 0, 1, 0]
 	});
 	expect((await t.run((ctx) => ctx.db.get(id)))?.moderationReason).toBe('Reviewed and restored');
+});
+
+test('guest rating sort fields follow the public threshold and review moderation', async () => {
+	const { t, guest, admin, accommodationId, bookingId, booking } = await setup();
+	const first = await guest.mutation(createReview, {
+		bookingId,
+		rating: 5,
+		comment: 'Great stay.'
+	});
+	for (const rating of [4, 3]) {
+		const id = await t.run((ctx) => ctx.db.insert('bookings', booking));
+		await guest.mutation(createReview, { bookingId: id, rating, comment: 'A real stay.' });
+	}
+	expect(await t.run((ctx) => ctx.db.get('accommodations', accommodationId))).toMatchObject({
+		guestRatingAverage: 4,
+		guestReviewCount: 3
+	});
+	const details = await t.query(fetchPublic, { id: accommodationId });
+	expect(details).not.toHaveProperty('guestRatingAverage');
+	expect(details).not.toHaveProperty('guestReviewCount');
+	await admin.mutation(moderate, { id: first, status: 'hidden', reason: 'Needs moderation' });
+	expect(await t.run((ctx) => ctx.db.get('accommodations', accommodationId))).toMatchObject({
+		guestRatingAverage: 0,
+		guestReviewCount: 2
+	});
+	await admin.mutation(moderate, { id: first, status: 'published', reason: 'Restored' });
+	expect(await t.run((ctx) => ctx.db.get('accommodations', accommodationId))).toMatchObject({
+		guestRatingAverage: 4,
+		guestReviewCount: 3
+	});
 });
 
 test('eligible booking pages exclude reviewed, expired, future, foreign and unclaimed stays', async () => {

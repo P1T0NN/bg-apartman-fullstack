@@ -10,7 +10,7 @@
 
 	// COMPONENTS
 	import SearchCard from '@/components/ui/custom-components/search-card/search-card.svelte';
-	import SearchToolbar from '@/components/pages/(unprotected)/search/search-filters/search-toolbar.svelte';
+	import SearchToolbar from '@/components/pages/(unprotected)/search/search-filters/search-toolbar/search-toolbar.svelte';
 	import SearchHeaderUserContent from './search-header-user-content.svelte';
 
 	// UTILS

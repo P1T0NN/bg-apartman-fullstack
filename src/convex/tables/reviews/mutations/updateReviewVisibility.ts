@@ -11,6 +11,9 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 // AGGREGATES
 import { reviewAggregate } from '../aggregates/reviewAggregate.js';
 
+// HELPERS
+import { updateAccommodationReviewSortKeys } from '../../accommodations/helpers/updateAccommodationReviewSortKeys.js';
+
 // SCHEMAS
 import { updateReviewVisibilitySchema } from '../../../../shared/features/reviews/schemas/reviewSchemas.js';
 
@@ -35,6 +38,7 @@ export const updateReviewVisibility = adminMutation({
 			moderatedAt: Date.now(),
 			moderationReason: parsed.data.reason
 		});
+		await updateAccommodationReviewSortKeys(ctx, review.accommodationId);
 		return null;
 	}
 });

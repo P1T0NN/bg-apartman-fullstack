@@ -19,7 +19,7 @@ export const fetchMyAccommodationListing = authenticatedQuery({
 	args: { id: v.id('accommodations') },
 	returns: v.union(
 		docValidator('accommodations', accommodations)
-			.omit('ownerId')
+			.omit('ownerId', 'recommendationSortKey', 'guestRatingAverage', 'guestReviewCount')
 			.extend({ imageUrls: v.array(v.string()) }),
 		v.null()
 	),
@@ -27,7 +27,13 @@ export const fetchMyAccommodationListing = authenticatedQuery({
 		const accommodation = await ctx.db.get('accommodations', id);
 		if (!accommodation || accommodation.ownerId !== getOwnerId(ctx.identity)) return null;
 
-		const { ownerId: _ownerId, ...listing } = accommodation;
+		const {
+			ownerId: _ownerId,
+			recommendationSortKey: _recommendationSortKey,
+			guestRatingAverage: _guestRatingAverage,
+			guestReviewCount: _guestReviewCount,
+			...listing
+		} = accommodation;
 		return { ...listing, imageUrls: await resolveStoredFileUrls(accommodation.imageKeys) };
 	}
 });

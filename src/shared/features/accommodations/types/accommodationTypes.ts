@@ -7,7 +7,10 @@ import type {
 	FormValues
 } from '../../../../components/ui/custom-components/form/formTypes.js';
 
-export type PublicAccommodation = Omit<Doc<'accommodations'>, 'ownerId' | 'imageKeys'> & {
+export type PublicAccommodation = Omit<
+	Doc<'accommodations'>,
+	'ownerId' | 'imageKeys' | 'recommendationSortKey' | 'guestRatingAverage' | 'guestReviewCount'
+> & {
 	imageUrls: string[];
 	reviews: ReviewSummary;
 };
@@ -32,6 +35,9 @@ export type AccommodationListItem = Omit<
 	| 'houseRules'
 	| 'status'
 	| 'updatedAt'
+	| 'recommendationSortKey'
+	| 'guestRatingAverage'
+	| 'guestReviewCount'
 > & {
 	address: { city: string; country: string };
 	imageUrls: string[];
@@ -56,6 +62,14 @@ export const ACCOMMODATION_TYPES = [
 
 export type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
 
+export const ACCOMMODATION_SORTS = [
+	'recommended',
+	'price-asc',
+	'price-desc',
+	'guest-rating'
+] as const;
+export type AccommodationSort = (typeof ACCOMMODATION_SORTS)[number];
+
 /** Header summary for the owner's my-accommodation workspace. */
 export type MyAccommodationSummary = {
 	_id: Id<'accommodations'>;
@@ -64,7 +78,10 @@ export type MyAccommodationSummary = {
 };
 
 /** Owner's full listing for the my-accommodation listing tab. */
-export type MyAccommodationListing = Omit<Doc<'accommodations'>, 'ownerId'> & {
+export type MyAccommodationListing = Omit<
+	Doc<'accommodations'>,
+	'ownerId' | 'recommendationSortKey' | 'guestRatingAverage' | 'guestReviewCount'
+> & {
 	imageUrls: string[];
 };
 

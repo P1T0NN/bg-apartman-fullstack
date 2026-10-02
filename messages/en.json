@@ -545,7 +545,9 @@
 			"night": "per night"
 		},
 		"AccommodationCardRating": {
-			"reviewSummary": "{average} / 5 - {count} reviews"
+			"ratingScore": "{average}/5",
+			"ratingLabel": "Rated {average} out of 5",
+			"reviewCount": "{count} reviews in total"
 		},
 		"AccommodationRuleCard": {
 			"enabled": "Enabled",
@@ -618,32 +620,46 @@
 		"mapError": "We couldn't load the map.",
 		"SearchFilters": {
 			"filters": "Filters",
-			"price": "Nightly price",
-			"minPrice": "Minimum ({currency})",
-			"maxPrice": "Maximum ({currency})",
-			"noMaximum": "No maximum",
-			"type": "Property type",
+			"close": "Close filters"
+		},
+		"SearchFiltersRoomCount": {
 			"bedrooms": "Bedrooms",
 			"beds": "Beds",
 			"bathrooms": "Bathrooms",
+			"any": "Any"
+		},
+		"SearchFiltersAmenities": {
 			"amenities": "Amenities",
 			"popularAmenities": "Popular amenities",
 			"allAmenities": "Show all amenities",
-			"additionalAmenities": "{count} additional amenities selected",
-			"any": "Any",
-			"clear": "Clear all",
+			"additionalAmenities": "{count} additional amenities selected"
+		},
+		"SearchFiltersPrice": {
+			"price": "Nightly price",
+			"minPrice": "Minimum ({currency})",
+			"maxPrice": "Maximum ({currency})",
+			"noMaximum": "No maximum"
+		},
+		"SearchFiltersType": {
+			"type": "Property type"
+		},
+		"SearchFiltersClearButton": {
+			"clear": "Clear all"
+		},
+		"SearchFiltersApplyButton": {
 			"show": "Show results",
-			"close": "Close filters",
 			"invalid": "Maximum price must be at least the minimum price."
 		},
 		"SearchToolbar": {
 			"map": "Show map",
-			"list": "Show list",
+			"list": "Show list"
+		},
+		"SearchToolbarSortSelect": {
 			"sort": "Sort by",
 			"recommended": "Recommended",
 			"priceAsc": "Price: low to high",
 			"priceDesc": "Price: high to low",
-			"distance": "Distance from centre"
+			"guestRating": "Guest rating: highest first"
 		},
 		"SearchFiltersSelected": {
 			"remove": "Remove {filter}",

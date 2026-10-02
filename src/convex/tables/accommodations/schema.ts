@@ -28,6 +28,11 @@ export const accommodations = defineTable({
 	bathrooms: v.number(),
 	// Integer minor units in the platform currency, e.g. 7500 = 75.00.
 	pricePerNightMinor: v.number(),
+	/** Negative recommendation score: ascending index order ranks higher scores, then lower prices. */
+	recommendationSortKey: v.number(),
+	/** Zero until the published review count reaches the public rating threshold. */
+	guestRatingAverage: v.number(),
+	guestReviewCount: v.number(),
 	amenities: v.array(v.string()),
 	// Ordered R2 keys; the first image is the cover.
 	imageKeys: v.array(v.string()),
@@ -47,6 +52,35 @@ export const accommodations = defineTable({
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])
 	.index('by_owner_id_type', ['ownerId', 'type'])
+	// Retain creation-time ordering for destination map searches.
+	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_address_country_city', ['address.country', 'address.city'])
 	.index('by_latitude', ['latitude'])
+	.index('by_price', ['pricePerNightMinor'])
+	.index('by_guest_rating_average_guest_review_count', ['guestRatingAverage', 'guestReviewCount'])
+	.index('by_address_country_guest_rating_average_guest_review_count', [
+		'address.country',
+		'guestRatingAverage',
+		'guestReviewCount'
+	])
+	.index('by_address_country_city_guest_rating_average_guest_review_count', [
+		'address.country',
+		'address.city',
+		'guestRatingAverage',
+		'guestReviewCount'
+	])
+	.index('by_address_country_price', ['address.country', 'pricePerNightMinor'])
+	.index('by_address_country_city_price', ['address.country', 'address.city', 'pricePerNightMinor'])
+	.index('by_recommendation_sort_key_price', ['recommendationSortKey', 'pricePerNightMinor'])
+	.index('by_address_country_recommendation_sort_key_price', [
+		'address.country',
+		'recommendationSortKey',
+		'pricePerNightMinor'
+	])
+	.index('by_address_country_city_recommendation_sort_key_price', [
+		'address.country',
+		'address.city',
+		'recommendationSortKey',
+		'pricePerNightMinor'
+	])
 	.searchIndex('search_name', { searchField: 'name', filterFields: ['ownerId', 'type'] });

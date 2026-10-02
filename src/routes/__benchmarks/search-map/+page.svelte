@@ -11,7 +11,7 @@
 
 	// HOOKS
 	import { useSearchAccommodations } from '@/features/search/hooks/useSearchAccommodations.svelte.js';
-	import { useSearchCriteria } from '@/features/search/hooks/useSearchCriteria.svelte.js';
+	import { useSortAccommodations } from '@/features/accommodations/hooks/useSortAccommodations.svelte.js';
 	import { setSearchContext } from '@/features/search/context/searchContext.js';
 	import { useFavorites } from '@/features/favorites/hooks/useFavorites.svelte.js';
 	import { setFavoritesContext } from '@/features/favorites/context/favoritesContext.js';
@@ -19,7 +19,7 @@
 	// TYPES
 	import type { MapBounds } from '@/components/ui/custom-components/google-components/google-map/useGoogleMap.svelte.js';
 
-	const criteria = useSearchCriteria({ hasLocation: () => true });
+	const criteria = useSortAccommodations({ hasLocation: () => true });
 	criteria.toggleMap();
 	setSearchContext(criteria);
 	let bounds = $state<MapBounds>();
@@ -151,7 +151,7 @@
 	<pre class="my-4 overflow-auto text-sm" aria-live="polite">{output}</pre>
 	<div
 		{@attach accommodations.load(accommodations.key, null)}
-		{@attach accommodations.loadMap(accommodations.key, Boolean(bounds))}
+		{@attach accommodations.loadMap(accommodations.mapKey, Boolean(bounds))}
 	>
 		<SearchMap
 			destination="Belgrade"

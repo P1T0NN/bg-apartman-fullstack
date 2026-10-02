@@ -1,4 +1,6 @@
 // CONVEX
+import { v } from 'convex/values';
+import { literals } from 'convex-helpers/validators';
 import { query } from '../../../_generated/server.js';
 import { getPagination } from '../../../helpers/getPagination.js';
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
@@ -14,6 +16,7 @@ import { EMPTY_REVIEW_SUMMARY } from '../../../../shared/features/reviews/data/r
 
 // CONFIG
 import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
+import { ACCOMMODATION_SORTS } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
 
 // UTILS
 import { setEmptyPagination } from '../../../../shared/features/pagination/utils/setEmptyPagination.js';
@@ -29,13 +32,19 @@ import { boundsSchema } from '../../../../shared/features/accommodations/schemas
 export const fetchAccommodationsSearch = query({
 	args: {
 		...listPageArgs,
-		...searchCriteriaArgs
+		...searchCriteriaArgs,
+		sort: v.optional(literals(...ACCOMMODATION_SORTS))
 	},
 	returns: accommodationSearchPage,
 	handler: async (ctx, args) => {
 		const { paginationOpts } = args;
 		const bounds = args.bounds ? boundsSchema.parse(args.bounds) : undefined;
-		const accommodationsQuery = buildAccommodationSearchQuery(ctx, { ...args, bounds });
+
+		const accommodationsQuery = buildAccommodationSearchQuery(ctx, {
+			...args,
+			bounds,
+			sort: args.sort ?? 'recommended'
+		});
 
 		if (!accommodationsQuery) {
 			return { ...setEmptyPagination(paginationOpts.numItems), favoriteIds: [] };
@@ -53,6 +62,7 @@ export const fetchAccommodationsSearch = query({
 
 		const items = await resolveImageUrls(page.items);
 		const identity = await ctx.auth.getUserIdentity();
+
 		const [summaries, favoriteIds] = await Promise.all([
 			getAccommodationReviewSummaries(
 				ctx,
