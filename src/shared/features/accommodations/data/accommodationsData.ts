@@ -1,3 +1,25 @@
+// CONFIG
+import { ACCOMMODATION_CONFIG } from '../config.js';
+
+// TYPES
+import type { AccommodationDetails } from '../schemas/accommodationSchemas.js';
+
+export const ACCOMMODATION_TYPES = [
+	'apartment',
+	'studio',
+	'house',
+	'villa',
+	'room',
+	'other'
+] as const;
+
+export const ACCOMMODATION_SORTS = [
+	'recommended',
+	'price-asc',
+	'price-desc',
+	'guest-rating'
+] as const;
+
 export const AMENITIES = [
 	{ key: 'wifi', group: 'essentials', icon: 'icon-[lucide--wifi]' },
 	{ key: 'kitchen', group: 'essentials', icon: 'icon-[lucide--cooking-pot]' },
@@ -25,3 +47,36 @@ export const POPULAR_AMENITY_KEYS = [
 	'tv',
 	'heating'
 ] as const satisfies readonly (typeof AMENITIES)[number]['key'][];
+
+export const DEFAULT_CANCELLATION_POLICY_DRAFT = {
+	fiveToSevenDays: 100,
+	threeToFiveDays: 100,
+	oneToThreeDays: 100,
+	under24Hours: 100,
+	...ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY
+};
+
+export const EMPTY_ACCOMMODATION: Omit<AccommodationDetails, 'latitude' | 'longitude'> = {
+	imageKeys: [],
+	name: '',
+	description: '',
+	type: 'apartment',
+	spaceType: 'entire',
+	address: { street: '', streetNumber: '', city: '', postalCode: '', country: '' },
+	maxGuests: 2,
+	bedrooms: 1,
+	beds: 1,
+	bathrooms: 1,
+	nightlyPrice: 0,
+	amenities: [],
+	checkInStart: '14:00',
+	timeZone: '',
+	checkInEnd: '22:00',
+	checkOut: '11:00',
+	minimumStay: 1,
+	smokingAllowed: false,
+	petsAllowed: false,
+	partiesAllowed: false,
+	houseRules: '',
+	cancellationPolicy: DEFAULT_CANCELLATION_POLICY_DRAFT
+};

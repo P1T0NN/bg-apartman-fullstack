@@ -1,18 +1,64 @@
 // LIBRARIES
+import { vEmailId } from '@convex-dev/resend';
 import { literals } from 'convex-helpers/validators';
 import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 // CONFIG
+import { ACCOMMODATION_CONFIG } from '../../../shared/features/accommodations/config.js';
 import { BOOKING_STATUSES } from '../../../shared/features/bookings/schemas/bookingSchemas.js';
 
+// SCHEMAS
+import { accommodations } from '../accommodations/schema.js';
+
+/** Server-owned terms frozen when the request is submitted, never reconstructed from a listing. */
+export const bookingCancellationTerms = v.object({
+	policy: accommodations.validator.fields.cancellationPolicy,
+	timeZone: v.string(),
+	checkInStart: v.string(),
+	checkInAt: v.number(),
+	checkOut: v.string(),
+	checkOutAt: v.number(),
+	pricePerNightMinor: v.number(),
+	currency: v.string()
+});
+
+export const cancellationRefundPercentage = v.union(
+	...ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES.map((percentage) =>
+		v.literal(percentage)
+	),
+	v.null()
+);
+
+export const bookingEmailIds = v.object({
+	guest: v.optional(vEmailId),
+	host: v.optional(vEmailId)
+});
+
+export const bookingCancellation = v.object({
+	actor: v.literal('guest'),
+	cancelledBy: v.string(),
+	cancelledAt: v.number(),
+	reason: v.string(),
+	kind: literals('withdrawal', 'cancellation'),
+	// Withdrawals have no accepted refund policy; confirmed cancellations preserve the outcome.
+	refundPercentage: cancellationRefundPercentage,
+	emailIds: v.optional(bookingEmailIds)
+});
+
 export const bookings = defineTable({
+	// Only bookings created after request emails were introduced have delivery history.
+	requestEmailIds: v.optional(bookingEmailIds),
+	// Present for guest cancellations; active and historical host-cancelled bookings have no record.
+	cancellation: v.optional(bookingCancellation),
 	// Set server-side when a signed-in guest books; also used to claim anonymous bookings.
 	ownerId: v.optional(v.string()),
 	// Owner of the booked accommodation, copied at creation; powers the host bookings page.
 	hostId: v.optional(v.string()),
 	// Booking request lifecycle; every new booking starts as 'pending'.
 	status: literals(...BOOKING_STATUSES),
+	/** Immutable property-local terms for every booking, backfilled before becoming required. */
+	cancellationTerms: bookingCancellationTerms,
 	// Retained even when a review is moderated: each stay earns only one review.
 	reviewId: v.optional(v.id('reviews')),
 	completedAt: v.optional(v.number()),
@@ -33,15 +79,17 @@ export const bookings = defineTable({
 	children: v.number()
 })
 	.index('by_email_check_out_date', ['email', 'checkOutDate'])
+	.index('by_email_status', ['email', 'status'])
 	// Retained for _creationTime ordering; guest list queries sort newest first.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])
-	.index('by_owner_id_accommodation_id_status_review_id_check_out_date', [
+	.index('by_owner_id_status', ['ownerId', 'status'])
+	.index('by_owner_id_accommodation_id_status_review_id_check_out_at', [
 		'ownerId',
 		'accommodationId',
 		'status',
 		'reviewId',
-		'checkOutDate'
+		'cancellationTerms.checkOutAt'
 	])
 	// Retained for _creationTime ordering; host list queries sort newest first.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes

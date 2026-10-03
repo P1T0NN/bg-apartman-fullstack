@@ -11,8 +11,8 @@
 	import { getFormValue } from '@/components/ui/custom-components/form/formValues.js';
 
 	// TYPES
-	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/types/accommodationTypes.js';
-	import type { ListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/data/accommodationsData.js';
+	import type { EditAccommodationListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	let {
 		group,
@@ -20,13 +20,13 @@
 		onopen
 	}: {
 		group: 'property' | 'booking';
-		sections: ListingSection[];
+		sections: EditAccommodationListingSection[];
 		onopen: (id: string) => void;
 	} = $props();
 
 	const titleId = $derived(`${group}-sections-title`);
 
-	function summary(section: ListingSection) {
+	function summary(section: EditAccommodationListingSection) {
 		const values = section.values;
 		switch (section.id) {
 			case 'basics': {
@@ -53,6 +53,12 @@
 					price: formatCurrency(Number(values.nightlyPrice) * 100, getLocale()),
 					nights: Number(values.minimumStay)
 				});
+			case 'cancellation-policy':
+				return getFormValue(values, 'cancellationPolicy.mode') === 'custom'
+					? m['MyAccommodationPage.MyAccommodationTabListingSection.customCancellationPolicy']()
+					: m[
+							'MyAccommodationPage.MyAccommodationTabListingSection.fullRefundCancellationPolicy'
+						]();
 			default:
 				return m['MyAccommodationPage.MyAccommodationTabListingSection.rulesSummary']({
 					start: String(values.checkInStart),

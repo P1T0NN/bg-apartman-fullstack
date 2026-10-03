@@ -1,4 +1,8 @@
 // LIBRARIES
+import { COMPANY_DATA } from '../shared/config.js';
+import { getIsoDateInTimeZone } from '../shared/features/timezone/utils/getIsoDateInTimeZone.js';
+import { getZonedTimestamp } from '../shared/features/timezone/utils/getZonedTimestamp.js';
+import { parseDate } from '@internationalized/date';
 import { v } from 'convex/values';
 
 // CONVEX
@@ -15,8 +19,10 @@ import { updateAccommodationReviewSortKeys } from './tables/accommodations/helpe
 import { ACCOMMODATION_CONFIG } from '../shared/features/accommodations/config.js';
 
 // DATA
-import { AMENITY_KEYS } from '../shared/features/accommodations/data/accommodationsData.js';
-import { ACCOMMODATION_TYPES } from '../shared/features/accommodations/types/accommodationTypes.js';
+import {
+	ACCOMMODATION_TYPES,
+	AMENITY_KEYS
+} from '../shared/features/accommodations/data/accommodationsData.js';
 
 // TYPES
 import type { Doc } from './_generated/dataModel.js';
@@ -26,6 +32,7 @@ const SEED_OWNER_ID = 'seed-owner';
 const IMAGE_COUNT = 5;
 
 type SeedCity = {
+	timeZone: string;
 	city: string;
 	country: string;
 	latitude: number;
@@ -34,14 +41,64 @@ type SeedCity = {
 };
 
 const SEED_CITIES: SeedCity[] = [
-	{ city: 'Belgrade', country: 'Serbia', latitude: 44.8125, longitude: 20.4612, count: 40 },
-	{ city: 'Novi Sad', country: 'Serbia', latitude: 45.2671, longitude: 19.8335, count: 20 },
-	{ city: 'Niš', country: 'Serbia', latitude: 43.3209, longitude: 21.8958, count: 15 },
-	{ city: 'Kragujevac', country: 'Serbia', latitude: 44.0128, longitude: 20.9114, count: 10 },
-	{ city: 'Subotica', country: 'Serbia', latitude: 46.1005, longitude: 19.6657, count: 5 },
-	{ city: 'Budapest', country: 'Hungary', latitude: 47.4979, longitude: 19.0402, count: 5 },
-	{ city: 'Zagreb', country: 'Croatia', latitude: 45.815, longitude: 15.9819, count: 3 },
 	{
+		timeZone: 'Europe/Belgrade',
+		city: 'Belgrade',
+		country: 'Serbia',
+		latitude: 44.8125,
+		longitude: 20.4612,
+		count: 40
+	},
+	{
+		timeZone: 'Europe/Belgrade',
+		city: 'Novi Sad',
+		country: 'Serbia',
+		latitude: 45.2671,
+		longitude: 19.8335,
+		count: 20
+	},
+	{
+		timeZone: 'Europe/Belgrade',
+		city: 'Niš',
+		country: 'Serbia',
+		latitude: 43.3209,
+		longitude: 21.8958,
+		count: 15
+	},
+	{
+		timeZone: 'Europe/Belgrade',
+		city: 'Kragujevac',
+		country: 'Serbia',
+		latitude: 44.0128,
+		longitude: 20.9114,
+		count: 10
+	},
+	{
+		timeZone: 'Europe/Belgrade',
+		city: 'Subotica',
+		country: 'Serbia',
+		latitude: 46.1005,
+		longitude: 19.6657,
+		count: 5
+	},
+	{
+		timeZone: 'Europe/Budapest',
+		city: 'Budapest',
+		country: 'Hungary',
+		latitude: 47.4979,
+		longitude: 19.0402,
+		count: 5
+	},
+	{
+		timeZone: 'Europe/Zagreb',
+		city: 'Zagreb',
+		country: 'Croatia',
+		latitude: 45.815,
+		longitude: 15.9819,
+		count: 3
+	},
+	{
+		timeZone: 'Europe/Sarajevo',
 		city: 'Sarajevo',
 		country: 'Bosnia and Herzegovina',
 		latitude: 43.8563,
@@ -219,6 +276,7 @@ export const seedAccommodations = internalMutation({
 
 			const listing: WithoutSystemFields<Doc<'accommodations'>> = {
 				ownerId,
+				cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 				name: `${adjective} ${noun} ${type}`,
 				description: `A ${adjective.toLowerCase()} ${type} with ${bedrooms} bedroom${bedrooms === 1 ? '' : 's'} in the centre of ${city.city}. Sleeps up to ${maxGuests} guests across ${beds} bed${beds === 1 ? '' : 's'} and ${bathrooms} bathroom${bathrooms === 1 ? '' : 's'}. Comes with ${amenities.length} amenities and fast wifi for remote work.`,
 				type,
@@ -242,6 +300,7 @@ export const seedAccommodations = internalMutation({
 				guestReviewCount: 0,
 				amenities,
 				imageKeys: buildImageKeys(seedIndex),
+				timeZone: city.timeZone,
 				checkInStart: pick(CHECK_IN_STARTS, random),
 				checkInEnd: pick(CHECK_IN_ENDS, random),
 				checkOut: pick(CHECK_OUTS, random),
@@ -320,18 +379,39 @@ export const seedReviews = internalMutation({
 				const email = `${guestOwnerId}@example.com`;
 				const stayEndOffsetDays = 10 + Math.floor(random() * 300);
 				const nights = 1 + Math.floor(random() * 6);
-				const checkOutDate = new Date(now - stayEndOffsetDays * 86_400_000)
-					.toISOString()
-					.slice(0, 10);
-				const checkInDate = new Date(Date.parse(checkOutDate) - nights * 86_400_000)
-					.toISOString()
-					.slice(0, 10);
+				const checkOutDate = getIsoDateInTimeZone(
+					now - stayEndOffsetDays * 86_400_000,
+					accommodation.timeZone
+				);
+				const checkInDate = parseDate(checkOutDate).subtract({ days: nights }).toString();
 
 				const bookingId = await ctx.db.insert('bookings', {
+					cancellationTerms: {
+						policy: accommodation.cancellationPolicy,
+						timeZone: accommodation.timeZone,
+						checkInStart: accommodation.checkInStart,
+						checkInAt: getZonedTimestamp(
+							checkInDate,
+							accommodation.checkInStart,
+							accommodation.timeZone
+						),
+						checkOut: accommodation.checkOut,
+						checkOutAt: getZonedTimestamp(
+							checkOutDate,
+							accommodation.checkOut,
+							accommodation.timeZone
+						),
+						pricePerNightMinor: accommodation.pricePerNightMinor,
+						currency: COMPANY_DATA.CURRENCY
+					},
 					ownerId: guestOwnerId,
 					hostId: accommodation.ownerId,
 					status: 'completed',
-					completedAt: now - stayEndOffsetDays * 86_400_000,
+					completedAt: getZonedTimestamp(
+						checkOutDate,
+						accommodation.checkOut,
+						accommodation.timeZone
+					),
 					completedBy: accommodation.ownerId,
 					accommodationId: accommodation._id,
 					firstName,

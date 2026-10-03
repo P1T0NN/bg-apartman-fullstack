@@ -4,6 +4,7 @@
 	import AddAccommodationSaveButton from './add-accommodation-save-button.svelte';
 	import * as Field from '@/components/ui/field/index.js';
 	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import AccommodationCancellationPolicyPreview from '@/features/accommodations/components/accommodation-cancellation-policy/accommodation-cancellation-policy-preview/accommodation-cancellation-policy-preview.svelte';
 
 	// CONFIG
 	import { accommodationLocationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
@@ -26,6 +27,13 @@
 			...context.values,
 			imageKeys: form.state.files.map((file) => file.id)
 		})
+	);
+	const validationErrors = $derived(
+		validation.success
+			? []
+			: validation.error.issues
+					.filter((issue) => issue.path[0] !== 'cancellationPolicy')
+					.map((issue) => issue.message)
 	);
 </script>
 
@@ -127,6 +135,17 @@
 		'checkOut'
 	)}
 </p>
+<p>
+	{m['AddAccommodationPage.AddAccommodationFormReview.timeZone']()}: {context.inputValue(
+		'timeZone'
+	)}
+</p>
+
+<AccommodationCancellationPolicyPreview
+	policy={context.getValue('cancellationPolicy')}
+	title={m['AddAccommodationPage.AddAccommodationFormReview.cancellationPolicy']()}
+/>
+
 <nav
 	class="flex flex-wrap gap-2"
 	aria-label={m['AddAccommodationPage.AddAccommodationFormReview.sections']()}
@@ -149,9 +168,12 @@
 	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(5)}>
 		{m['AddAccommodationPage.AddAccommodationFormReview.rules']()}
 	</Button>
+	<Button type="button" variant="outline" disabled={context.disabled} onclick={() => form.goTo(6)}>
+		{m['AddAccommodationPage.AddAccommodationFormReview.cancellationPolicy']()}
+	</Button>
 </nav>
-{#if !validation.success}
-	<Field.Error>{validation.error.issues.map((issue) => issue.message).join(' ')}</Field.Error>
+{#if validationErrors.length}
+	<Field.Error>{validationErrors.join(' ')}</Field.Error>
 {/if}
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">
 	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}>

@@ -33,6 +33,7 @@ test('listing sections validate independently and strip unrelated fields', () =>
 	expect(
 		accommodationRulesSchema.safeParse({
 			checkInStart: '14:00',
+			timeZone: 'Europe/Belgrade',
 			checkInEnd: '22:00',
 			checkOut: '11:00',
 			smokingAllowed: false,

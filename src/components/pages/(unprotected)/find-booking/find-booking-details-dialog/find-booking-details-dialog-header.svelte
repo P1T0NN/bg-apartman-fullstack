@@ -15,7 +15,7 @@
 	<h2 id={titleId} class="text-xl font-semibold tracking-tight">
 		{m['FindBookingPage.FindBookingDetailsDialogHeader.title']()}
 	</h2>
-	
+
 	<p class="text-base font-medium wrap-anywhere">{booking.accommodationName}</p>
 
 	<BookingStatusBadge status={booking.status} />

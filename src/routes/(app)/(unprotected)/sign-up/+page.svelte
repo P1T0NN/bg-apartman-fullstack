@@ -27,7 +27,11 @@
 	</main>
 
 	<aside class="relative hidden bg-muted lg:block" aria-hidden="true">
-		<img src="/login/login-image.webp" alt="" class="absolute inset-0 h-full w-full object-cover" />
+		<img
+			src="/assets/belgrade-sunset.webp"
+			alt=""
+			class="absolute inset-0 h-full w-full object-cover"
+		/>
 		<div class="absolute inset-0 bg-black/60"></div>
 	</aside>
 </div>

@@ -5,12 +5,12 @@
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 
-	let { 
-		field, 
-		value = $bindable() 
-	}: { 
-		field: 'bedrooms' | 'beds' | 'bathrooms'; 
-		value: number 
+	let {
+		field,
+		value = $bindable()
+	}: {
+		field: 'bedrooms' | 'beds' | 'bathrooms';
+		value: number;
 	} = $props();
 
 	const uid = $props.id();
@@ -26,7 +26,7 @@
 
 <fieldset id={`${uid}-${field}`} class="scroll-mt-24">
 	<legend class="mb-3 font-semibold">{label}</legend>
-	
+
 	<div class="flex flex-wrap gap-2">
 		{#each [0, 1, 2, 3, 4, 5] as number (number)}
 			<Button

@@ -11,26 +11,14 @@ import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations
 
 // SCHEMAS
 import { saveAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
-import { accommodations } from '../schema.js';
+import { createAccommodationValidator } from '../validators/accommodationValidators.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
 export const createAccommodation = authenticatedUploadMutation({
 	rateLimit: { name: 'accommodations:create' },
-	args: accommodations.validator
-		.omit(
-			'ownerId',
-			'status',
-			'updatedAt',
-			'pricePerNightMinor',
-			'latitude',
-			'longitude',
-			'recommendationSortKey',
-			'guestRatingAverage',
-			'guestReviewCount'
-		)
-		.extend({ nightlyPrice: v.number(), latitude: v.number(), longitude: v.number() }).fields,
+	args: createAccommodationValidator.fields,
 	returns: v.id('accommodations'),
 	handler: async (ctx, args) => {
 		const parsed = saveAccommodationSchema.safeParse(args);

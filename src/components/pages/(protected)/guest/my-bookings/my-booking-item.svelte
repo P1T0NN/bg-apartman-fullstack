@@ -1,5 +1,7 @@
 <script lang="ts">
 	// COMPONENTS
+	import BookingCancellationDialog from '@/features/bookings/components/booking-cancellation-dialog/booking-cancellation-dialog.svelte';
+	import BookingCancellationDetails from '@/features/bookings/components/booking-cancellation-details/booking-cancellation-details.svelte';
 	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
 	import { Badge, type BadgeVariant } from '@/components/ui/badge/index.js';
 	import { Button } from '@/components/ui/button/index.js';
@@ -7,6 +9,7 @@
 	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
 	import MyReviewDetailsDialog from '@/components/pages/(protected)/guest/my-reviews/my-review-details-dialog/my-review-details-dialog.svelte';
 	import ReviewDialog from '@/features/reviews/components/review-dialog/review-dialog.svelte';
+	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
@@ -24,12 +27,12 @@
 
 	let {
 		booking,
-		today
+		now
 	}: {
 		booking: FunctionReturnType<
 			typeof api.tables.bookings.queries.fetchMyBookings.fetchMyBookings
 		>['items'][number];
-		today: string;
+		now: number;
 	} = $props();
 	let failedImageUrl = $state('');
 
@@ -166,14 +169,21 @@
 		class="flex flex-col gap-4 border-t bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6"
 	>
 		<p class="max-w-prose text-sm leading-5 text-muted-foreground">{status.hint()}</p>
+		<BookingCancellationDialog
+			{booking}
+			accommodationName={booking.accommodation?.name ??
+				m['MyBookingsPage.MyBookingItem.unavailable']()}
+			{now}
+		/>
 		{#if booking.reviewId}
 			<MyReviewDetailsDialog reviewId={booking.reviewId} />
-		{:else if booking.accommodation && canReviewBooking(booking, today)}
+		{:else if booking.accommodation && canReviewBooking(booking, now)}
 			<ReviewDialog
 				bookingId={booking._id}
 				accommodationName={booking.accommodation.name}
 				checkInDate={booking.checkInDate}
 				checkOutDate={booking.checkOutDate}
+				timeZone={booking.cancellationTerms.timeZone}
 			/>
 		{/if}
 		{#if booking.accommodation}
@@ -191,6 +201,32 @@
 			</Button>
 		{/if}
 	</div>
+
+	{#if booking.cancellation}
+		<div class="border-t px-5 py-4 sm:px-6">
+			<BookingCancellationDetails
+				cancellation={booking.cancellation}
+				timeZone={booking.cancellationTerms.timeZone}
+			/>
+		</div>
+	{/if}
+
+	<details class="group border-t px-5 sm:px-6">
+		<summary
+			class="flex min-h-12 cursor-pointer items-center gap-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2"
+		>
+			{m['MyBookingsPage.MyBookingItem.cancellationDetails']()}
+		</summary>
+		<div class="pb-6">
+			<BookingCancellationPolicy
+				policy={booking.cancellationTerms.policy}
+				timeZone={booking.cancellationTerms.timeZone}
+				checkInAt={booking.cancellationTerms.checkInAt}
+				status={booking.status}
+				booked
+			/>
+		</div>
+	</details>
 
 	<details class="group border-t px-5 sm:px-6">
 		<summary

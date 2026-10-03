@@ -1,5 +1,6 @@
 <script lang="ts">
 	// COMPONENTS
+	import BookingCancellationDetails from '@/features/bookings/components/booking-cancellation-details/booking-cancellation-details.svelte';
 	import { Button } from '@/components/ui/button/index.js';
 	import NativeDialog from '@/components/ui/native-components/native-dialog/native-dialog.svelte';
 	import NativeAvatar from '@/components/ui/native-components/native-avatar/native-avatar.svelte';
@@ -29,7 +30,7 @@
 <NativeDialog aria-labelledby={dialogId}>
 	{#snippet trigger({ id })}
 		<Button
-			variant="ghost"
+			variant="outline"
 			size="sm"
 			commandfor={id}
 			command="show-modal"
@@ -66,6 +67,13 @@
 
 				<HostBookingsDetailsDialogAccommodationInfo accommodation={booking.accommodation} />
 			</dl>
+
+			{#if booking.cancellation}
+				<BookingCancellationDetails
+					cancellation={booking.cancellation}
+					timeZone={booking.cancellationTerms.timeZone}
+				/>
+			{/if}
 
 			{#if booking.specialRequests}
 				<HostBookingsDetailsDialogSpecialRequests requests={booking.specialRequests} />

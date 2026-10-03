@@ -14,7 +14,7 @@ export function getAccommodationsByRecommendedSort(ctx: QueryCtx, country?: stri
 			)
 			.order('asc');
 	}
-	
+
 	return query
 		.withIndex('by_address_country_recommendation_sort_key_price', (q) =>
 			q.eq('address.country', country)

@@ -3,7 +3,7 @@ import { useSearchParams } from '@/hooks/useSearchParams.svelte.js';
 
 // DATA
 import { DEFAULT_SEARCH, OPTIONAL_FILTER_KEYS } from '@/features/search/data/searchCriteria.js';
-import { ACCOMMODATION_SORTS } from '@/shared/features/accommodations/types/accommodationTypes.js';
+import { ACCOMMODATION_SORTS } from '@/shared/features/accommodations/data/accommodationsData.js';
 
 // TYPES
 import type { StaySearch } from '@/shared/features/search/types/searchTypes.js';

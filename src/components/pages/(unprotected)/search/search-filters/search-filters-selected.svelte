@@ -46,7 +46,7 @@
 				<span class="icon-[lucide--x]" aria-hidden="true"></span>
 			</Button>
 		{/each}
-		
+
 		<Button
 			size="sm"
 			variant="ghost"

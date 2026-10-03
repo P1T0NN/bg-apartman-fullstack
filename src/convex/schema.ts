@@ -34,11 +34,14 @@ export const tables = {
 		key: v.string(),
 		expectedSize: v.optional(v.number()),
 		expectedContentType: v.optional(v.string()),
-		status: literals('pending', 'uploaded'),
+		bucket: v.optional(v.string()),
+		temporaryKey: v.optional(v.string()),
+		status: literals('pending', 'processing', 'uploaded', 'deleting'),
 		createdAt: v.number()
 	})
 		.index('by_key', ['key'])
 		.index('by_owner_id_created_at', ['ownerId', 'createdAt'])
+		.index('by_owner_id_and_status_and_created_at', ['ownerId', 'status', 'createdAt'])
 		.index('by_created_at', ['createdAt'])
 };
 

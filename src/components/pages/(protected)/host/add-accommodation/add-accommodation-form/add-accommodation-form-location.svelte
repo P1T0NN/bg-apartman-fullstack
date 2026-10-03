@@ -7,6 +7,8 @@
 	import FormInput from '@/components/ui/custom-components/form/form-input.svelte';
 	import FormSelect from '@/components/ui/custom-components/form/form-select.svelte';
 	import GoogleMap from '@/components/ui/custom-components/google-components/google-map/google-map.svelte';
+	import AccommodationTimeZone from '@/features/accommodations/components/accommodation-time-zone/accommodation-time-zone.svelte';
+	import { useAccommodationTimeZone } from '@/features/accommodations/hooks/useAccommodationTimeZone.svelte.js';
 	import GoogleStreetInput from '@/components/ui/custom-components/google-components/google-street-input/google-street-input.svelte';
 	import * as Field from '@/components/ui/field/index.js';
 	import { Button } from '@/components/ui/button/index.js';
@@ -36,6 +38,7 @@
 	let { context }: { context: FormFieldContext<FormValue> } = $props();
 
 	const form = getAccommodationFormContext();
+	const timeZone = useAccommodationTimeZone(() => context);
 	const address = $derived({
 		street: context.inputValue('address.street').trim(),
 		streetNumber: context.inputValue('address.streetNumber').trim(),
@@ -58,8 +61,7 @@
 	let mapStatus = $state<'idle' | 'searching' | 'placed' | 'noResult' | 'failed'>('idle');
 
 	function setPosition(point: { lat: number; lng: number }) {
-		context.setValue('latitude', point.lat);
-		context.setValue('longitude', point.lng);
+		void timeZone.setPosition(point);
 		form.state.pinAddress = addressKey;
 		mapStatus = 'placed';
 	}
@@ -79,6 +81,7 @@
 				context.setValue('longitude', undefined);
 			}
 			form.state.pinAddress = '';
+			timeZone.clear();
 			if (!addressComplete) {
 				mapStatus = 'idle';
 				return;
@@ -103,7 +106,7 @@
 					});
 					if (!response.ok) throw new Error('Geocoding failed');
 					const result = geocodeResponseSchema.parse(await response.json());
-					if (cancelled) return;
+					if (cancelled || form.state.pinAddress === key) return;
 					if (result.position) setPosition(result.position);
 					else mapStatus = 'noResult';
 				} catch {
@@ -233,6 +236,13 @@
 		</Field.Error>
 	{/if}
 </section>
+
+<AccommodationTimeZone
+	{context}
+	pending={timeZone.pending}
+	error={timeZone.error}
+	onretry={position ? timeZone.retry : undefined}
+/>
 
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">
 	<Button type="button" variant="outline" disabled={context.disabled} onclick={form.back}>

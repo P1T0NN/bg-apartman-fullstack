@@ -10,7 +10,7 @@
 	import ReviewDialogForm from './review-dialog-form.svelte';
 
 	// UTILS
-	import { formatDate } from '@/shared/utils/date.js';
+	import { formatDateTime } from '@/shared/utils/date.js';
 	import { getReviewDeadline } from '@/shared/features/reviews/utils/getReviewDeadline.js';
 
 	// TYPES
@@ -22,12 +22,14 @@
 		accommodationName,
 		checkInDate,
 		checkOutDate,
+		timeZone,
 		trigger: customTrigger
 	}: {
 		bookingId: Id<'bookings'>;
 		accommodationName: string;
 		checkInDate: string;
 		checkOutDate: string;
+		timeZone: string;
 		trigger?: Snippet<[{ id: string }]>;
 	} = $props();
 
@@ -75,7 +77,12 @@
 			{#if active}
 				<p class="text-sm text-muted-foreground">
 					{m['ReviewsFeature.ReviewDialog.deadline']({
-						date: formatDate(getReviewDeadline(checkOutDate) - 1, getLocale())
+						date: formatDateTime(
+							getReviewDeadline(checkOutDate, timeZone) - 1,
+							getLocale(),
+							timeZone
+						),
+						timeZone
 					})}
 				</p>
 

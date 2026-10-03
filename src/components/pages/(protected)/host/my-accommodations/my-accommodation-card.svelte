@@ -10,9 +10,9 @@
 	import { PROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// TYPES
-	import type { AccommodationListItem } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { AccommodationCard } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
-	let { accommodation }: { accommodation: AccommodationListItem } = $props();
+	let { accommodation }: { accommodation: AccommodationCard } = $props();
 
 	const coverUrl = $derived(accommodation.imageUrls[0]);
 </script>

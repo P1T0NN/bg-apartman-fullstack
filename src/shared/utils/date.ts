@@ -32,11 +32,11 @@ export function formatDate(timestamp: number, locale: string): string {
 	}).format(timestamp);
 }
 
-export function formatDateTime(timestamp: number, locale: string): string {
+export function formatDateTime(timestamp: number, locale: string, timeZone = 'UTC'): string {
 	return new Intl.DateTimeFormat(locale, {
 		dateStyle: 'medium',
 		timeStyle: 'short',
-		timeZone: 'UTC'
+		timeZone
 	}).format(timestamp);
 }
 

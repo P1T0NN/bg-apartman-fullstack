@@ -62,7 +62,7 @@ export function useClaimBooking() {
 			await claimBooking(args);
 
 			clear();
-			
+
 			return true;
 		} finally {
 			submitting = false;

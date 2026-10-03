@@ -2,9 +2,12 @@
 import { REVIEWS_CONFIG } from '../config.js';
 
 // UTILS
-import { DAY_IN_MS } from '../../../utils/date.js';
+import { parseDate } from '@internationalized/date';
 
-/** Booking dates use UTC throughout this project; the window ends 90 days after departure. */
-export function getReviewDeadline(checkOutDate: string): number {
-	return Date.parse(checkOutDate) + REVIEWS_CONFIG.REVIEW_WINDOW_DAYS * DAY_IN_MS;
+/** Exclusive start of the 90th calendar day after checkout, in the booking's property zone. */
+export function getReviewDeadline(checkOutDate: string, timeZone: string): number {
+	return parseDate(checkOutDate)
+		.add({ days: REVIEWS_CONFIG.REVIEW_WINDOW_DAYS })
+		.toDate(timeZone)
+		.getTime();
 }

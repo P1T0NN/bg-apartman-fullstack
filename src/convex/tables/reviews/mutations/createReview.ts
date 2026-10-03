@@ -18,7 +18,6 @@ import { createReviewSchema } from '../../../../shared/features/reviews/schemas/
 
 // UTILS
 import { canReviewBooking } from '../../../../shared/features/reviews/utils/canReviewBooking.js';
-import { getReviewDeadline } from '../../../../shared/features/reviews/utils/getReviewDeadline.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -39,9 +38,7 @@ export const createReview = authenticatedMutation({
 		if (existing || booking.reviewId)
 			throw new ConvexError<BackendErrorData>({ code: 'REVIEW_ALREADY_EXISTS' });
 		const now = Date.now();
-		const today = new Date(now).toISOString().slice(0, 10);
-		const isEligible =
-			canReviewBooking(booking, today) && now < getReviewDeadline(booking.checkOutDate);
+		const isEligible = canReviewBooking(booking, now);
 		if (!isEligible) throw new ConvexError<BackendErrorData>({ code: 'REVIEW_NOT_ELIGIBLE' });
 		const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
 		if (!accommodation || accommodation.status !== 'published')

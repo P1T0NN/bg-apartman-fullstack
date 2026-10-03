@@ -2,6 +2,7 @@
 	// COMPONENTS
 	import AddAccommodationContinueButton from './add-accommodation-continue-button.svelte';
 	import AccommodationRuleCard from '@/features/accommodations/components/accommodation-rule-card/accommodation-rule-card.svelte';
+	import AccommodationTimeZone from '@/features/accommodations/components/accommodation-time-zone/accommodation-time-zone.svelte';
 	import FormSelect from '@/components/ui/custom-components/form/form-select.svelte';
 	import FormTextarea from '@/components/ui/custom-components/form/form-textarea.svelte';
 	import * as Field from '@/components/ui/field/index.js';
@@ -24,6 +25,7 @@
 	} from '@/components/ui/custom-components/form/formTypes.js';
 
 	let { context }: { context: FormFieldContext<FormValue> } = $props();
+
 	const form = getAccommodationFormContext();
 	const timeSlots = getTimeSlots();
 
@@ -76,6 +78,8 @@
 </script>
 
 <Field.Group>
+	<AccommodationTimeZone {context} />
+
 	<div class="flex flex-row gap-4">
 		{#each checkInFields as field (field.name)}
 			<FormSelect

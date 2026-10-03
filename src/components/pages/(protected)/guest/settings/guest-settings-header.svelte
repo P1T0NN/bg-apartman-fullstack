@@ -4,9 +4,9 @@
 	import { m } from '@/lib/paraglide/messages';
 
 	// TYPES
-	import type { GuestSettingsUser } from './guestSettingsTypes.js';
+	import type { AuthUserSummary } from '@/shared/features/auth/types/authTypes.js';
 
-	let { user }: { user: GuestSettingsUser } = $props();
+	let { user }: { user: AuthUserSummary } = $props();
 </script>
 
 <header class="flex items-center gap-4">

@@ -60,7 +60,7 @@
 <NativeDialog aria-labelledby={dialogId}>
 	{#snippet trigger({ id })}
 		<Button
-			variant="outline"
+			variant="destructive"
 			size="sm"
 			disabled={disabled || pending}
 			commandfor={id}

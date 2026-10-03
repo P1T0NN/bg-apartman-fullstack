@@ -11,6 +11,7 @@
 	import AddAccommodationFormPhotos from './add-accommodation-form-photos.svelte';
 	import AddAccommodationFormPricing from './add-accommodation-form-pricing.svelte';
 	import AddAccommodationFormRules from './add-accommodation-form-rules.svelte';
+	import AddAccommodationFormCancellationPolicy from './add-accommodation-form-cancellation-policy.svelte';
 	import AddAccommodationFormReview from './add-accommodation-form-review.svelte';
 
 	// CONFIG
@@ -43,18 +44,21 @@
 						label: m['AddAccommodationPage.AddAccommodationForm.images'](),
 						mode: 'multiple',
 						accept: STORAGE_CONFIG.allowedImageTypes.join(','),
-						class: state.step === 3 || state.step === 6 ? undefined : 'hidden'
+						class: state.step === 3 || state.step === 7 ? undefined : 'hidden'
 					}
 				]}
 				onsubmitcapture={(event) => {
-					if (state.step === 6) return;
+					if (state.step === 7) return;
 					event.preventDefault();
 					event.stopImmediatePropagation();
 				}}
 				resolveExtraFields={({ uploadedFiles }) => ({
 					imageKeys: state.files.map((file, index) => uploadedFiles[index] ?? file.id)
 				})}
-				onSuccess={() => goto(PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS)}
+				onSuccess={() => {
+					// eslint-disable-next-line svelte/no-navigation-without-resolve -- Shared endpoints already call resolve().
+					return goto(PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS);
+				}}
 				resetOnSuccess={false}
 				successMessage={m['AddAccommodationPage.AddAccommodationForm.published']()}
 				errorMessage={m['AddAccommodationPage.AddAccommodationForm.publishError']()}
@@ -73,6 +77,8 @@
 						<AddAccommodationFormPricing {context} />
 					{:else if state.step === 5}
 						<AddAccommodationFormRules {context} />
+					{:else if state.step === 6}
+						<AddAccommodationFormCancellationPolicy {context} />
 					{:else}
 						<AddAccommodationFormReview {context} />
 					{/if}

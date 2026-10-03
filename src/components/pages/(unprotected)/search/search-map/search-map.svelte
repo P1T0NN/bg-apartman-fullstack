@@ -19,7 +19,7 @@
 
 	// TYPES
 	import type {
-		AccommodationListItem,
+		AccommodationCard,
 		AccommodationMapMarker
 	} from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type {
@@ -42,7 +42,7 @@
 		destination: string;
 		position: Position | null;
 		markers?: AccommodationMapMarker[];
-		accommodations?: AccommodationListItem[];
+		accommodations?: AccommodationCard[];
 		highlightedId?: string | null;
 		loading?: boolean;
 		mapError?: unknown;
@@ -93,7 +93,7 @@
 
 	function buildStayPin(
 		marker: AccommodationMapMarker,
-		accommodation: AccommodationListItem | undefined
+		accommodation: AccommodationCard | undefined
 	) {
 		if (!accommodation) {
 			const pin = document.createElement('div');

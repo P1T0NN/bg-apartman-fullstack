@@ -10,8 +10,10 @@ import { accommodations } from '../schema.js';
 import { reviewSummary } from '../../reviews/validators/reviewValidators.js';
 
 // DATA
-import { AMENITY_KEYS } from '../../../../shared/features/accommodations/data/accommodationsData.js';
-import { ACCOMMODATION_TYPES } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
+import {
+	ACCOMMODATION_TYPES,
+	AMENITY_KEYS
+} from '../../../../shared/features/accommodations/data/accommodationsData.js';
 
 export const boundsValidator = v.object({
 	south: v.number(),
@@ -54,6 +56,7 @@ const accommodationListItem = accommodationDoc
 		'amenities',
 		'imageKeys',
 		'checkInStart',
+		'timeZone',
 		'checkInEnd',
 		'checkOut',
 		'minimumStay',
@@ -62,6 +65,7 @@ const accommodationListItem = accommodationDoc
 		'petsAllowed',
 		'partiesAllowed',
 		'houseRules',
+		'cancellationPolicy',
 		'status',
 		'updatedAt',
 		'recommendationSortKey',
@@ -80,6 +84,19 @@ export const accommodationPage = v.object({
 	pageSize: v.number(),
 	total: v.optional(v.number())
 });
+
+/** Complete editable listing payload; server-owned fields cannot be submitted. */
+export const createAccommodationValidator = accommodations.validator
+	.omit(
+		'ownerId',
+		'status',
+		'updatedAt',
+		'pricePerNightMinor',
+		'recommendationSortKey',
+		'guestRatingAverage',
+		'guestReviewCount'
+	)
+	.extend({ nightlyPrice: v.number() });
 
 /** Section-agnostic update payload: any subset of the editable listing fields plus the target id. */
 export const updateAccommodationValidator = accommodations.validator

@@ -11,7 +11,7 @@
 
 	// HOOKS
 	import { useConvexPagination } from '@/features/pagination/hooks/useConvexPagination.svelte.js';
-	import { useReviewDate } from '@/features/reviews/hooks/useReviewDate.svelte.js';
+	import { useReviewClock } from '@/features/reviews/hooks/useReviewClock.svelte.js';
 
 	// TYPES
 	import type { Id } from '@convex/_generated/dataModel';
@@ -21,11 +21,11 @@
 		accommodationName
 	}: { accommodationId: Id<'accommodations'>; accommodationName: string } = $props();
 
-	const date = useReviewDate();
+	const clock = useReviewClock();
 
 	const bookings = useConvexPagination(
 		api.tables.reviews.queries.fetchEligibleReviewBookings.fetchEligibleReviewBookings,
-		() => ({ accommodationId, today: date.today }),
+		() => ({ accommodationId, now: clock.now }),
 		{ pageSize: 5 }
 	);
 </script>

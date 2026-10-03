@@ -1,5 +1,8 @@
-﻿/// <reference types="vite/client" />
+import { registerResend, successfulResendResponse } from '../fixtures/resend';
+/// <reference types="vite/client" />
+import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 
+import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
 import { convexTest } from 'convex-test';
 import { z } from 'zod';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
@@ -38,7 +41,14 @@ beforeEach(() => {
 	vi.setSystemTime(new Date('2026-10-01T12:00:00Z'));
 	vi.stubEnv('RESEND_API_KEY', 'test-key');
 	vi.stubEnv('EMAIL_FROM', 'test@example.com');
-	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockImplementation((_url, options) =>
+				Promise.resolve(successfulResendResponse(options?.body))
+			)
+	);
 });
 afterEach(() => {
 	vi.useRealTimers();
@@ -49,6 +59,7 @@ afterEach(() => {
 
 async function setup(email = 'alex+stay@example.com') {
 	const t = convexTest(schema, modules);
+	registerResend(t);
 	rateLimiterTest.register(t);
 	const bookingId = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
@@ -71,6 +82,7 @@ async function setup(email = 'alex+stay@example.com') {
 			amenities: [],
 			imageKeys: [],
 			checkInStart: '14:00',
+			timeZone: 'Europe/Belgrade',
 			checkInEnd: '20:00',
 			checkOut: '11:00',
 			minimumStay: 1,
@@ -78,10 +90,12 @@ async function setup(email = 'alex+stay@example.com') {
 			petsAllowed: false,
 			partiesAllowed: false,
 			houseRules: '',
+			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			status: 'published',
 			updatedAt: Date.now()
 		});
 		return ctx.db.insert('bookings', {
+			cancellationTerms: bookingCancellationTerms('2026-09-01', '2026-09-05'),
 			accommodationId,
 			ownerId: 'guest-1',
 			hostId: 'host-1',
@@ -325,8 +339,7 @@ async function request(
 }
 
 async function finishDelivery(t: Awaited<ReturnType<typeof setup>>['t']) {
-	await vi.runAllTimersAsync();
-	await t.finishInProgressScheduledFunctions();
+	await t.finishAllScheduledFunctions(() => vi.advanceTimersByTimeAsync(100));
 }
 
 test('public requests acknowledge identically while only matching email receives a scoped, reusable link', async () => {
@@ -342,11 +355,11 @@ test('public requests acknowledge identically while only matching email receives
 	await finishDelivery(t);
 	expect(fetch).toHaveBeenCalledTimes(1);
 	const [endpoint, options] = vi.mocked(fetch).mock.calls[0];
-	expect(endpoint).toBe('https://api.resend.com/emails');
+	expect(endpoint).toBe('https://api.resend.com/emails/batch');
 	const payload = z
-		.object({ to: z.string(), subject: z.string(), html: z.string(), text: z.string() })
-		.parse(JSON.parse(z.string().parse(options?.body)));
-	expect(payload.to).toBe('alex+stay@example.com');
+		.object({ to: z.array(z.string()), subject: z.string(), html: z.string(), text: z.string() })
+		.parse(JSON.parse(z.string().parse(options?.body))[0]);
+	expect(payload.to).toEqual(['alex+stay@example.com']);
 	expect(payload.subject).toBe('Your secure booking link');
 	for (const content of [payload.html, payload.text]) {
 		expect(content).toContain('Do not share it');
@@ -428,11 +441,10 @@ test('validation rejects malformed input; provider errors disclose no credential
 		data: { code: 'INVALID_BOOKING_RECOVERY_REQUEST' }
 	});
 	const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
-	vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 500 }));
+	vi.stubEnv('EMAIL_FROM', '');
 	expect(await request(t, 'alex+stay@example.com')).toBeNull();
 	await finishDelivery(t);
 	expect(errorLog).toHaveBeenCalledWith('Booking recovery email delivery failed');
-	vi.mocked(fetch).mockRejectedValue(new Error('sensitive provider diagnostic'));
 	expect(
 		await t.action(deliverBookingRecoveryLink, { email: 'alex+stay@example.com', locale: 'en' })
 	).toBeNull();

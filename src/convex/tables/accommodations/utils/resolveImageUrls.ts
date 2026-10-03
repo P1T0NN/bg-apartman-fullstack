@@ -3,13 +3,13 @@ import { resolveStoredFileUrls } from '../../../storage/r2.js';
 
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
-import type { AccommodationListItem } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
+import type { AccommodationCard } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
 
 /** Resolve ordered image urls for list rows; `limit` keeps only the first n (cover-only lists). */
 export async function resolveImageUrls(
 	items: Doc<'accommodations'>[],
 	limit?: number
-): Promise<AccommodationListItem[]> {
+): Promise<AccommodationCard[]> {
 	const imageKeys = [...new Set(items.flatMap((item) => item.imageKeys.slice(0, limit)))];
 	const urls = await resolveStoredFileUrls(imageKeys);
 	const urlByKey = new Map(imageKeys.map((key, index) => [key, urls[index]]));

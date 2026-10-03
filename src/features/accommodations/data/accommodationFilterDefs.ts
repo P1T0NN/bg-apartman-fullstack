@@ -1,5 +1,5 @@
 // CONFIG
-import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/types/accommodationTypes.js';
+import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/data/accommodationsData.js';
 
 // TYPES
 import type { FilterDef } from '@/shared/features/filters/types/filterTypes.js';

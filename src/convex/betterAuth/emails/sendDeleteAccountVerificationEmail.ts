@@ -13,17 +13,16 @@ import { escapeHtml } from '../../../shared/utils/escapeHtml.js';
 // TYPES
 import type { DeleteAccountEmailData } from '../../emails/types/emailTypes.js';
 
-export async function sendDeleteAccountVerificationEmail({
-	email,
-	name,
-	url
-}: DeleteAccountEmailData): Promise<void> {
+export async function sendDeleteAccountVerificationEmail(
+	ctx: Parameters<typeof sendEmail>[0],
+	{ email, name, url }: DeleteAccountEmailData
+): Promise<void> {
 	const { COLORS, TYPOGRAPHY } = EMAIL_DATA;
 	const { EMAIL_COPY } = COMPANY_DATA;
 	const heading = 'Confirm account deletion';
 	const instruction = `Hi ${escapeHtml(name)}, you asked to delete your account. Opening the button below permanently deletes your account, saved stays and sign-in details. Bookings you already made stay on record for the host.`;
 
-	await sendEmail({
+	await sendEmail(ctx, {
 		to: email,
 		subject: 'Confirm account deletion',
 		previewText: 'Confirm that you want to delete your account.',

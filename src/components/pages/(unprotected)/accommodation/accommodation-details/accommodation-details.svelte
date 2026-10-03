@@ -7,6 +7,7 @@
 	import AccommodationDetailsAmenities from './accommodation-details-amenities.svelte';
 	import AccommodationDetailsLocation from './accommodation-details-location.svelte';
 	import AccommodationDetailsRules from './accommodation-details-rules.svelte';
+	import AccommodationDetailsCancellationPolicy from './accommodation-details-cancellation-policy.svelte';
 	import AccommodationReviews from '../accommodation-reviews/accommodation-reviews.svelte';
 	import AccommodationReviewBookings from '../accommodation-reviews/accommodation-review-bookings.svelte';
 	import Reviews from '@/features/reviews/components/reviews/reviews.svelte';
@@ -38,4 +39,5 @@
 
 	<AccommodationDetailsLocation {accommodation} />
 	<AccommodationDetailsRules {accommodation} />
+	<AccommodationDetailsCancellationPolicy {accommodation} />
 </div>

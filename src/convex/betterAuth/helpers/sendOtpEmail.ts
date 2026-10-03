@@ -40,12 +40,15 @@ const OTP_COPY = {
 	{ subject: string; preview: string; heading: string; instruction: string }
 >;
 
-export async function sendOtpEmail({ email, otp, type }: OtpEmailData): Promise<void> {
+export async function sendOtpEmail(
+	ctx: Parameters<typeof sendEmail>[0],
+	{ email, otp, type }: OtpEmailData
+): Promise<void> {
 	const copy = OTP_COPY[type];
 	const { COLORS, TYPOGRAPHY } = EMAIL_DATA;
 	const { EMAIL_COPY } = COMPANY_DATA;
 
-	await sendEmail({
+	await sendEmail(ctx, {
 		to: email,
 		subject: copy.subject,
 		previewText: copy.preview,

@@ -29,7 +29,7 @@ export const deliverBookingRecoveryLink = internalAction({
 
 			url.searchParams.set('token', recovery.token);
 
-			await sendBookingRecoveryEmail({
+			await sendBookingRecoveryEmail(ctx, {
 				email: recovery.email,
 				url: url.toString(),
 				locale: args.locale

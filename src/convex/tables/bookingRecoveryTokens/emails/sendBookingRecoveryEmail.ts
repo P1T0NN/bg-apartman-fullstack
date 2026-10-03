@@ -14,11 +14,10 @@ import { EMAIL_DATA } from '../../../emails/data/emailData.js';
 import type { BookingRecoveryEmailData } from '../../../emails/types/emailTypes.js';
 
 /** Locale is passed from the frontend; backend email copy never imports Paraglide. */
-export async function sendBookingRecoveryEmail({
-	email,
-	url,
-	locale
-}: BookingRecoveryEmailData): Promise<void> {
+export async function sendBookingRecoveryEmail(
+	ctx: Parameters<typeof sendEmail>[0],
+	{ email, url, locale }: BookingRecoveryEmailData
+): Promise<void> {
 	const copy = getTranslationLocale(locale, sendBookingRecoveryEmailTranslation);
 
 	const { subject, heading, body } = copy;
@@ -27,7 +26,7 @@ export async function sendBookingRecoveryEmail({
 
 	const { COLORS, TYPOGRAPHY } = EMAIL_DATA;
 
-	await sendEmail({
+	await sendEmail(ctx, {
 		to: email,
 		subject,
 		previewText: heading,

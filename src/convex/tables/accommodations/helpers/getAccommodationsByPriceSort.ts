@@ -19,7 +19,7 @@ export function getAccommodationsByPriceSort(
 			)
 			.order(direction);
 	}
-	
+
 	return query
 		.withIndex('by_address_country_price', (q) => q.eq('address.country', country))
 		.order(direction);

@@ -17,7 +17,7 @@
 		booking,
 		accommodationName
 	}: {
-		booking: Pick<Doc<'bookings'>, '_id' | 'checkInDate' | 'checkOutDate'>;
+		booking: Pick<Doc<'bookings'>, '_id' | 'checkInDate' | 'checkOutDate'> & { timeZone: string };
 		accommodationName: string;
 	} = $props();
 </script>
@@ -27,6 +27,7 @@
 	{accommodationName}
 	checkInDate={booking.checkInDate}
 	checkOutDate={booking.checkOutDate}
+	timeZone={booking.timeZone}
 >
 	{#snippet trigger({ id })}
 		<Button
@@ -36,7 +37,7 @@
 			class="min-h-11 w-full flex-wrap justify-between gap-3 sm:w-auto"
 		>
 			{m['AccommodationPage.AccommodationReviewBookingItem.leaveReview']()}
-			
+
 			<span>
 				{formatDate(Date.parse(booking.checkInDate), getLocale())} &ndash; {formatDate(
 					Date.parse(booking.checkOutDate),

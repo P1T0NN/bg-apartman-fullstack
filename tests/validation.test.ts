@@ -66,6 +66,7 @@ test('stay bounds are optional and rule times stay on half-hour slots', () => {
 	if (pricing.success) expect(pricing.data.maximumStay).toBeUndefined();
 
 	const rules = {
+		timeZone: 'Europe/Belgrade',
 		checkInStart: '14:00',
 		checkInEnd: '22:00',
 		checkOut: '11:00',

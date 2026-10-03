@@ -1,3 +1,7 @@
+import { Resend, type EmailId } from '@convex-dev/resend';
+import { components } from '../_generated/api.js';
+import type { ActionCtx, MutationCtx } from '../_generated/server.js';
+
 // CONFIG
 import { EMAIL_DATA } from './data/emailData.js';
 
@@ -11,7 +15,7 @@ import { renderHeaderTemplate } from './templates/headerTemplate.js';
 // UTILS
 import { escapeHtml } from '../../shared/utils/escapeHtml.js';
 
-const RESEND_API_URL = 'https://api.resend.com/emails';
+export const resend = new Resend(components.resend, { testMode: false });
 
 function renderEmailDocument({
 	subject,
@@ -52,36 +56,21 @@ function renderEmailDocument({
 </html>`;
 }
 
-export async function sendEmail({
-	to,
-	subject,
-	content,
-	text,
-	previewText
-}: SendEmailOptions): Promise<void> {
-	const apiKey = process.env.RESEND_API_KEY;
+export async function sendEmail(
+	ctx: ActionCtx | MutationCtx,
+	{ to, replyTo, subject, content, text, previewText, idempotencyKey }: SendEmailOptions
+): Promise<EmailId> {
 	const from = process.env.EMAIL_FROM;
 
-	if (!apiKey || !from) {
-		throw new Error('Missing RESEND_API_KEY or EMAIL_FROM');
-	}
-
-	const response = await fetch(RESEND_API_URL, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			from,
-			to,
-			subject,
-			html: renderEmailDocument({ subject, content, previewText }),
-			text: text ?? previewText ?? subject
-		})
+	if (!from) throw new Error('Missing EMAIL_FROM');
+	
+	return resend.sendEmail(ctx, {
+		from,
+		to,
+		subject,
+		replyTo: replyTo ? [replyTo] : undefined,
+		html: renderEmailDocument({ subject, content, previewText }),
+		text: text ?? previewText ?? subject,
+		idempotencyKey
 	});
-
-	if (!response.ok) {
-		throw new Error(`Resend returned HTTP ${response.status}`);
-	}
 }

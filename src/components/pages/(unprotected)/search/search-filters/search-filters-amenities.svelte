@@ -22,7 +22,7 @@
 	const popular = $derived(
 		amenities.filter((item) => POPULAR_AMENITY_KEYS.some((key) => key === item.key))
 	);
-	
+
 	const additionalCount = $derived(
 		selected.filter((key) => !popular.some((item) => item.key === key)).length
 	);

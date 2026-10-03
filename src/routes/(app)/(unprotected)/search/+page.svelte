@@ -8,7 +8,7 @@
 
 	// CONFIG
 	import { PAGINATION_CONFIG } from '@/shared/features/pagination/config.js';
-	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/data/accommodationsData.js';
 
 	// COMPONENTS
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';

@@ -13,6 +13,7 @@
 	import { Button } from '@/components/ui/button/index.js';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
 	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import AccommodationGuestCancellationPolicy from '@/features/accommodations/components/accommodation-guest-cancellation-policy/accommodation-guest-cancellation-policy.svelte';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -88,6 +89,14 @@
 		</Card.Content>
 
 		<Card.Footer class="flex-col items-stretch gap-3">
+			<AccommodationGuestCancellationPolicy
+				{accommodation}
+				checkInDate={page.url.searchParams.get('checkIn') ?? ''}
+				compact
+			/>
+			<a href="#cancellation-policy" class="text-sm underline underline-offset-4">
+				{m['AccommodationPage.AccommodationSummary.cancellationDetails']()}
+			</a>
 			<Button
 				href={UNPROTECTED_PAGE_ENDPOINTS.BOOK_ACCOMMODATION(accommodation._id) + page.url.search}
 				class="min-h-11"

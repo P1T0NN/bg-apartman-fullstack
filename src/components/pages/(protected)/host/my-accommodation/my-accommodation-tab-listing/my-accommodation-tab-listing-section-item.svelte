@@ -3,14 +3,14 @@
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
-	import type { ListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { EditAccommodationListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	let {
 		section,
 		summary,
 		onopen
 	}: {
-		section: ListingSection;
+		section: EditAccommodationListingSection;
 		summary: string;
 		onopen: () => void;
 	} = $props();

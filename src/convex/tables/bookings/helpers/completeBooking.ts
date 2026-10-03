@@ -16,7 +16,7 @@ export async function completeBooking(
 	if (booking.status !== 'confirmed')
 		throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING_STATUS' });
 	const now = Date.now();
-	const isPrematureCompletion = booking.checkOutDate > new Date(now).toISOString().slice(0, 10);
+	const isPrematureCompletion = now < booking.cancellationTerms.checkOutAt;
 	if (isPrematureCompletion)
 		throw new ConvexError<BackendErrorData>({ code: 'BOOKING_NOT_FINISHED' });
 	await ctx.db.patch('bookings', booking._id, {

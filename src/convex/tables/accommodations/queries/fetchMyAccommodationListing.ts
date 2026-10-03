@@ -1,4 +1,5 @@
 // LIBRARIES
+import { omit } from 'convex-helpers';
 import { docValidator } from 'convex/server';
 import { v } from 'convex/values';
 
@@ -27,13 +28,16 @@ export const fetchMyAccommodationListing = authenticatedQuery({
 		const accommodation = await ctx.db.get('accommodations', id);
 		if (!accommodation || accommodation.ownerId !== getOwnerId(ctx.identity)) return null;
 
-		const {
-			ownerId: _ownerId,
-			recommendationSortKey: _recommendationSortKey,
-			guestRatingAverage: _guestRatingAverage,
-			guestReviewCount: _guestReviewCount,
-			...listing
-		} = accommodation;
-		return { ...listing, imageUrls: await resolveStoredFileUrls(accommodation.imageKeys) };
+		const listing = omit(accommodation, [
+			'ownerId',
+			'recommendationSortKey',
+			'guestRatingAverage',
+			'guestReviewCount'
+		]);
+
+		return {
+			...listing,
+			imageUrls: await resolveStoredFileUrls(accommodation.imageKeys)
+		};
 	}
 });

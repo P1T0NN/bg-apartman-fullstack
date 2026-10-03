@@ -34,6 +34,11 @@ export function accommodationSections() {
 			hint: m['AddAccommodationPage.AccommodationHeader.rulesHint']()
 		},
 		{
+			label: m['AddAccommodationPage.AccommodationProgress.cancellationPolicy'](),
+			title: m['AddAccommodationPage.AccommodationHeader.cancellationPolicyTitle'](),
+			hint: m['AddAccommodationPage.AccommodationHeader.cancellationPolicyHint']()
+		},
+		{
 			label: m['AddAccommodationPage.AccommodationProgress.review'](),
 			title: m['AddAccommodationPage.AccommodationHeader.reviewTitle'](),
 			hint: m['AddAccommodationPage.AccommodationHeader.reviewHint']()

@@ -23,7 +23,7 @@
 
 	// HOOKS
 	import { useClaimBooking } from '@/features/bookings/hooks/useClaimBooking.svelte.js';
-	
+
 	// UTILS
 	import { toastMessage } from '@/utils/toastMessage.js';
 	import { getBackendErrorMessage } from '@/utils/getBackendErrorMessage.js';

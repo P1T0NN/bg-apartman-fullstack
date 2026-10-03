@@ -6,7 +6,7 @@
 	import { getSearchContext } from '@/features/search/context/searchContext.js';
 
 	// DATA
-	import { ACCOMMODATION_SORTS } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import { ACCOMMODATION_SORTS } from '@/shared/features/accommodations/data/accommodationsData.js';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';

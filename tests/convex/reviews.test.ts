@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
+import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
+
 import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
 import { convexTest } from 'convex-test';
@@ -53,6 +56,7 @@ async function setup() {
 			amenities: [],
 			imageKeys: [],
 			checkInStart: '14:00',
+			timeZone: 'Europe/Belgrade',
 			checkInEnd: '20:00',
 			checkOut: '11:00',
 			minimumStay: 1,
@@ -60,11 +64,13 @@ async function setup() {
 			petsAllowed: false,
 			partiesAllowed: false,
 			houseRules: '',
+			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			status: 'published',
 			updatedAt: Date.now()
 		})
 	);
 	const booking = {
+		cancellationTerms: bookingCancellationTerms('2026-09-20', '2026-09-23'),
 		accommodationId,
 		ownerId: 'guest',
 		hostId: 'host',
@@ -211,7 +217,11 @@ test('rejects unauthenticated, foreign, incomplete, future, expired and self-boo
 		});
 	}
 	await t.run((ctx) =>
-		ctx.db.patch(bookingId, { status: 'completed', checkOutDate: '2026-10-01' })
+		ctx.db.patch(bookingId, {
+			status: 'completed',
+			checkOutDate: '2026-10-01',
+			cancellationTerms: bookingCancellationTerms(booking.checkInDate, '2026-10-01')
+		})
 	);
 	await expect(guest.mutation(createReview, args)).rejects.toMatchObject({
 		data: { code: 'REVIEW_NOT_ELIGIBLE' }
@@ -221,7 +231,11 @@ test('rejects unauthenticated, foreign, incomplete, future, expired and self-boo
 		data: { code: 'REVIEW_NOT_ELIGIBLE' }
 	});
 	await t.run((ctx) =>
-		ctx.db.patch(bookingId, { checkOutDate: booking.checkOutDate, hostId: 'guest' })
+		ctx.db.patch(bookingId, {
+			checkOutDate: booking.checkOutDate,
+			cancellationTerms: booking.cancellationTerms,
+			hostId: 'guest'
+		})
 	);
 	await expect(guest.mutation(createReview, args)).rejects.toMatchObject({
 		data: { code: 'REVIEW_NOT_ELIGIBLE' }
@@ -235,7 +249,7 @@ test('rejects unauthenticated, foreign, incomplete, future, expired and self-boo
 });
 
 test('validates review input and enforces the exact 90-day boundary using the server clock', async () => {
-	const { t, guest, bookingId } = await setup();
+	const { t, guest, bookingId, booking } = await setup();
 	for (const rating of [0, 6, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
 		await expect(
 			guest.mutation(createReview, { bookingId, rating, comment: 'Valid text.' })
@@ -248,9 +262,13 @@ test('validates review input and enforces the exact 90-day boundary using the se
 	}
 	const checkout = '2026-07-02';
 	await t.run((ctx) =>
-		ctx.db.patch(bookingId, { checkInDate: '2026-07-01', checkOutDate: checkout })
+		ctx.db.patch(bookingId, {
+			checkInDate: '2026-07-01',
+			checkOutDate: checkout,
+			cancellationTerms: bookingCancellationTerms('2026-07-01', checkout)
+		})
 	);
-	const deadline = getReviewDeadline(checkout);
+	const deadline = getReviewDeadline(checkout, booking.cancellationTerms.timeZone);
 	vi.setSystemTime(deadline);
 	await expect(
 		guest.mutation(createReview, { bookingId, rating: 5, comment: 'Too late.' })
@@ -259,8 +277,8 @@ test('validates review input and enforces the exact 90-day boundary using the se
 	await guest.mutation(createReview, { bookingId, rating: 5, comment: 'Just in time.' });
 	expect(
 		canReviewBooking(
-			{ status: 'completed', checkOutDate: checkout },
-			new Date(deadline).toISOString().slice(0, 10)
+			{ status: 'completed', checkOutDate: checkout, cancellationTerms: booking.cancellationTerms },
+			deadline
 		)
 	).toBe(false);
 });
@@ -383,10 +401,19 @@ test('eligible booking pages exclude reviewed, expired, future, foreign and uncl
 		{ checkOutDate: '2026-01-01' },
 		{ checkOutDate: '2027-01-01' }
 	])
-		await t.run((ctx) => ctx.db.insert('bookings', { ...booking, ...overrides }));
+		await t.run((ctx) =>
+			ctx.db.insert('bookings', {
+				...booking,
+				...overrides,
+				cancellationTerms: bookingCancellationTerms(
+					booking.checkInDate,
+					overrides.checkOutDate ?? booking.checkOutDate
+				)
+			})
+		);
 	const base = {
 		accommodationId,
-		today: '2026-09-30',
+		now: Date.now(),
 		paginationOpts: { cursor: null, numItems: 10 }
 	};
 	expect((await guest.query(fetchEligible, base)).items.map((item) => item._id)).toEqual([
@@ -398,7 +425,7 @@ test('eligible booking pages exclude reviewed, expired, future, foreign and uncl
 	await expect(t.query(fetchEligible, base)).rejects.toMatchObject({
 		data: { code: 'UNAUTHENTICATED' }
 	});
-	await expect(guest.query(fetchEligible, { ...base, today: 'not a date' })).rejects.toMatchObject({
+	await expect(guest.query(fetchEligible, { ...base, now: Number.NaN })).rejects.toMatchObject({
 		data: { code: 'INVALID_REVIEW' }
 	});
 	await expect(
@@ -432,7 +459,11 @@ test('support can complete a verified confirmed stay while preserving lifecycle 
 		data: { code: 'INVALID_BOOKING_STATUS' }
 	});
 	await t.run((ctx) =>
-		ctx.db.patch(bookingId, { status: 'confirmed', checkOutDate: '2027-01-01' })
+		ctx.db.patch(bookingId, {
+			status: 'confirmed',
+			checkOutDate: '2027-01-01',
+			cancellationTerms: bookingCancellationTerms('2026-12-28', '2027-01-01')
+		})
 	);
 	await expect(admin.mutation(complete, args)).rejects.toMatchObject({
 		data: { code: 'BOOKING_NOT_FINISHED' }
@@ -455,4 +486,46 @@ test('concurrent submissions create exactly one review and one aggregate contrib
 		)
 	).toHaveLength(1);
 	expect((await t.query(fetchPublic, { id: accommodationId }))?.reviews.count).toBe(1);
+});
+
+test('completion and review eligibility use the frozen property checkout instant across UTC dates and DST', async () => {
+	for (const timeZone of ['Pacific/Kiritimati', 'America/Los_Angeles', 'Europe/Belgrade']) {
+		const { t, guest, admin, accommodationId, bookingId } = await setup();
+		const terms = bookingCancellationTerms('2027-03-26', '2027-03-28', timeZone);
+		await t.run((ctx) =>
+			ctx.db.patch(bookingId, {
+				status: 'confirmed',
+				checkInDate: '2027-03-26',
+				checkOutDate: '2027-03-28',
+				cancellationTerms: terms
+			})
+		);
+		await t.run((ctx) => ctx.db.patch(accommodationId, { timeZone: 'UTC', checkOut: '23:30' }));
+		vi.setSystemTime(terms.checkOutAt - 1);
+		const complete = api.tables.bookings.mutations.completeBookingAdmin.completeBookingAdmin;
+		const completion = { bookingId, reason: 'Verified actual checkout.' };
+		await expect(admin.mutation(complete, completion)).rejects.toMatchObject({
+			data: { code: 'BOOKING_NOT_FINISHED' }
+		});
+		const eligibility = {
+			accommodationId,
+			now: Date.now(),
+			paginationOpts: { cursor: null, numItems: 10 }
+		};
+		expect((await guest.query(fetchEligible, eligibility)).items).toEqual([]);
+		vi.setSystemTime(terms.checkOutAt);
+		await admin.mutation(complete, completion);
+		// A forged refresh clock must not change server-authoritative eligibility.
+		expect((await guest.query(fetchEligible, { ...eligibility, now: 0 })).items).toMatchObject([
+			{ _id: bookingId, timeZone }
+		]);
+		await guest.mutation(createReview, {
+			bookingId,
+			rating: 5,
+			comment: 'Checked out in property local time.'
+		});
+		expect((await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.cancellationTerms).toEqual(
+			terms
+		);
+	}
 });

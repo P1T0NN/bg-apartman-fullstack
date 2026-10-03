@@ -13,10 +13,28 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 	if (!parsed.success) return;
 
 	switch (parsed.data.code) {
+		case 'ACCOUNT_HAS_ACTIVE_BOOKINGS':
+			return m['BackendMessages.accountHasActiveBookings']();
+		case 'ACCOUNT_HAS_ACCOMMODATIONS':
+			return m['BackendMessages.accountHasAccommodations']();
 		case 'INVALID_ACCOMMODATION':
 			return m['BackendMessages.invalidAccommodation']();
+		case 'INVALID_CANCELLATION_POLICY':
+			return m['BackendMessages.invalidCancellationPolicy']();
+		case 'INVALID_BOOKING_CANCELLATION':
+			return m['BackendMessages.invalidBookingCancellation']();
+		case 'BOOKING_CANCELLATION_NOT_ELIGIBLE':
+			return m['BackendMessages.bookingCancellationNotEligible']();
+		case 'BOOKING_CANCELLATION_CHANGED':
+			return m['BackendMessages.bookingCancellationChanged']();
 		case 'INVALID_BOOKING':
 			return m['BackendMessages.invalidBooking']();
+		case 'BOOKING_TERMS_UNAVAILABLE':
+			return m['BackendMessages.bookingTermsUnavailable']();
+		case 'BOOKING_CHECK_IN_TIME_UNAVAILABLE':
+			return m['BackendMessages.bookingCheckInTimeUnavailable']();
+		case 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE':
+			return m['BackendMessages.bookingCheckOutTimeUnavailable']();
 		case 'INVALID_BOOKING_RECOVERY_REQUEST':
 			return m['BackendMessages.invalidBookingRecoveryRequest']();
 		case 'INVALID_BOOKING_RECOVERY_TOKEN':
@@ -45,6 +63,8 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.accommodationNotFound']();
 		case 'INVALID_FEEDBACK':
 			return m['BackendMessages.invalidFeedback']();
+		case 'INVALID_CONTACT_FORM':
+			return m['BackendMessages.invalidContactForm']();
 		case 'FEEDBACK_NOT_FOUND':
 			return m['BackendMessages.feedbackNotFound']();
 		case 'UNAUTHENTICATED':
@@ -62,6 +82,8 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.duplicateUpload']();
 		case 'UPLOAD_NOT_FOUND':
 			return m['BackendMessages.uploadNotFound']();
+		case 'UPLOAD_BATCH_TOO_LARGE':
+			return m['BackendMessages.uploadBatchTooLarge']({ maxSizeMB: parsed.data.maxSizeMB });
 		case 'TOO_MANY_FILES':
 			return m['ValidationMessages.maxItems']({ maximum: parsed.data.maxFiles });
 	}

@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
+import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
+
 import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
 import { expect, test, vi } from 'vitest';
@@ -42,6 +45,7 @@ const accommodation = {
 	amenities: [],
 	imageKeys: [],
 	checkInStart: '14:00',
+	timeZone: 'Europe/Belgrade',
 	checkInEnd: '20:00',
 	checkOut: '11:00',
 	minimumStay: 2,
@@ -50,6 +54,7 @@ const accommodation = {
 	petsAllowed: false,
 	partiesAllowed: false,
 	houseRules: '',
+	cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 	status: 'published' as const,
 	updatedAt: Date.now()
 };
@@ -62,6 +67,130 @@ const guest = {
 	specialRequests: ''
 };
 
+test('requests freeze server-owned terms and confirmation preserves them after listing edits', async () => {
+	const t = setup();
+	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
+	const request = {
+		accommodationId,
+		checkInDate: '2999-07-20',
+		checkOutDate: '2999-07-23',
+		adults: 2,
+		children: 0,
+		...guest
+	};
+	const id = await t.mutation(createBooking, request);
+	const original = (await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms;
+	expect(original).toEqual({
+		policy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
+		timeZone: 'Europe/Belgrade',
+		checkInStart: '14:00',
+		checkInAt: Date.parse('2999-07-20T12:00:00Z'),
+		checkOut: '11:00',
+		checkOutAt: Date.parse('2999-07-23T09:00:00Z'),
+		pricePerNightMinor: 8025,
+		currency: 'EUR'
+	});
+	const custom = {
+		version: 1,
+		mode: 'custom',
+		fiveToSevenDays: 100,
+		threeToFiveDays: 50,
+		oneToThreeDays: 50,
+		under24Hours: 0
+	} as const;
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, {
+			timeZone: 'America/New_York',
+			checkInStart: '16:00',
+			pricePerNightMinor: 9999,
+			cancellationPolicy: custom
+		})
+	);
+	const host = t.withIdentity({ subject: 'host-1', tokenIdentifier: 'issuer|host-1' });
+	await host.mutation(updateBookingStatus, { id, status: 'confirmed' });
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toEqual(original);
+	const confirmation =
+		api.tables.bookings.queries.fetchBookingConfirmation.fetchBookingConfirmation;
+	expect((await t.query(confirmation, { id }))?.status).toBe('confirmed');
+	expect((await t.query(confirmation, { id }))?.cancellationTerms).toEqual(original);
+	const nextId = await t.mutation(createBooking, request);
+	expect((await t.run((ctx) => ctx.db.get('bookings', nextId)))?.cancellationTerms).toEqual({
+		policy: custom,
+		timeZone: 'America/New_York',
+		checkInStart: '16:00',
+		checkInAt: Date.parse('2999-07-20T20:00:00Z'),
+		checkOut: '11:00',
+		checkOutAt: Date.parse('2999-07-23T15:00:00Z'),
+		pricePerNightMinor: 9999,
+		currency: 'EUR'
+	});
+	const forged = { ...request, cancellationTerms: original };
+	await expect(t.mutation(createBooking, forged)).rejects.toThrow();
+});
+
+test('requests reject unknown property timezones, elapsed check-in, and DST gaps or folds', async () => {
+	vi.useFakeTimers();
+	try {
+		vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+		for (const [changes, checkInDate, code] of [
+			[{ timeZone: 'Not/AZone' }, '2027-01-20', 'BOOKING_TERMS_UNAVAILABLE'],
+			[{ checkInStart: '02:30' }, '2027-03-28', 'BOOKING_CHECK_IN_TIME_UNAVAILABLE'],
+			[{ checkInStart: '02:30' }, '2027-10-31', 'BOOKING_CHECK_IN_TIME_UNAVAILABLE'],
+			[{ checkOut: '02:30' }, '2027-03-25', 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE'],
+			[{ checkOut: '02:30' }, '2027-10-28', 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE'],
+			[{ checkInStart: '13:00' }, '2027-01-01', 'INVALID_BOOKING']
+		] as const) {
+			const t = setup();
+			const accommodationId = await t.run((ctx) =>
+				ctx.db.insert('accommodations', { ...accommodation, ...changes })
+			);
+			await expect(
+				t.mutation(createBooking, {
+					...guest,
+					accommodationId,
+					checkInDate,
+					checkOutDate: new Date(Date.parse(checkInDate) + 3 * 86_400_000)
+						.toISOString()
+						.slice(0, 10),
+					adults: 1,
+					children: 0
+				})
+			).rejects.toMatchObject({ data: { code } });
+			expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
+		}
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+test('request dates use the property calendar even when its date differs from UTC', async () => {
+	vi.useFakeTimers();
+	try {
+		vi.setSystemTime(new Date('2027-01-02T00:30:00Z'));
+		const t = setup();
+		const accommodationId = await t.run((ctx) =>
+			ctx.db.insert('accommodations', {
+				...accommodation,
+				timeZone: 'America/Los_Angeles',
+				checkInStart: '17:00'
+			})
+		);
+		const id = await t.mutation(createBooking, {
+			...guest,
+			accommodationId,
+			checkInDate: '2027-01-01',
+			checkOutDate: '2027-01-04',
+			adults: 1,
+			children: 0
+		});
+		expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms?.checkInAt).toBe(
+			Date.parse('2027-01-02T01:00:00Z')
+		);
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
 test('host bookings prioritize the oldest pending requests and the newest other statuses', async () => {
 	const t = setup();
 	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
@@ -71,6 +200,7 @@ test('host bookings prioritize the oldest pending requests and the newest other 
 		const insert = (status: 'pending' | 'confirmed', checkInDate: string, hostId = 'host-1') =>
 			t.run((ctx) =>
 				ctx.db.insert('bookings', {
+					cancellationTerms: bookingCancellationTerms(checkInDate, '2999-12-31'),
 					...guest,
 					firstName: 'Alex',
 					accommodationId,
@@ -292,7 +422,11 @@ test('host manages bookings for their own accommodations', async () => {
 		host.mutation(updateBookingStatus, { id: bookingId, status: 'completed' })
 	).rejects.toMatchObject({ data: { code: 'BOOKING_NOT_FINISHED' } });
 	await t.run((ctx) =>
-		ctx.db.patch(bookingId, { checkInDate: '2020-10-24', checkOutDate: '2020-10-27' })
+		ctx.db.patch(bookingId, {
+			checkInDate: '2020-10-24',
+			checkOutDate: '2020-10-27',
+			cancellationTerms: bookingCancellationTerms('2020-10-24', '2020-10-27')
+		})
 	);
 	await host.mutation(updateBookingStatus, { id: bookingId, status: 'completed' });
 	expect((await t.run((ctx) => ctx.db.get(bookingId)))?.completedAt).toBeTypeOf('number');

@@ -1,3 +1,6 @@
+// DATA
+import type { ACCOMMODATION_SORTS, ACCOMMODATION_TYPES } from '../data/accommodationsData.js';
+
 // TYPES
 import type { Doc, Id } from '@convex/_generated/dataModel';
 import type { ReviewSummary } from '../../reviews/types/reviewTypes.js';
@@ -16,7 +19,7 @@ export type PublicAccommodation = Omit<
 };
 
 /** Accommodation row returned by the list queries: only list fields, with resolved image urls. */
-export type AccommodationListItem = Omit<
+export type AccommodationCard = Omit<
 	Doc<'accommodations'>,
 	| 'ownerId'
 	| 'description'
@@ -25,6 +28,7 @@ export type AccommodationListItem = Omit<
 	| 'amenities'
 	| 'imageKeys'
 	| 'checkInStart'
+	| 'timeZone'
 	| 'checkInEnd'
 	| 'checkOut'
 	| 'minimumStay'
@@ -33,6 +37,7 @@ export type AccommodationListItem = Omit<
 	| 'petsAllowed'
 	| 'partiesAllowed'
 	| 'houseRules'
+	| 'cancellationPolicy'
 	| 'status'
 	| 'updatedAt'
 	| 'recommendationSortKey'
@@ -51,23 +56,8 @@ export type AccommodationMapMarker = Pick<
 	'_id' | 'name' | 'latitude' | 'longitude' | 'pricePerNightMinor'
 >;
 
-export const ACCOMMODATION_TYPES = [
-	'apartment',
-	'studio',
-	'house',
-	'villa',
-	'room',
-	'other'
-] as const;
-
 export type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
 
-export const ACCOMMODATION_SORTS = [
-	'recommended',
-	'price-asc',
-	'price-desc',
-	'guest-rating'
-] as const;
 export type AccommodationSort = (typeof ACCOMMODATION_SORTS)[number];
 
 /** Header summary for the owner's my-accommodation workspace. */
@@ -86,7 +76,7 @@ export type MyAccommodationListing = Omit<
 };
 
 /** Editable listing section for the my-accommodation workspace. */
-export type ListingSection = {
+export type EditAccommodationListingSection = {
 	id: string;
 	title: string;
 	description: string;

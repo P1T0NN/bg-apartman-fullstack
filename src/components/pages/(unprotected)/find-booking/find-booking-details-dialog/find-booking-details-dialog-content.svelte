@@ -5,6 +5,7 @@
 
 	// COMPONENTS
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
+	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 
 	// UTILS
 	import { formatDate } from '@/shared/utils/date.js';
@@ -21,7 +22,7 @@
 		<dt class="text-muted-foreground">
 			{m['FindBookingPage.FindBookingDetailsDialogContent.checkIn']()}
 		</dt>
-		
+
 		<dd class="mt-1 font-medium">
 			<time datetime={booking.checkInDate}>
 				{formatDate(Date.parse(booking.checkInDate), getLocale())}
@@ -108,3 +109,11 @@
 		</div>
 	{/if}
 </dl>
+
+<BookingCancellationPolicy
+	policy={booking.cancellationTerms.policy}
+	timeZone={booking.cancellationTerms.timeZone}
+	checkInAt={booking.cancellationTerms.checkInAt}
+	status={booking.status}
+	booked
+/>

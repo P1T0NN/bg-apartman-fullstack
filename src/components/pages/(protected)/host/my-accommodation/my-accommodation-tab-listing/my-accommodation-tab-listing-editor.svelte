@@ -7,7 +7,9 @@
 	import FormTextarea from '@/components/ui/custom-components/form/form-textarea.svelte';
 	import AccommodationAmenities from '@/features/accommodations/components/accommodation-amenities/accommodation-amenities.svelte';
 	import AccommodationRuleCard from '@/features/accommodations/components/accommodation-rule-card/accommodation-rule-card.svelte';
-	import GoogleMap from '@/components/ui/custom-components/google-components/google-map/google-map.svelte';
+	import AccommodationTimeZone from '@/features/accommodations/components/accommodation-time-zone/accommodation-time-zone.svelte';
+	import AccommodationCancellationPolicy from '@/features/accommodations/components/accommodation-cancellation-policy/accommodation-cancellation-policy.svelte';
+	import MyAccommodationTabListingLocation from './my-accommodation-tab-listing-location.svelte';
 	import * as Field from '@/components/ui/field/index.js';
 	import { Button } from '@/components/ui/button/index.js';
 	import MyAccommodationTabListingSaveButton from './my-accommodation-tab-listing-save-button.svelte';
@@ -21,14 +23,16 @@
 
 	// TYPES
 	import type { Id } from '@convex/_generated/dataModel';
-	import type { ListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { EditAccommodationListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type { PreviewFile } from '@/features/uploadFile/types/uploadFileTypes.js';
 
-	let { section, onclose }: { section: ListingSection; onclose: () => void } = $props();
+	let { section, onclose }: { section: EditAccommodationListingSection; onclose: () => void } =
+		$props();
 
 	// SAFETY: Convex validates the untrusted route ID before running the mutation.
 	const accommodationId = $derived(page.params.id as Id<'accommodations'>);
 	// SAFETY: Snapshot preserves this section's plain form values while copying nested data.
+
 	const form = useFormChanges(
 		() => $state.snapshot<object>(section.values) as typeof section.values
 	);
@@ -38,11 +42,13 @@
 	const savedKeys = Array.isArray(section.values.imageKeys)
 		? (section.values.imageKeys as string[])
 		: [];
+
 	// svelte-ignore state_referenced_locally
 	// SAFETY: Same stored photo keys, resolved to URLs in the same order.
 	const savedUrls = Array.isArray(section.values.imageUrls)
 		? (section.values.imageUrls as string[])
 		: [];
+
 	let files = $state<PreviewFile[]>(
 		savedKeys.flatMap((key, index) => {
 			const url = savedUrls[index];
@@ -113,11 +119,17 @@
 		resetOnSuccess={false}
 	>
 		{#snippet customFields(context)}
+			{#if section.id === 'cancellation-policy'}
+				<AccommodationCancellationPolicy {context} />
+			{/if}
+
 			{#if section.id === 'amenities'}
 				<AccommodationAmenities {context} />
 			{/if}
+
 			{#if section.id === 'rules'}
 				<Field.Group>
+					<AccommodationTimeZone {context} />
 					{#each ruleToggles as rule (rule.name)}
 						<AccommodationRuleCard
 							label={rule.label}
@@ -145,33 +157,7 @@
 				</Field.Group>
 			{/if}
 			{#if section.id === 'location'}
-				{@const latitude = context.inputValue('latitude')}
-				{@const longitude = context.inputValue('longitude')}
-				<section class="flex flex-col gap-3" aria-labelledby="listing-map-title">
-					<div>
-						<h3 id="listing-map-title" class="font-medium">
-							{m['MyAccommodationPage.MyAccommodationTabListingEditor.mapTitle']()}
-						</h3>
-						<p class="text-sm text-muted-foreground">
-							{m['MyAccommodationPage.MyAccommodationTabListingEditor.mapHint']()}
-						</p>
-					</div>
-
-					<GoogleMap
-						position={latitude !== '' && longitude !== ''
-							? { lat: Number(latitude), lng: Number(longitude) }
-							: null}
-						onPositionChange={(point) => {
-							context.setValue('latitude', point.lat);
-							context.setValue('longitude', point.lng);
-						}}
-						disabled={context.disabled}
-						label={m['MyAccommodationPage.MyAccommodationTabListingEditor.mapTitle']()}
-						pinTitle={m['AddAccommodationPage.AddAccommodationFormLocation.mapPinTitle']()}
-						loadingText={m['AddAccommodationPage.AddAccommodationFormLocation.mapLoading']()}
-						errorText={m['AddAccommodationPage.AddAccommodationFormLocation.mapUnavailable']()}
-					/>
-				</section>
+				<MyAccommodationTabListingLocation {context} />
 			{/if}
 		{/snippet}
 

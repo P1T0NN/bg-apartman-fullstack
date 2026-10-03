@@ -6,6 +6,10 @@ export type BookingOwnerAggregateKey = number;
 
 export type BookingRecoveryAccess = Pick<Doc<'bookingRecoveryTokens'>, 'email' | 'expiresAt'>;
 
+export type BookingCancellationTerms = Doc<'bookings'>['cancellationTerms'];
+
+export type BookingCancellation = NonNullable<Doc<'bookings'>['cancellation']>;
+
 export type Booking = Pick<
 	Doc<'bookings'>,
 	| '_id'
@@ -20,4 +24,8 @@ export type Booking = Pick<
 	| 'checkOutDate'
 	| 'adults'
 	| 'children'
-> & { accommodationName: string; isClaimable: boolean };
+> & {
+	accommodationName: string;
+	isClaimable: boolean;
+	cancellationTerms: BookingCancellationTerms;
+};

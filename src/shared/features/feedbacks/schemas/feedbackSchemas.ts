@@ -17,7 +17,7 @@ export const createFeedbackSchema = z.object({
 	message: z.string().trim().min(10).max(2000),
 	email: z.preprocess(
 		(value) => (value === '' ? undefined : value),
-		z.string().trim().email().max(320).optional()
+		z.string().trim().pipe(z.email().max(320)).optional()
 	)
 });
 

@@ -20,10 +20,10 @@
 	// HOOKS
 	import { useConvexPagination } from '@/features/pagination/hooks/useConvexPagination.svelte.js';
 	import { useSearch } from '@/features/search/hooks/useSearch.svelte';
-	import { useReviewDate } from '@/features/reviews/hooks/useReviewDate.svelte.js';
+	import { useReviewClock } from '@/features/reviews/hooks/useReviewClock.svelte.js';
 
 	const search = useSearch({ mode: 'state' });
-	const date = useReviewDate();
+	const clock = useReviewClock();
 
 	const bookings = useConvexPagination(
 		api.tables.bookings.queries.fetchMyBookings.fetchMyBookings,
@@ -62,7 +62,7 @@
 		{/snippet}
 
 		{#snippet children(booking)}
-			<MyBookingItem {booking} today={date.today} />
+			<MyBookingItem {booking} now={clock.now} />
 		{/snippet}
 
 		{#snippet loadingSnippet()}

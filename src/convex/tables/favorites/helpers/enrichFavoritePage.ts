@@ -4,7 +4,7 @@ import { resolveImageUrls } from '../../accommodations/utils/resolveImageUrls.js
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
 import type { QueryCtx } from '../../../_generated/server.js';
-import type { AccommodationListItem } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
+import type { AccommodationCard } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
 
 type Favorite = Doc<'favorites'>;
 
@@ -15,7 +15,7 @@ export async function withPublishedAccommodationImageUrls({
 }: {
 	ctx: QueryCtx;
 	items: Favorite[];
-}): Promise<AccommodationListItem[]> {
+}): Promise<AccommodationCard[]> {
 	const accommodations = await Promise.all(
 		items.map((favorite) => ctx.db.get('accommodations', favorite.accommodationId))
 	);

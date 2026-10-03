@@ -5,8 +5,15 @@ import { z } from 'zod';
 import { STORAGE_CONFIG } from '../../storage/config.js';
 
 // DATA
-import { AMENITY_KEYS } from '../data/accommodationsData.js';
-import { ACCOMMODATION_TYPES } from '../types/accommodationTypes.js';
+import { ACCOMMODATION_TYPES, AMENITY_KEYS } from '../data/accommodationsData.js';
+
+// SCHEMAS
+import { accommodationCancellationPolicySchema } from './cancellationPolicySchemas.js';
+
+import {
+	timeZoneSchema,
+	timeZoneCoordinatesSchema
+} from '../../timezone/schemas/timezoneSchemas.js';
 
 export const boundsSchema = z
 	.object({
@@ -42,9 +49,8 @@ export const accommodationBasicInfoSchema = z.object({
 	bathrooms: z.coerce.number().int().min(1).max(100)
 });
 
-export const accommodationLocationSchema = z.object({
-	latitude: z.number().finite().min(-90).max(90),
-	longitude: z.number().finite().min(-180).max(180),
+export const accommodationLocationSchema = timeZoneCoordinatesSchema.extend({
+	timeZone: timeZoneSchema,
 	address: z.object({
 		street: z.string().trim().min(3).max(200),
 		streetNumber: z.string().trim().min(1).max(20),
@@ -76,6 +82,7 @@ export const accommodationPricingSchema = z.object({
 const TIME_SLOT_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 
 export const accommodationRulesSchema = z.object({
+	timeZone: timeZoneSchema,
 	checkInStart: z.string().regex(TIME_SLOT_PATTERN),
 	checkInEnd: z.string().regex(TIME_SLOT_PATTERN),
 	checkOut: z.string().regex(TIME_SLOT_PATTERN),
@@ -91,7 +98,8 @@ export const accommodationSectionSchemas = [
 	accommodationAmenitiesStepSchema,
 	accommodationPhotosSchema,
 	accommodationPricingSchema,
-	accommodationRulesSchema
+	accommodationRulesSchema,
+	accommodationCancellationPolicySchema
 ];
 
 export const saveAccommodationSchema = accommodationBasicInfoSchema
@@ -99,6 +107,7 @@ export const saveAccommodationSchema = accommodationBasicInfoSchema
 	.and(accommodationAmenitiesStepSchema)
 	.and(accommodationPhotosSchema)
 	.and(accommodationPricingSchema)
+	.and(accommodationCancellationPolicySchema)
 	.and(accommodationRulesSchema);
 
 export type AccommodationDetails = z.infer<typeof saveAccommodationSchema>;

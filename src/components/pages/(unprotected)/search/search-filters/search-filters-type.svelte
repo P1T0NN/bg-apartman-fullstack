@@ -4,7 +4,7 @@
 
 	// CONFIG
 	import { ACCOMMODATION_FILTER_DEFS } from '@/features/accommodations/data/accommodationFilterDefs.js';
-	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/data/accommodationsData.js';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';

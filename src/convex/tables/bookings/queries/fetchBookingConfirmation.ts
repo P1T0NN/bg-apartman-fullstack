@@ -22,8 +22,10 @@ export const fetchBookingConfirmation = query({
 		if (!accommodation) return null;
 
 		return {
+			status: booking.status,
 			accommodationId: booking.accommodationId,
 			accommodationName: accommodation.name,
+			cancellationTerms: booking.cancellationTerms,
 			checkInDate: booking.checkInDate,
 			checkOutDate: booking.checkOutDate,
 			adults: booking.adults,

@@ -3,7 +3,7 @@ import { docValidator } from 'convex/server';
 import { v } from 'convex/values';
 
 // SCHEMAS
-import { bookings } from '../schema.js';
+import { bookings, bookingCancellationTerms } from '../schema.js';
 
 const bookingDoc = docValidator('bookings', bookings);
 
@@ -23,7 +23,11 @@ export const recoveredBooking = bookingDoc
 		'adults',
 		'children'
 	)
-	.extend({ accommodationName: v.string(), isClaimable: v.boolean() });
+	.extend({
+		accommodationName: v.string(),
+		isClaimable: v.boolean(),
+		cancellationTerms: bookingCancellationTerms
+	});
 
 export const recoveredBookingPage = v.object({
 	items: v.array(recoveredBooking),
@@ -70,8 +74,10 @@ export const hostBookingPage = v.object({
 
 /** Non-identifying booking summary for the public confirmation page. */
 export const bookingConfirmation = v.object({
+	status: bookings.validator.fields.status,
 	accommodationId: v.id('accommodations'),
 	accommodationName: v.string(),
+	cancellationTerms: bookingCancellationTerms,
 	checkInDate: v.string(),
 	checkOutDate: v.string(),
 	adults: v.number(),

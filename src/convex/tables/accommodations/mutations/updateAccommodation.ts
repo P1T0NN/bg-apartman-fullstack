@@ -12,6 +12,8 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // SCHEMAS
 import { saveAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
+import { cancellationPolicySchema } from '../../../../shared/features/accommodations/schemas/cancellationPolicySchemas.js';
+import { timeZoneSchema } from '../../../../shared/features/timezone/schemas/timezoneSchemas.js';
 
 // VALIDATORS
 import { updateAccommodationValidator } from '../validators/accommodationValidators.js';
@@ -34,6 +36,24 @@ export const updateAccommodation = authenticatedUploadMutation({
 			throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 		}
 
+		const changesPosition = args.latitude !== undefined || args.longitude !== undefined;
+		const hasIncompletePosition =
+			changesPosition &&
+			(args.latitude === undefined || args.longitude === undefined || args.timeZone === undefined);
+		if (hasIncompletePosition) {
+			throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
+		}
+		if (args.timeZone !== undefined && !timeZoneSchema.safeParse(args.timeZone).success) {
+			throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
+		}
+
+		if (args.cancellationPolicy !== undefined) {
+			const policy = cancellationPolicySchema.safeParse(args.cancellationPolicy);
+			if (!policy.success) {
+				throw new ConvexError<BackendErrorData>({ code: 'INVALID_CANCELLATION_POLICY' });
+			}
+		}
+
 		if (args.imageKeys) {
 			const hasDuplicateImages = new Set(args.imageKeys).size !== args.imageKeys.length;
 			if (hasDuplicateImages) {
@@ -53,6 +73,7 @@ export const updateAccommodation = authenticatedUploadMutation({
 		const parsed = saveAccommodationSchema.safeParse({
 			...existing,
 			...args,
+			timeZone: changesPosition ? args.timeZone : existing.timeZone,
 			imageKeys: args.imageKeys ?? existing.imageKeys,
 			nightlyPrice: args.nightlyPrice ?? existing.pricePerNightMinor / 100
 		});
@@ -61,6 +82,7 @@ export const updateAccommodation = authenticatedUploadMutation({
 		const { nightlyPrice: validatedPrice, ...data } = parsed.data;
 		await ctx.db.patch('accommodations', args.id, {
 			...data,
+			cancellationPolicy: args.cancellationPolicy ?? existing.cancellationPolicy,
 			pricePerNightMinor: Math.round(validatedPrice * 100),
 			updatedAt: Date.now()
 		});

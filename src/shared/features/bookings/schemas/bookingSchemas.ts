@@ -1,6 +1,9 @@
 // LIBRARIES
 import { z } from 'zod';
 
+// CONFIG
+import { ACCOMMODATION_CONFIG } from '../../accommodations/config.js';
+
 // UTILS
 import { DAY_IN_MS, parseIsoDate } from '../../../utils/date.js';
 
@@ -16,6 +19,19 @@ export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
 /** Booking and recovery lookup share this normalization; preserve dots and plus tags. */
 export const bookingEmailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
+export const cancelBookingSchema = z.object({
+	bookingId: z.string().min(1),
+	reason: z.string().trim().min(1).max(500),
+	expectedStatus: z.enum(['pending', 'confirmed']),
+	expectedRefundPercentage: z.union([
+		...ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES.map((percentage) =>
+			z.literal(percentage)
+		),
+		z.null()
+	]),
+	locale: z.string().min(1).max(35)
+});
 
 export const completeBookingAdminSchema = z.object({
 	bookingId: z.string().min(1),

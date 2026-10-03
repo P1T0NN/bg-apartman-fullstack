@@ -16,7 +16,7 @@ import { EMPTY_REVIEW_SUMMARY } from '../../../../shared/features/reviews/data/r
 
 // CONFIG
 import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
-import { ACCOMMODATION_SORTS } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
+import { ACCOMMODATION_SORTS } from '../../../../shared/features/accommodations/data/accommodationsData.js';
 
 // UTILS
 import { setEmptyPagination } from '../../../../shared/features/pagination/utils/setEmptyPagination.js';

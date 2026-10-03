@@ -1,9 +1,18 @@
 // LIBRARIES
 import { z } from 'zod';
 
-// CONFIG
+// LIBRARIES
 import { m } from '@/lib/paraglide/messages';
 import { getLocale } from '@/lib/paraglide/runtime';
+
+// CONFIG
+import { STORAGE_CONFIG } from '@/shared/features/storage/config.js';
+
+// UTILS
+import { getCountryOptions } from '@/shared/utils/countries.js';
+import { getTimeSlots } from '@/utils/getTimeSlots.js';
+
+// SCHEMAS
 import {
 	accommodationBasicInfoSchema,
 	accommodationLocationSchema,
@@ -12,22 +21,20 @@ import {
 	accommodationPricingSchema,
 	accommodationRulesSchema
 } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
-import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/types/accommodationTypes.js';
-import { STORAGE_CONFIG } from '@/shared/features/storage/config.js';
+import { accommodationCancellationPolicySchema } from '@/shared/features/accommodations/schemas/cancellationPolicySchemas.js';
 
-// UTILS
-import { getCountryOptions } from '@/shared/utils/countries.js';
-import { getTimeSlots } from '@/utils/getTimeSlots.js';
+// DATA
+import { ACCOMMODATION_TYPES } from '@/shared/features/accommodations/data/accommodationsData.js';
 
 // TYPES
 import type {
-	ListingSection,
+	EditAccommodationListingSection,
 	MyAccommodationListing
 } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 export function createMyAccommodationTabListingForm(
 	accommodation: MyAccommodationListing
-): ListingSection[] {
+): EditAccommodationListingSection[] {
 	return [
 		{
 			id: 'basics',
@@ -102,6 +109,7 @@ export function createMyAccommodationTabListingForm(
 			schema: accommodationLocationSchema.extend({ id: z.string() }),
 			values: {
 				address: accommodation.address,
+				timeZone: accommodation.timeZone,
 				latitude: accommodation.latitude,
 				longitude: accommodation.longitude
 			},
@@ -250,6 +258,7 @@ export function createMyAccommodationTabListingForm(
 			group: 'booking',
 			schema: accommodationRulesSchema.extend({ id: z.string() }),
 			values: {
+				timeZone: accommodation.timeZone,
 				checkInStart: accommodation.checkInStart,
 				checkInEnd: accommodation.checkInEnd,
 				checkOut: accommodation.checkOut,
@@ -278,6 +287,25 @@ export function createMyAccommodationTabListingForm(
 					options: getTimeSlots()
 				}
 			]
+		},
+		{
+			id: 'cancellation-policy',
+			title: m['MyAccommodationPage.MyAccommodationTabListingSections.cancellationPolicy'](),
+			description:
+				m['MyAccommodationPage.MyAccommodationTabListingSections.cancellationPolicyHint'](),
+			icon: 'icon-[lucide--calendar-x]',
+			group: 'booking',
+			schema: accommodationCancellationPolicySchema.extend({ id: z.string() }),
+			values: {
+				cancellationPolicy: {
+					fiveToSevenDays: 100,
+					threeToFiveDays: 100,
+					oneToThreeDays: 100,
+					under24Hours: 100,
+					...accommodation.cancellationPolicy
+				}
+			},
+			fields: []
 		}
 	];
 }

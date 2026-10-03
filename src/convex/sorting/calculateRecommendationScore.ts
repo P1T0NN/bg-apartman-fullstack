@@ -33,6 +33,6 @@ export function calculateRecommendationScore({
 	}
 
 	const reviewWeight = count / (count + baselineWeight);
-	
+
 	return reviewWeight * average + (1 - reviewWeight) * baselineAverage;
 }

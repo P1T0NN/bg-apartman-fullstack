@@ -36,7 +36,7 @@
 		<div class="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
 			<div class="flex items-start justify-between gap-4">
 				<FindBookingDetailsDialogHeader {booking} {titleId} />
-				
+
 				<Button type="button" variant="outline" class="min-h-11" commandfor={id} command="close">
 					{m['FindBookingPage.FindBookingDetailsDialog.close']()}
 				</Button>

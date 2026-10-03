@@ -1,4 +1,5 @@
 // LIBRARIES
+import { ConvexError } from 'convex/values';
 import { useAction, useMutation } from 'convex-svelte';
 import { api } from '@convex/_generated/api';
 import { tick } from 'svelte';
@@ -9,16 +10,17 @@ import { m } from '@/lib/paraglide/messages';
 import { useGuestLocal } from '@/features/guests/hooks/useGuestLocal.svelte.js';
 
 // UTILS
-import { optimizeToWebp } from '@/features/storage/utils/optimizeToWebp.js';
+import { exceedsUploadBatchLimit } from '@/shared/features/storage/utils/exceedsUploadBatchLimit.js';
 import { aggregateUploadProgress } from '@/features/uploadFile/utils/aggregateUploadProgress.js';
 import { uploadWithProgress } from '@/features/uploadFile/utils/uploadWithProgress.js';
-import { partition } from '@/shared/lib/algorithms/index.js';
+import { linearFind } from '@/shared/lib/algorithms/index.js';
 import { STORAGE_CONFIG } from '@/shared/features/storage/config.js';
 import { toastMessage } from '@/utils/toastMessage.js';
 import { focusFirstError } from '@/utils/focusFirstError.js';
 import { formValidationErrors, getFormValue, setFormValue } from './formValues.js';
 
 // TYPES
+import type { BackendErrorData } from '@/shared/types/types.js';
 import type { PreviewFile } from '@/features/uploadFile/types/uploadFileTypes.js';
 import type { CaptchaApi } from '@/features/captcha/hooks/useCaptcha.svelte.js';
 import type {
@@ -92,8 +94,8 @@ export function useForm<Mutation extends FunctionReference<'mutation' | 'action'
 			: useMutation(convexFunction as FunctionReference<'mutation'>)
 	) as (args: FunctionArgs<Mutation>) => Promise<FunctionReturnType<Mutation>>;
 
-	const generateUploadUrl = useMutation(api.storage.r2.generateUploadUrl);
-	const syncUploadMetadata = useAction(api.storage.r2.syncMetadata);
+	const generateUploadUrls = useMutation(api.storage.r2.generateUploadUrls);
+	const processUploads = useAction(api.storage.actions.processUploads);
 	const deleteUpload = useMutation(api.storage.r2.deleteObject);
 
 	const getValue = (name: string) => getFormValue(bindings.values, name);
@@ -145,76 +147,57 @@ export function useForm<Mutation extends FunctionReference<'mutation' | 'action'
 		await Promise.allSettled(keys.map((key) => deleteUpload({ key })));
 	};
 
-	const uploadFile = async (file: File, onProgress: (loaded: number, total: number) => void) => {
-		const upload = await generateUploadUrl({
-			namespace: options.uploadNamespace || undefined,
-			size: file.size,
-			contentType: file.type
-		});
-
-		try {
-			await uploadWithProgress(
-				upload.url,
-				file,
-				({ loaded, total }) => onProgress(loaded, total),
-				options.uploadErrorMessage,
-				options.uploadCancelledMessage
-			);
-
-			if (!(await syncUploadMetadata({ key: upload.key }))) {
-				throw new Error(options.uploadErrorMessage);
-			}
-
-			return upload.key;
-		} catch (error) {
-			await deleteUpload({ key: upload.key }).catch(() => {});
-			throw error;
-		}
-	};
-
 	const uploadSelectedFiles = async () => {
 		const uploadFiles = bindings.uploadFiles;
-		if (uploadFiles.length > STORAGE_CONFIG.maxFilesPerUpload) {
-			throw new Error(
-				m['ValidationMessages.maxItems']({ maximum: STORAGE_CONFIG.maxFilesPerUpload })
-			);
-		}
-
-		const localFiles = uploadFiles.flatMap((preview) => (preview.file ? [preview.file] : []));
-
-		preparingUpload = true;
+		if (uploadFiles.length > STORAGE_CONFIG.maxFilesPerUpload)
+			throw new ConvexError<BackendErrorData>({
+				code: 'TOO_MANY_FILES',
+				maxFiles: STORAGE_CONFIG.maxFilesPerUpload
+			});
+		const files = uploadFiles.flatMap((preview) => (preview.file ? [preview.file] : []));
 		uploadProgress = 0;
-
-		const files = await Promise.all(
-			localFiles.map(async (file) =>
-				file.type.startsWith('image/') ? optimizeToWebp(file).catch(() => file) : file
-			)
-		);
-
-		preparingUpload = false;
+		if (files.some((file) => file.size === 0 || file.size > STORAGE_CONFIG.maxFileSizeBytes)) {
+			throw new ConvexError<BackendErrorData>({ code: 'INVALID_UPLOAD' });
+		}
+		if (exceedsUploadBatchLimit(files.map((file) => file.size))) {
+			throw new ConvexError<BackendErrorData>({
+				code: 'UPLOAD_BATCH_TOO_LARGE',
+				maxSizeMB: STORAGE_CONFIG.maxTotalUploadBytes / (1024 * 1024)
+			});
+		}
 
 		const progress = files.map((file) => ({ loaded: 0, total: file.size }));
-
-		const results = await Promise.allSettled(
-			files.map((file, index) =>
-				uploadFile(file, (loaded, total) => {
-					progress[index] = { loaded, total };
-					uploadProgress = aggregateUploadProgress(progress);
-				})
-			)
-		);
-
-		const [succeeded, failed] = partition(
-			results,
-			(result): result is PromiseFulfilledResult<string> => result.status === 'fulfilled'
-		);
-		const failure = failed[0];
-
-		if (failure?.status === 'rejected') {
-			await removeUploads(succeeded.map((result) => result.value));
-			throw failure.reason;
+		const uploads = await generateUploadUrls({
+			namespace: options.uploadNamespace || undefined,
+			files: files.map((file) => ({ size: file.size, contentType: file.type }))
+		});
+		const keys = uploads.map((upload) => upload.key);
+		try {
+			// Wait for every transfer to settle before cleaning up partial success.
+			const results = await Promise.allSettled(
+				files.map((file, index) =>
+					uploadWithProgress(
+						uploads[index].url,
+						file,
+						({ loaded, total }) => {
+							progress[index] = { loaded, total };
+							uploadProgress = aggregateUploadProgress(progress);
+						},
+						options.uploadErrorMessage,
+						options.uploadCancelledMessage
+					)
+				)
+			);
+			const failed = linearFind(results, (result) => result.status === 'rejected');
+			if (failed?.status === 'rejected') throw failed.reason;
+			preparingUpload = true;
+			return await processUploads({ keys });
+		} catch (error) {
+			await removeUploads(keys);
+			throw error;
+		} finally {
+			preparingUpload = false;
 		}
-		return succeeded.map((result) => result.value);
 	};
 
 	async function submit(

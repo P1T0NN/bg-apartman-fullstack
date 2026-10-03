@@ -45,12 +45,29 @@
 {/snippet}
 
 <header class="sticky top-0 z-40 border-b bg-background">
-	<div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-		<a href={UNPROTECTED_PAGE_ENDPOINTS.ROOT} class="text-lg font-semibold tracking-tight">
+	<div
+		class="mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-6"
+	>
+		<a
+			href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}
+			class="justify-self-start text-lg font-semibold tracking-tight"
+		>
 			{COMPANY_DATA.NAME}
 		</a>
 
-		<div class="flex items-center gap-2">
+		<nav
+			aria-label={m['Components.Header.navigation']()}
+			class="flex items-center justify-center gap-1"
+		>
+			<Button variant="ghost" href={UNPROTECTED_PAGE_ENDPOINTS.CONTACT}>
+				{m['Components.Header.contact']()}
+			</Button>
+			<Button variant="ghost" href={UNPROTECTED_PAGE_ENDPOINTS.FEEDBACK}>
+				{m['Components.Header.feedback']()}
+			</Button>
+		</nav>
+
+		<div class="flex items-center gap-2 justify-self-end">
 			{#if $session.isPending}
 				<Spinner />
 			{:else if user}

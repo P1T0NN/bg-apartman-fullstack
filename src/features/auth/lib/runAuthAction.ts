@@ -1,3 +1,6 @@
+// LIBRARIES
+import { m } from '@/lib/paraglide/messages';
+
 // UTILS
 import { toastMessage } from '@/utils/toastMessage.js';
 
@@ -7,7 +10,7 @@ export type AuthActionResult =
 
 /**
  * Run a better-auth client call: toast the caller-authored success/error copy and
- * report whether it succeeded. Never throws — unexpected errors become a toast.
+ * report whether it succeeded. Never throws; unexpected errors become a toast.
  */
 export async function runAuthAction(
 	action: () => Promise<AuthActionResult>,
@@ -17,7 +20,13 @@ export async function runAuthAction(
 	try {
 		const result = await action();
 		if (result?.error) {
-			toastMessage({ type: 'error', error: result.error, message: errorMessage });
+			const message =
+				result.error.code === 'ACCOUNT_HAS_ACTIVE_BOOKINGS'
+					? m['BackendMessages.accountHasActiveBookings']()
+					: result.error.code === 'ACCOUNT_HAS_ACCOMMODATIONS'
+						? m['BackendMessages.accountHasAccommodations']()
+						: errorMessage;
+			toastMessage({ type: 'error', error: result.error, message });
 			return false;
 		}
 

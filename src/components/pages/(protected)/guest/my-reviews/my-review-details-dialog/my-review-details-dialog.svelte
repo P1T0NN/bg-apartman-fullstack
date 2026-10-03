@@ -35,7 +35,7 @@
 	const result = useQuery(api.tables.reviews.queries.fetchMyReview.fetchMyReview, () =>
 		active && !review ? { id: reviewId } : 'skip'
 	);
-	
+
 	const details = $derived(review ?? result.data);
 </script>
 

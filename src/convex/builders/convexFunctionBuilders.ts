@@ -29,6 +29,7 @@ import { enforceRateLimit } from '../rateLimits/helpers/enforceRateLimit.js';
 import { getUploadByKey } from '../storage/getUploadByKey.js';
 
 // CONFIG
+import { exceedsUploadBatchLimit } from '../../shared/features/storage/utils/exceedsUploadBatchLimit.js';
 import { STORAGE_CONFIG } from '../../shared/features/storage/config.js';
 
 // UTILS
@@ -156,6 +157,11 @@ const authenticatedUploadContext = (rateLimited: boolean) => ({
 			}
 			uploads.push(upload);
 		}
+		if (exceedsUploadBatchLimit(uploads.map((upload) => upload.expectedSize ?? 0)))
+			throw new ConvexError<BackendErrorData>({
+				code: 'UPLOAD_BATCH_TOO_LARGE',
+				maxSizeMB: STORAGE_CONFIG.maxTotalUploadBytes / (1024 * 1024)
+			});
 
 		return {
 			ctx: authenticated,
@@ -173,10 +179,6 @@ const authenticatedUploadContext = (rateLimited: boolean) => ({
 export const authenticatedUploadMutation = customMutation(
 	rawMutation,
 	authenticatedUploadContext(true)
-);
-export const authenticatedUploadInternalMutation = customMutation(
-	rawInternalMutation,
-	authenticatedUploadContext(false)
 );
 export const authenticatedAction = customAction(rawAction, authenticatedActionContext);
 export const authenticatedQuery = customQuery(rawQuery, authenticatedQueryContext);

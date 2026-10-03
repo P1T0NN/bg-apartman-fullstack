@@ -5,8 +5,14 @@ export type typesBackendResult<Code extends string = string> =
 	{ success: true } | { success: false; code: Code };
 
 export const backendErrorDataSchema = z.discriminatedUnion('code', [
+	z.object({ code: z.literal('ACCOUNT_HAS_ACTIVE_BOOKINGS') }),
+	z.object({ code: z.literal('ACCOUNT_HAS_ACCOMMODATIONS') }),
 	z.object({ code: z.literal('INVALID_ACCOMMODATION') }),
+	z.object({ code: z.literal('INVALID_CANCELLATION_POLICY') }),
 	z.object({ code: z.literal('INVALID_BOOKING') }),
+	z.object({ code: z.literal('BOOKING_TERMS_UNAVAILABLE') }),
+	z.object({ code: z.literal('BOOKING_CHECK_IN_TIME_UNAVAILABLE') }),
+	z.object({ code: z.literal('BOOKING_CHECK_OUT_TIME_UNAVAILABLE') }),
 	z.object({ code: z.literal('INVALID_BOOKING_RECOVERY_REQUEST') }),
 	z.object({ code: z.literal('INVALID_BOOKING_RECOVERY_TOKEN') }),
 	z.object({ code: z.literal('BOOKING_EMAIL_UNVERIFIED') }),
@@ -14,6 +20,9 @@ export const backendErrorDataSchema = z.discriminatedUnion('code', [
 	z.object({ code: z.literal('BOOKING_ALREADY_CLAIMED') }),
 	z.object({ code: z.literal('BOOKING_NOT_FOUND') }),
 	z.object({ code: z.literal('INVALID_BOOKING_STATUS') }),
+	z.object({ code: z.literal('INVALID_BOOKING_CANCELLATION') }),
+	z.object({ code: z.literal('BOOKING_CANCELLATION_NOT_ELIGIBLE') }),
+	z.object({ code: z.literal('BOOKING_CANCELLATION_CHANGED') }),
 	z.object({ code: z.literal('BOOKING_NOT_FINISHED') }),
 	z.object({ code: z.literal('INVALID_REVIEW') }),
 	z.object({ code: z.literal('REVIEW_ALREADY_EXISTS') }),
@@ -21,6 +30,7 @@ export const backendErrorDataSchema = z.discriminatedUnion('code', [
 	z.object({ code: z.literal('REVIEW_NOT_FOUND') }),
 	z.object({ code: z.literal('ACCOMMODATION_NOT_FOUND') }),
 	z.object({ code: z.literal('INVALID_FEEDBACK') }),
+	z.object({ code: z.literal('INVALID_CONTACT_FORM') }),
 	z.object({ code: z.literal('FEEDBACK_NOT_FOUND') }),
 	z.object({ code: z.literal('UNAUTHENTICATED') }),
 	z.object({ code: z.literal('FORBIDDEN') }),
@@ -31,6 +41,7 @@ export const backendErrorDataSchema = z.discriminatedUnion('code', [
 	z.object({ code: z.literal('UPLOAD_NOT_FOUND') }),
 	z.object({ code: z.literal('INVALID_UPLOAD_NAMESPACE') }),
 	z.object({ code: z.literal('INVALID_UPLOAD') }),
+	z.object({ code: z.literal('UPLOAD_BATCH_TOO_LARGE'), maxSizeMB: z.number() }),
 	z.object({ code: z.literal('TOO_MANY_FILES'), maxFiles: z.number() })
 ]);
 

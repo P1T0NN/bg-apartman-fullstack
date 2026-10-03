@@ -5,9 +5,6 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 
-	// LIBRARIES
-	import { getLocalTimeZone, today } from '@internationalized/date';
-
 	// CONVEX
 	import { api } from '@convex/_generated/api';
 
@@ -16,6 +13,7 @@
 	import Form from '@/components/ui/custom-components/form/form.svelte';
 	import BookingSummary from '../booking-summary/booking-summary.svelte';
 	import BookingCheckoutConfirmButton from './booking-checkout-confirm-button.svelte';
+	import AccommodationGuestCancellationPolicy from '@/features/accommodations/components/accommodation-guest-cancellation-policy/accommodation-guest-cancellation-policy.svelte';
 
 	// FEATURES
 	import BookingStayDates from '@/features/bookings/components/booking-stay-dates/booking-stay-dates.svelte';
@@ -27,7 +25,9 @@
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 	import { parseIsoDate, toIsoDate } from '@/shared/utils/date.js';
+	import { getIsoDateInTimeZone } from '@/shared/features/timezone/utils/getIsoDateInTimeZone.js';
 	import { createBookingSchema } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+	import { timeZoneSchema } from '@/shared/features/timezone/schemas/timezoneSchemas.js';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -53,10 +53,16 @@
 		specialRequests: ''
 	});
 	let submitting = $state(false);
-	let currentDate = $state('');
+	let currentTimestamp = $state<number>();
+	const timeZone = $derived(timeZoneSchema.safeParse(accommodation.timeZone));
+	const currentDate = $derived(
+		timeZone.success && currentTimestamp !== undefined
+			? getIsoDateInTimeZone(currentTimestamp, timeZone.data)
+			: ''
+	);
 
 	onMount(() => {
-		currentDate = today(getLocalTimeZone()).toString();
+		currentTimestamp = Date.now();
 	});
 
 	const checkInDate = $derived(values.checkInDate == null ? '' : String(values.checkInDate));
@@ -138,33 +144,32 @@
 		/>
 	</div>
 
-	<Form
-		function={createBooking}
-		schema={bookingSchema}
-		{fields}
-		extraFields={{ accommodationId: accommodation._id }}
-		bind:values
-		bind:submitting
-		onSuccess={(bookingId) =>
-			goto(resolve('/(app)/(unprotected)/book-confirmation/[id]', { id: bookingId }))}
-		successMessage={m['BookingPage.BookingCheckout.booked']()}
-		class="min-w-0 lg:col-start-1 lg:row-start-1"
-	>
-		{#snippet customFields()}
-			<div class="border-t pt-8">
-				<div class="flex flex-col gap-4 text-sm leading-6">
-					<p>
-						<span class="font-medium">{m['BookingPage.BookingCheckout.cancellation']()}</span>
-						{m['BookingPage.BookingCheckout.cancellationHint']()}
-					</p>
-					<p>
-						<span class="font-medium">{m['BookingPage.BookingCheckout.payment']()}</span>
-						{m['BookingPage.BookingCheckout.paymentHint']()}
-					</p>
-				</div>
+	{#if timeZone.success}
+		<Form
+			function={createBooking}
+			schema={bookingSchema}
+			{fields}
+			extraFields={{ accommodationId: accommodation._id }}
+			bind:values
+			bind:submitting
+			onSuccess={(bookingId) =>
+				goto(resolve('/(app)/(unprotected)/book-confirmation/[id]', { id: bookingId }))}
+			successMessage={m['BookingPage.BookingCheckout.booked']()}
+			class="min-w-0 lg:col-start-1 lg:row-start-1"
+		>
+			{#snippet customFields()}
+				<div class="border-t pt-8">
+					<div class="flex flex-col gap-4 text-sm leading-6">
+						<AccommodationGuestCancellationPolicy {accommodation} {checkInDate} />
+					</div>
 
-				<BookingCheckoutConfirmButton {submitting} />
-			</div>
-		{/snippet}
-	</Form>
+					<BookingCheckoutConfirmButton {submitting} />
+				</div>
+			{/snippet}
+		</Form>
+	{:else}
+		<p role="status" class="text-sm text-muted-foreground">
+			{m['BackendMessages.bookingTermsUnavailable']()}
+		</p>
+	{/if}
 </div>

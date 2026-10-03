@@ -25,4 +25,7 @@
 	<Button variant="outline" href="#rules">
 		{m['AccommodationPage.AccommodationNavigation.rules']()}
 	</Button>
+	<Button variant="outline" href="#cancellation-policy">
+		{m['AccommodationPage.AccommodationNavigation.cancellation']()}
+	</Button>
 </nav>

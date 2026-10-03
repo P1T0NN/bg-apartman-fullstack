@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from '@/components/ui/button/index.js';
+	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 	import { Separator } from '@/components/ui/separator/index.js';
 	import { m } from '@/lib/paraglide/messages';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
@@ -73,6 +74,15 @@
 					</dd>
 				</div>
 			</dl>
+			<div class="mt-8 border-t pt-6">
+				<BookingCancellationPolicy
+					policy={confirmation.cancellationTerms.policy}
+					timeZone={confirmation.cancellationTerms.timeZone}
+					checkInAt={confirmation.cancellationTerms.checkInAt}
+					status={confirmation.status}
+					booked
+				/>
+			</div>
 			<div class="mt-8">
 				<Button
 					href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(confirmation.accommodationId)}

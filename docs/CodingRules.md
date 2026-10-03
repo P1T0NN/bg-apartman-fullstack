@@ -160,6 +160,12 @@ rules; every dialog-like surface has an accessible title.
 
 ## Custom UI components (`src/components/ui/custom-components`)
 
+`SearchableSelect` (`searchable-select/searchable-select.svelte`) composes a
+search input and `NativeSelect` for finite option lists. It filters labels and
+values, preserves the selected option while filtering, and accepts caller-owned
+search labels and empty-result copy. Use it when a dropdown needs explicit text
+filtering; keep domain values and translations in the calling feature.
+
 | Component                                                                                                              | Use                                                                                                                                                             |
 | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Section`                                                                                                              | Full-width semantic band with centered width, horizontal padding, and vertical rhythm; `class` styles the band and `containerClass` styles the inner container. |
@@ -211,13 +217,13 @@ its native Cancel button; `onCancel` remains available for other workflows.
 
 ## Feature components and hooks
 
-| Area       | Existing pieces and intended use                                                                                                                                                                                                                         |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth       | `SignInForm`, `SignUpForm`, `ForgotPasswordForm`, `VerifyEmailForm`, and `LogoutButton`; `useAuth` centralizes Better Auth calls, error codes, pending state, OTP/password/social flows, and redirects. Keep wording in components via `ERROR_MESSAGES`. |
-| Search     | `SearchInput` is an InputGroup with clear button and optional listbox snippet. `useSearch` owns raw value, debounce, trim, minimum two-character gate, and `state`/`url` mode. Pass only `search.term` to a query.                                       |
-| Filters    | Filter defs define symbolic options. `useFilters` owns state/URL mode, active values, count, clear methods, and stable `identity`; feature filters belong with their feature.                                                                            |
-| Pagination | `useConvexPagination` owns page/cursor sessions; `useConvexInfinitePagination` owns accumulated pages, duplicate protection, retry, and reset. `createConvexPaginationQuery` is their shared subscription builder.                                       |
-| Uploads    | `UploadFile`, `UploadFileDropzone`, `UploadFilePreviewItem`, and `useUpload` manage previews, object-URL cleanup, multiple-file ordering, cover selection, and removal. `optimizeToWebp` is the browser compression step.                                |
+| Area       | Existing pieces and intended use                                                                                                                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth       | `SignInForm`, `SignUpForm`, `ForgotPasswordForm`, `VerifyEmailForm`, and `LogoutButton`; `useAuth` centralizes Better Auth calls, error codes, pending state, OTP/password/social flows, and redirects. Keep wording in components via `ERROR_MESSAGES`.                                  |
+| Search     | `SearchInput` is an InputGroup with clear button and optional listbox snippet. `useSearch` owns raw value, debounce, trim, minimum two-character gate, and `state`/`url` mode. Pass only `search.term` to a query.                                                                        |
+| Filters    | Filter defs define symbolic options. `useFilters` owns state/URL mode, active values, count, clear methods, and stable `identity`; feature filters belong with their feature.                                                                                                             |
+| Pagination | `useConvexPagination` owns page/cursor sessions; `useConvexInfinitePagination` owns accumulated pages, duplicate protection, retry, and reset. `createConvexPaginationQuery` is their shared subscription builder.                                                                        |
+| Uploads    | `UploadFile`, `UploadFileDropzone`, `UploadFilePreviewItem`, and `useUpload` manage previews, object-URL cleanup, multiple-file ordering, cover selection, and removal. Originals upload to private R2; `processUploads` validates and optimizes them on the server before final storage. |
 
 The admin page components are intentionally page-specific: user list/header
 rows, user profile/settings/sessions/logs tabs, ban/unban/role actions, and
@@ -536,3 +542,13 @@ children on indented lines instead of hugging `>`, `</tag>`, or `{/snippet}`.
   one-line block for you.
 - Run `bun run format` after changes; `prettier --check .` must pass. Generated
   Paraglide output and caches are ignored in `.prettierignore`.
+
+## Reusable timezone feature
+
+`src/features/timezone` contains browser coordinate lookup (`lltz`) and its
+Svelte hook. `src/shared/features/timezone` contains timezone/coordinate schemas
+and pure date conversions usable in browser and backend. Keep project-specific
+form bindings, property labels, booking snapshots, cancellation rules, and review
+windows in their owning features. Copy both timezone folders together; see
+[`src/features/timezone/README.md`](../src/features/timezone/README.md) for
+required dependencies, asset bundling, and the client/server validation boundary.

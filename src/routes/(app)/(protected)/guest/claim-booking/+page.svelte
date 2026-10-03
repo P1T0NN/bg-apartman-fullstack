@@ -1,7 +1,7 @@
 <script lang="ts">
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages';
-	
+
 	// COMPONENTS
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
 	import ClaimBookingHeader from '@/components/pages/(protected)/guest/claim-booking/claim-booking-header.svelte';

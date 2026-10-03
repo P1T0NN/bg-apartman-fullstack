@@ -48,6 +48,8 @@ z.config({
 				return m['ValidationMessages.multipleOf']({ step: String(issue.divisor) });
 			case 'custom':
 				switch (issue.params?.code) {
+					case 'INVALID_TIME_ZONE':
+						return m['ValidationMessages.invalidTimeZone']();
 					case 'PAST_STAY_DATE':
 						return m['ValidationMessages.pastStayDate']();
 					case 'STAY_DATE_ORDER':

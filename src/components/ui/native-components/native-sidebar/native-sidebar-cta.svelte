@@ -38,11 +38,7 @@
 		display: none;
 	}
 
-	:global(
-		aside:not([data-hover-suppressed='true']):is(:hover, :focus-within)
-			[data-native-sidebar-footer]
-			.sidebar-cta
-	),
+	:global(aside:is(:hover, :focus-within) [data-native-sidebar-footer] .sidebar-cta),
 	:global(aside:has([popover]:popover-open) [data-native-sidebar-footer] .sidebar-cta) {
 		inline-size: 100%;
 		block-size: 2rem;
@@ -53,10 +49,7 @@
 	}
 
 	:global(
-		aside:not([data-hover-suppressed='true']):is(:hover, :focus-within)
-			[data-native-sidebar-footer]
-			.sidebar-cta
-			.sidebar-cta-label
+		aside:is(:hover, :focus-within) [data-native-sidebar-footer] .sidebar-cta .sidebar-cta-label
 	),
 	:global(
 		aside:has([popover]:popover-open) [data-native-sidebar-footer] .sidebar-cta .sidebar-cta-label

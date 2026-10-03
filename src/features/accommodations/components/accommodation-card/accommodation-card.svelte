@@ -17,7 +17,7 @@
 	import Price from '@/components/ui/custom-components/price/price.svelte';
 
 	// TYPES
-	import type { AccommodationListItem } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { AccommodationCard } from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -26,7 +26,7 @@
 		onfocuschange,
 		close
 	}: {
-		accommodation: AccommodationListItem;
+		accommodation: AccommodationCard;
 		onhover?: (hovered: boolean) => void;
 		onfocuschange?: (focused: boolean) => void;
 		close?: Snippet;

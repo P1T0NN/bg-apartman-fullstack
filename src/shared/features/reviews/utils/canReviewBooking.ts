@@ -5,18 +5,19 @@ export function canReviewBooking(
 	booking: {
 		status: string;
 		checkOutDate: string;
+		cancellationTerms: { timeZone: string; checkOutAt: number };
 		reviewId?: string;
 		hostId?: string;
 		ownerId?: string;
 	},
-	today: string
+	now: number
 ): boolean {
 	const isOwnListing = booking.hostId !== undefined && booking.hostId === booking.ownerId;
 	return (
 		booking.status === 'completed' &&
 		!booking.reviewId &&
 		!isOwnListing &&
-		booking.checkOutDate <= today &&
-		Date.parse(today) < getReviewDeadline(booking.checkOutDate)
+		now >= booking.cancellationTerms.checkOutAt &&
+		now < getReviewDeadline(booking.checkOutDate, booking.cancellationTerms.timeZone)
 	);
 }

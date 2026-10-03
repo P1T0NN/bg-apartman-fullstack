@@ -1,6 +1,9 @@
 // SVELTEKIT IMPORTS
 import { page } from '$app/state';
 
+// LIBRARIES
+import { deLocalizeUrl } from '@/lib/paraglide/runtime';
+
 function normalizePath(path: string): string {
 	const pathname = path.split(/[?#]/, 1)[0] || '/';
 	return pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
@@ -16,7 +19,7 @@ export function isActivePath(itemPath: string, currentPath: string, exact = fals
 
 /** Reactive pathname state and route matching for Svelte components. */
 export function usePathname() {
-	const pathname = $derived(page.url.pathname);
+	const pathname = $derived(deLocalizeUrl(page.url).pathname);
 
 	return {
 		get pathname() {

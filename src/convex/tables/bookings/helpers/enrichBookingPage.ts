@@ -19,13 +19,18 @@ export async function enrichBookingPage(
 			const isHidden = !accommodation || (onlyPublished && accommodation.status !== 'published');
 
 			if (isHidden) {
-				return { ...booking, accommodation: null };
+				return {
+					...booking,
+					cancellationTerms: booking.cancellationTerms,
+					accommodation: null
+				};
 			}
 
 			const [imageUrl] = await resolveStoredFileUrls(accommodation.imageKeys.slice(0, 1));
 
 			return {
 				...booking,
+				cancellationTerms: booking.cancellationTerms,
 				accommodation: {
 					name: accommodation.name,
 					city: accommodation.address.city,

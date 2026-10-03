@@ -1,36 +1,15 @@
 // CONFIG
 import { accommodationSectionSchemas } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 
+// DATA
+import { EMPTY_ACCOMMODATION } from '@/shared/features/accommodations/data/accommodationsData.js';
+
 // UTILS
 import { formValidationErrors } from '@/components/ui/custom-components/form/formValues.js';
 
 // TYPES
-import type { AccommodationDetails } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 import type { FormValues } from '@/components/ui/custom-components/form/formTypes.js';
 import type { PreviewFile } from '@/features/uploadFile/types/uploadFileTypes.js';
-
-const EMPTY_ACCOMMODATION: Omit<AccommodationDetails, 'latitude' | 'longitude'> = {
-	imageKeys: [],
-	name: '',
-	description: '',
-	type: 'apartment',
-	spaceType: 'entire',
-	address: { street: '', streetNumber: '', city: '', postalCode: '', country: '' },
-	maxGuests: 2,
-	bedrooms: 1,
-	beds: 1,
-	bathrooms: 1,
-	nightlyPrice: 0,
-	amenities: [],
-	checkInStart: '14:00',
-	checkInEnd: '22:00',
-	checkOut: '11:00',
-	minimumStay: 1,
-	smokingAllowed: false,
-	petsAllowed: false,
-	partiesAllowed: false,
-	houseRules: ''
-};
 
 type AccommodationFormState = {
 	values: FormValues;

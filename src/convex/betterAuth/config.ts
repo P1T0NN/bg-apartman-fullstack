@@ -2,7 +2,9 @@
 import { createClient, type AuthFunctions, type GenericCtx } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
 import type { BetterAuthPlugin } from 'better-auth';
-import { APIError } from 'better-auth/api';
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
+import { ConvexError } from 'convex/values';
+import { z } from 'zod';
 import { betterAuth, type BetterAuthOptions } from 'better-auth/minimal';
 import { admin } from 'better-auth/plugins/admin';
 import { captcha } from 'better-auth/plugins';
@@ -25,7 +27,11 @@ import { TURNSTILE_ALWAYS_PASS_TEST_SECRET } from '../../shared/features/captcha
 import { sendDeleteAccountVerificationEmail } from './emails/sendDeleteAccountVerificationEmail.js';
 import { sendVerificationOTPEmail } from './emails/sendVerificationOTPEmail.js';
 
+// HELPERS
+import { checkAccountDeletionRestrictions } from './helpers/checkAccountDeletionRestrictions.js';
+
 // TYPES
+import type { BackendErrorData } from '../../shared/types/types.js';
 import type { DataModel } from '../_generated/dataModel.js';
 
 const siteUrl = process.env.PUBLIC_ORIGIN!;
@@ -96,6 +102,11 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 			},
 			onDelete: async (ctx, doc) => {
 				const ownerId = String(doc._id);
+				const restriction = await checkAccountDeletionRestrictions(ctx, {
+					id: ownerId,
+					email: doc.email
+				});
+				if (restriction) throw new ConvexError<BackendErrorData>({ code: restriction });
 				await userTotalAggregate.deleteIfExists(ctx, { key: ownerId, id: ownerId });
 				await ctx.scheduler.runAfter(
 					0,
@@ -106,6 +117,18 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 		}
 	}
 });
+
+/** Used before verification, before self-deletion, and before admin deletion revokes sessions. */
+async function assertAccountDeletionAllowed(
+	ctx: GenericCtx<DataModel>,
+	user: { id: string; email: string }
+) {
+	const restriction = await ctx.runQuery(
+		internal.betterAuth.queries.checkAccountDeletion.checkAccountDeletion,
+		{ id: user.id, email: user.email }
+	);
+	if (restriction) throw APIError.from('FORBIDDEN', { code: restriction, message: restriction });
+}
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
 	({
@@ -135,12 +158,37 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
 			autoSignIn: false,
 			requireEmailVerification: true
 		},
+		hooks: {
+			before: createAuthMiddleware(async (context) => {
+				const isSelfDeletion =
+					context.path === '/delete-user' || context.path === '/delete-user/callback';
+				const isAdminDeletion = context.path === '/admin/remove-user';
+				if (!isSelfDeletion && !isAdminDeletion) return;
+				const session = await getSessionFromCtx(context);
+				if (!session) return;
+				if (isSelfDeletion) {
+					await assertAccountDeletionAllowed(ctx, session.user);
+					return;
+				}
+				const isAdmin = session.user.role?.split(',').includes('admin');
+				if (!isAdmin) return;
+				const parsed = z.object({ userId: z.string().min(1) }).safeParse(context.body);
+				if (!parsed.success) return;
+				const user = await context.context.internalAdapter.findUserById(parsed.data.userId);
+				if (user) await assertAccountDeletionAllowed(ctx, user);
+			})
+		},
 		user: {
 			deleteUser: {
 				enabled: true,
+				beforeDelete: async (user) => {
+					await assertAccountDeletionAllowed(ctx, user);
+				},
 				// Email verification keeps deletion intentional and works for social-only accounts.
 				sendDeleteAccountVerification: async ({ user, url }) => {
-					await sendDeleteAccountVerificationEmail({
+					if (!('runMutation' in ctx))
+						throw new Error('Email sending requires a mutation or action context');
+					await sendDeleteAccountVerificationEmail(ctx, {
 						email: user.email,
 						name: user.name,
 						url
@@ -182,7 +230,9 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
 				storeOTP: 'hashed',
 				overrideDefaultEmailVerification: true,
 				sendVerificationOTP: async (data) => {
-					await sendVerificationOTPEmail(data).catch((error) => {
+					if (!('runMutation' in ctx))
+						throw new Error('Email sending requires a mutation or action context');
+					await sendVerificationOTPEmail(ctx, data).catch((error) => {
 						console.error('[emailOTP] send failed', error);
 					});
 				}

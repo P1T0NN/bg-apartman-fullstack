@@ -4,7 +4,7 @@
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 
 	// COMPONENTS
-	import AccommodationCard from '@/features/accommodations/components/accommodation-card/accommodation-card.svelte';
+	import AccommodationCardPreview from '@/features/accommodations/components/accommodation-card/accommodation-card.svelte';
 	import NativePopover from '@/components/ui/native-components/native-popover/native-popover.svelte';
 
 	// HOOKS
@@ -15,7 +15,7 @@
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
-	import type { AccommodationListItem } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { AccommodationCard } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	// LUCIDE ICONS
 	import X from '@lucide/svelte/icons/x';
@@ -24,7 +24,7 @@
 		accommodation,
 		isHighlighted
 	}: {
-		accommodation: AccommodationListItem;
+		accommodation: AccommodationCard;
 		isHighlighted: () => boolean;
 	} = $props();
 
@@ -87,6 +87,6 @@
 >
 	<span class="hidden" {@attach placement.watch}></span>
 	{#if placement.open}
-		<AccommodationCard {accommodation} {close} />
+		<AccommodationCardPreview {accommodation} {close} />
 	{/if}
 </NativePopover>

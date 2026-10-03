@@ -1,15 +1,19 @@
 <script lang="ts">
 	// COMPONENTS
-	import SearchCard from '@/components/ui/custom-components/search-card/search-card.svelte';
+	import HeroSection from '@/components/pages/(unprotected)/root/hero-section.svelte';
 	import NewslettersSection from '@/features/newsletters/components/newsletters-section/newsletters-section.svelte';
-	import Section from '@/components/ui/custom-components/section/section.svelte';
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
+
+	// UTILS
+	import { m } from '@/lib/paraglide/messages';
 </script>
 
-<SvelteHead title="Home" />
+<SvelteHead
+	title={m['HomePage.title']()}
+	description={m['HomePage.description']()}
+	suffixSiteName={false}
+/>
 
-<Section>
-	<SearchCard />
-</Section>
+<HeroSection />
 
 <NewslettersSection />

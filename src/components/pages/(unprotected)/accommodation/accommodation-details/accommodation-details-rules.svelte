@@ -63,10 +63,4 @@
 			{accommodation.houseRules}
 		</p>
 	{/if}
-	<div class="mt-8">
-		<h3 class="font-semibold">{m['AccommodationPage.AccommodationDetailsRules.cancellation']()}</h3>
-		<p class="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
-			{m['AccommodationPage.AccommodationDetailsRules.cancellationHint']()}
-		</p>
-	</div>
 </section>

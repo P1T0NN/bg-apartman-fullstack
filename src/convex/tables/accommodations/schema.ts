@@ -4,7 +4,7 @@ import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 // CONFIG
-import { ACCOMMODATION_TYPES } from '../../../shared/features/accommodations/types/accommodationTypes.js';
+import { ACCOMMODATION_TYPES } from '../../../shared/features/accommodations/data/accommodationsData.js';
 
 export const accommodations = defineTable({
 	// Set server-side from the authenticated user when creating a listing.
@@ -37,6 +37,8 @@ export const accommodations = defineTable({
 	// Ordered R2 keys; the first image is the cover.
 	imageKeys: v.array(v.string()),
 	checkInStart: v.string(), // Local property time, HH:mm.
+	/** Required IANA timezone for interpreting local check-in times. */
+	timeZone: v.string(),
 	checkInEnd: v.string(), // Local property time, HH:mm.
 	checkOut: v.string(), // Local property time, HH:mm.
 	minimumStay: v.number(),
@@ -45,6 +47,17 @@ export const accommodations = defineTable({
 	petsAllowed: v.boolean(),
 	partiesAllowed: v.boolean(),
 	houseRules: v.string(),
+	cancellationPolicy: v.union(
+		v.object({ version: v.literal(1), mode: v.literal('full_refund') }),
+		v.object({
+			version: v.literal(1),
+			mode: v.literal('custom'),
+			fiveToSevenDays: literals(100, 50, 0),
+			threeToFiveDays: literals(100, 50, 0),
+			oneToThreeDays: literals(100, 50, 0),
+			under24Hours: literals(100, 50, 0)
+		})
+	),
 	status: v.literal('published'),
 	updatedAt: v.number() // Unix milliseconds; Convex supplies _creationTime.
 })
