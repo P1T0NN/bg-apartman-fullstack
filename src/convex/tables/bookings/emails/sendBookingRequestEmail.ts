@@ -26,7 +26,7 @@ export async function sendBookingRequestEmail(
 
 	const terms = data.booking.cancellationTerms;
 
-	const path =data.recipient === 'host' ? '/host/bookings' : `/book-confirmation/${data.bookingId}`;
+	const path = data.recipient === 'host' ? '/host/bookings' : `/book-confirmation/${data.bookingId}`;
 
 	const bodyData: BookingRequestEmailBodyData = {
 		accommodationName: data.accommodationName,

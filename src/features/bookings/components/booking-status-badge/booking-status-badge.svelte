@@ -18,6 +18,7 @@
 		confirmed: 'border-success/30 bg-success/10 text-success',
 		declined: 'border-destructive/30 bg-destructive/10 text-destructive',
 		cancelled: 'border-border bg-muted text-muted-foreground',
+		expired: 'border-border bg-muted text-muted-foreground',
 		completed: 'border-border bg-muted text-muted-foreground'
 	} satisfies Record<BookingStatus, string>;
 </script>

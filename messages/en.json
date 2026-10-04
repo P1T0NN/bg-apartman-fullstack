@@ -754,12 +754,12 @@
 			"checkOut": "Check-out",
 			"viewAccommodation": "View accommodation",
 			"next": "What happens next?",
-			"nextHint": "Your request is saved. Availability, the final price and payment arrangements still need confirmation from the property before your stay is booked.",
+			"nextHint": "The host must accept or decline within 24 hours, or before scheduled check-in if sooner. Unanswered requests expire automatically. Your stay is booked only after the host confirms.",
 			"saveLink": "Bookmark this page to keep your request details close at hand.",
 			"noPayment": "No payment has been taken.",
 			"stay": "Accommodation",
 			"dates": "Dates",
-			"bookedHint": "We saved your request for this stay. The property will confirm availability and payment details.",
+			"bookedHint": "We saved your request for this stay. The host has up to 24 hours to accept or decline, or until scheduled check-in if sooner.",
 			"notFound": "We couldn't find this booking request",
 			"notFoundHint": "The link may be incomplete or no longer valid. Return home to keep planning."
 		}
@@ -1117,6 +1117,8 @@
 			"confirmed": "Confirmed",
 			"declined": "Declined",
 			"cancelled": "Cancelled",
+			"expired": "Request expired",
+			"expiredHint": "The host did not accept or decline before the response deadline. This stay is not booked. You can submit a new request.",
 			"completed": "Completed"
 		}
 	},
@@ -1663,6 +1665,7 @@
 		"invalidTimeZone": "Choose a valid property timezone."
 	},
 	"BackendMessages": {
+		"bookingRequestExpired": "The response deadline has passed. This request can no longer be changed. You can submit a new request.",
 		"invalidCancellationPolicy": "Choose only full refund (100%), 50% refund, or no refund (0%). Refunds must stay the same or decrease as check-in approaches.",
 		"rateLimitSingle": "You hit the rate limit. Try again in 1 second.",
 		"rateLimitMultiple": "You hit the rate limit. Try again in {seconds} seconds.",
@@ -2043,7 +2046,7 @@
 			"guest": "guest",
 			"guests": "guests",
 			"pending": "Awaiting confirmation",
-			"pendingHint": "Your request is saved. The property still needs to confirm availability and payment details.",
+			"pendingHint": "Your request is saved. The host must accept or decline within 24 hours, or before scheduled check-in if sooner. Unanswered requests expire automatically.",
 			"confirmed": "Confirmed",
 			"confirmedHint": "The property has confirmed your booking.",
 			"declined": "Declined",

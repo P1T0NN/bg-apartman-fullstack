@@ -3,7 +3,7 @@ import { MINUTE } from '@convex-dev/rate-limiter';
 import { ConvexError, v } from 'convex/values';
 
 // CONVEX
-import { internal } from '../../../_generated/api.js';
+import { components } from '../../../_generated/api.js';
 
 // BUILDERS
 import { mutation } from '../../../builders/convexFunctionBuilders.js';
@@ -14,6 +14,9 @@ import { bookingOwnerAggregate } from '../aggregates/bookingOwnerAggregate.js';
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
+// EMAILS
+import { sendBookingRequestEmail } from '../emails/sendBookingRequestEmail.js';
+
 // SCHEMAS
 import { createBookingSchema } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
 import { timeZoneSchema } from '../../../../shared/features/timezone/schemas/timezoneSchemas.js';
@@ -21,6 +24,7 @@ import { cancellationPolicySchema } from '../../../../shared/features/accommodat
 
 // CONFIG
 import { COMPANY_DATA } from '../../../../shared/config.js';
+import { BOOKINGS_CONFIG } from '../../../../shared/features/bookings/config.js';
 
 // UTILS
 import { getIsoDateInTimeZone } from '../../../../shared/features/timezone/utils/getIsoDateInTimeZone.js';
@@ -84,7 +88,9 @@ export const createBooking = mutation({
 		} catch {
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_CHECK_IN_TIME_UNAVAILABLE' });
 		}
+
 		if (checkInAt <= now) throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING' });
+
 		try {
 			checkOutAt = getZonedTimestamp(
 				parsed.data.checkOutDate,
@@ -107,6 +113,7 @@ export const createBooking = mutation({
 			// The host owns everything booked on their listing; copied now so host pages need no join scan.
 			hostId: accommodation.ownerId,
 			status: 'pending' as const,
+			requestExpiresAt: Math.min(now + BOOKINGS_CONFIG.REQUEST_RESPONSE_WINDOW_MS, checkInAt),
 			requestEmailIds: {},
 			cancellationTerms: {
 				policy: policy.data,
@@ -128,26 +135,29 @@ export const createBooking = mutation({
 			if (stored) await bookingOwnerAggregate.insert(ctx, stored);
 		}
 
-		const delivery =
-			internal.tables.bookings.mutations.enqueueBookingRequestEmail.enqueueBookingRequestEmail;
-		for (const recipient of ['guest', 'host'] as const) {
-			await ctx.scheduler.runAfter(0, delivery, {
-				bookingId,
-				booking: {
-					hostId: booking.hostId,
-					email: booking.email,
-					firstName: booking.firstName,
-					lastName: booking.lastName,
-					phone: booking.phone,
-					specialRequests: booking.specialRequests,
-					adults: booking.adults,
-					children: booking.children,
-					cancellationTerms: booking.cancellationTerms
-				},
-				recipient,
-				accommodationName: accommodation.name
-			});
-		}
+		const host = await ctx.runQuery(components.betterAuth.queries.getUser.getUser, {
+			id: booking.hostId
+		});
+		if (!host) throw new Error('Booking host account is unavailable');
+
+		// Queue both receipts with the booking; the component delivers them asynchronously.
+		const emailData = { bookingId, booking, accommodationName: accommodation.name };
+
+		const guestEmailId = await sendBookingRequestEmail(ctx, {
+			...emailData,
+			recipient: 'guest',
+			email: booking.email
+		});
+
+		const hostEmailId = await sendBookingRequestEmail(ctx, {
+			...emailData,
+			recipient: 'host',
+			email: host.email
+		});
+
+		await ctx.db.patch('bookings', bookingId, {
+			requestEmailIds: { guest: guestEmailId, host: hostEmailId }
+		});
 
 		return bookingId;
 	}

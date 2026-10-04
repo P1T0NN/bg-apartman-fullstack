@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { m } from '@/lib/paraglide/messages';
+	import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+	let { status }: { status: BookingStatus } = $props();
 </script>
 
 <header class="flex flex-col items-start gap-5 pb-9 sm:flex-row sm:items-center sm:gap-6 sm:pb-12">
@@ -14,10 +16,14 @@
 			{m['BookingPage.BookingConfirmation.eyebrow']()}
 		</p>
 		<h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
-			{m['BookingPage.BookingCheckout.booked']()}
+			{status === 'expired'
+				? m['BookingsFeature.status.expired']()
+				: m['BookingPage.BookingCheckout.booked']()}
 		</h1>
 		<p class="mt-3 max-w-prose text-sm leading-6 text-muted-foreground">
-			{m['BookingPage.BookingConfirmation.bookedHint']()}
+			{status === 'expired'
+				? m['BookingsFeature.status.expiredHint']()
+				: m['BookingPage.BookingConfirmation.bookedHint']()}
 		</p>
 	</div>
 </header>

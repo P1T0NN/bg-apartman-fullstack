@@ -12,6 +12,7 @@ export const HOST_BOOKING_FILTER_DEFS = [
 			{ value: 'confirmed', label: 'Confirmed' },
 			{ value: 'declined', label: 'Declined' },
 			{ value: 'cancelled', label: 'Cancelled' },
+			{ value: 'expired', label: 'Request expired' },
 			{ value: 'completed', label: 'Completed' }
 		]
 	}

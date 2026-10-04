@@ -18,8 +18,8 @@ export const sendBookingRequestEmailTranslation = {
 			text: (data: BookingRequestEmailBodyData) =>
 				[
 					data.recipient === 'guest'
-						? 'Your request has been sent to the host. A request does not confirm your stay; the host must accept it. View the latest booking status online.'
-						: 'A guest has requested a stay at your accommodation. Review the request and confirm or decline it in your host bookings.',
+						? 'Your request has been sent to the host. A request does not confirm your stay; the host must accept it. Unanswered requests expire within 24 hours, or at scheduled check-in if sooner. View the latest booking status online.'
+						: 'A guest has requested a stay at your accommodation. Review the request and confirm or decline it in your host bookings within 24 hours, or before scheduled check-in if sooner. Unanswered requests expire automatically.',
 					`Accommodation: ${data.accommodationName}`,
 					`Guest: ${data.guestName}`,
 					`Check-in (property local time): ${data.checkIn}`,
@@ -38,8 +38,8 @@ export const sendBookingRequestEmailTranslation = {
 			html: (data: BookingRequestEmailBodyData) => `
 				<p>${
 					data.recipient === 'guest'
-						? 'Your request has been sent to the host. <strong>A request does not confirm your stay; the host must accept it.</strong> View the latest booking status online.'
-						: 'A guest has requested a stay at your accommodation. Review the request and confirm or decline it in your host bookings.'
+						? 'Your request has been sent to the host. <strong>A request does not confirm your stay; the host must accept it.</strong> Unanswered requests expire within 24 hours, or at scheduled check-in if sooner. View the latest booking status online.'
+						: 'A guest has requested a stay at your accommodation. Review the request and confirm or decline it in your host bookings within 24 hours, or before scheduled check-in if sooner. Unanswered requests expire automatically.'
 				}</p>
 				<p>Accommodation: ${escapeHtml(data.accommodationName)}</p>
 				<p>Guest: ${escapeHtml(data.guestName)}</p>

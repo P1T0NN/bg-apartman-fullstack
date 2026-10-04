@@ -49,6 +49,12 @@ export const bookingCancellation = v.object({
 export const bookings = defineTable({
 	// Only bookings created after request emails were introduced have delivery history.
 	requestEmailIds: v.optional(bookingEmailIds),
+	// Recorded atomically when the host confirms; historical confirmations are not emailed.
+	confirmationEmailId: v.optional(vEmailId),
+	// Optional for existing records; the cron initializes legacy pending deadlines in batches.
+	requestExpiresAt: v.optional(v.number()),
+	expiredAt: v.optional(v.number()),
+	expirationEmailId: v.optional(vEmailId),
 	// Present for guest cancellations; active and historical host-cancelled bookings have no record.
 	cancellation: v.optional(bookingCancellation),
 	// Set server-side when a signed-in guest books; also used to claim anonymous bookings.
@@ -80,6 +86,7 @@ export const bookings = defineTable({
 })
 	.index('by_email_check_out_date', ['email', 'checkOutDate'])
 	.index('by_email_status', ['email', 'status'])
+	.index('by_status_request_expires_at', ['status', 'requestExpiresAt'])
 	// Retained for _creationTime ordering; guest list queries sort newest first.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])

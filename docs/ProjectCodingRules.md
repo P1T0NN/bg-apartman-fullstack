@@ -211,7 +211,7 @@ in `COMPANY_DATA.CURRENCY` (EUR); accommodation photos are ordered R2 keys.
   every create/update; photo lists need at least five claimed, duplicate-free
   upload keys.
 - `bookings`: `accommodationId`, guest contact and stay fields, `status`
-  (`BOOKING_STATUSES`: pending/confirmed/declined/cancelled/completed; new
+  (`BOOKING_STATUSES`: pending/confirmed/declined/cancelled/expired/completed; new
   bookings start `pending`), optional `ownerId` (set server-side for a
   signed-in guest; anonymous bookings stay claimable), `hostId` (owner of the
   booked accommodation, copied at creation; powers the host bookings page), and
@@ -221,7 +221,9 @@ in `COMPANY_DATA.CURRENCY` (EUR); accommodation photos are ordered R2 keys.
   (past date, min/max stay, capacity) against the stored listing, writes
   `searchText`, and counts owned bookings in `bookingOwnerAggregate`;
   `updateBookingStatus` allows only `BOOKING_STATUS_TRANSITIONS` changes for the
-  booking's own host.
+  booking's own host. New requests store `requestExpiresAt`; expiration records
+  `expiredAt` and `expirationEmailId`. The `by_status_request_expires_at` index
+  supports bounded legacy deadline initialization and due-request processing.
 - Booking recovery foundation (Chunk 1 of `FindABookingSystemDesign.md`):
   booking email is trimmed/lowercased on creation and indexed by
   `by_email_check_out_date`. `migrations/backfillBookingEmails` normalizes
@@ -451,9 +453,33 @@ Current app-facing functions are:
   `sent` means provider acceptance; signed webhooks report delivery and bounces. Guest and host views show the reason
   and property-local cancellation time. Removed/hidden listings do not prevent
   guest cancellation. Anonymous bookings must be claimed before cancellation.
-  `createBooking` queues independent guest/host request receipts in the same
-  transaction as the new pending booking. Scheduled internal enqueue mutations
-  pass rendered messages to the shared component-backed `emails/sendEmail.ts`.
+  `createBooking` directly queues guest/host request receipts and stores both email IDs
+  in the same transaction as the new pending booking, using the shared
+  component-backed `emails/sendEmail.ts`. Enqueue failures roll back booking creation;
+  the component delivers queued receipts asynchronously.
+  Host `updateBookingStatus` confirmation queues a guest-only confirmation email and
+  stores `confirmationEmailId` atomically with the pending-to-confirmed transition.
+  It uses the booking contact email and frozen property-local stay times, with safe
+  public status/recovery links for anonymous guests. Enqueue failures leave the
+  request pending; duplicate or unauthorized transitions cannot enqueue notices.
+  Existing confirmed bookings are not emailed retroactively.
+  Pending requests expire after 24 elapsed hours from submission, or at frozen
+  scheduled check-in if sooner. `BOOKINGS_CONFIG` owns the response window,
+  five-minute cron interval and 25-request batch size. The internal
+  `tables/bookings/crons/expireBookingRequestsCron.ts` initializes missing legacy
+  deadlines from `_creationTime` and frozen `checkInAt`, then changes due requests
+  to terminal `expired` and queues a guest-only email in the same transaction.
+  Full batches schedule another bounded invocation; no growing-table scan is used.
+  Existing overdue pending requests also expire and receive a notice. Confirmed
+  and terminal history is untouched, and owned booking aggregate totals do not
+  change. `expiredAt` is processing time; `requestExpiresAt` is the exact deadline.
+  Host pending actions and guest withdrawals reject at the deadline even before
+  cron processing, using localized `BOOKING_REQUEST_EXPIRED`. Expired requests
+  cannot be reopened; guests may submit a new request subject to current availability.
+  Email enqueue failures roll back the batch for the next cron to retry; the
+  Resend component handles subsequent delivery retries and idempotency. Request
+  receipts explain the window; host filters, guest history, recovery badges and
+  public confirmation views show "Request expired" separately from cancellation.
   Bookings retain `requestEmailIds` and `cancellation.emailIds` per recipient;
   the component owns delivery state. No application retry schedule, attempt
   counter, delivery-state mutation or notification query is needed.
@@ -472,7 +498,9 @@ Current app-facing functions are:
   request hook and `beforeDelete` share an internal preflight query; the user
   `onDelete` trigger repeats the same indexed checks inside the deletion transaction
   before aggregate/storage cleanup, so a rejection rolls back user deletion.
-  Cancelled, declined and completed history remains intact. Deletion errors are
+  Cancelled, declined, expired and completed history remains intact. Expired requests
+  no longer block account deletion; pending requests do until the cron processes them.
+  Deletion errors are
   localized through `runAuthAction`; raw component adapter calls are internal and
   must use the deletion trigger instead of bypassing these domain rules.
 

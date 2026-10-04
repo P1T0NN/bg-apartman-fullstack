@@ -16,4 +16,4 @@ export type HostBookingItem = Doc<'bookings'> & {
 };
 
 /** Booking statuses the host actions component can send; the server enforces the transition map. */
-export type HostBookingAction = Exclude<BookingStatus, 'pending'>;
+export type HostBookingAction = Exclude<BookingStatus, 'pending' | 'expired'>;

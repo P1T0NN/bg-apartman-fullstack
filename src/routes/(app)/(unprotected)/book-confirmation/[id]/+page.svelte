@@ -39,7 +39,7 @@
 	{:else if result.isLoading}
 		<BookingConfirmationLoading />
 	{:else if confirmation}
-		<BookingConfirmationHeader />
+		<BookingConfirmationHeader status={confirmation.status} />
 		<BookingConfirmationDetails {confirmation} />
 	{:else}
 		<EmptyData

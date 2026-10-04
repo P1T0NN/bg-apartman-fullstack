@@ -9,6 +9,12 @@ import { authenticatedMutation } from '../../../builders/convexFunctionBuilders.
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { completeBooking } from '../helpers/completeBooking.js';
 
+// EMAILS
+import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationEmail.js';
+
+// UTILS
+import { calculateBookingRequestExpiry } from '../../../../shared/features/bookings/utils/calculateBookingRequestExpiry.js';
+
 // CONFIG
 import {
 	BOOKING_STATUSES,
@@ -38,8 +44,21 @@ export const updateBookingStatus = authenticatedMutation({
 		if (!isAllowedTransition) {
 			throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING_STATUS' });
 		}
+		const requestExpired =
+			booking.status === 'pending' && Date.now() >= calculateBookingRequestExpiry(booking);
+		if (requestExpired)
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_REQUEST_EXPIRED' });
 
-		if (args.status === 'completed') await completeBooking(ctx, booking, getOwnerId(ctx.identity));
+		if (args.status === 'confirmed') {
+			const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
+			const confirmationEmailId = await sendBookingConfirmationEmail(ctx, {
+				bookingId: booking._id,
+				booking,
+				accommodationName: accommodation?.name ?? ''
+			});
+			await ctx.db.patch('bookings', args.id, { status: 'confirmed', confirmationEmailId });
+		} else if (args.status === 'completed')
+			await completeBooking(ctx, booking, getOwnerId(ctx.identity));
 		else await ctx.db.patch('bookings', args.id, { status: args.status });
 
 		return null;

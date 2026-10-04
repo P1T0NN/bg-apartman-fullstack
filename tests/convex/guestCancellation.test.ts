@@ -236,7 +236,7 @@ test('scheduled check-in is exclusive for pending and confirmed bookings; termin
 			status === 'pending' || status === 'confirmed' ? now : now + 86400000
 		);
 		await expect(account.mutation(cancel, args)).rejects.toThrow(
-			'BOOKING_CANCELLATION_NOT_ELIGIBLE'
+			status === 'pending' ? 'BOOKING_REQUEST_EXPIRED' : 'BOOKING_CANCELLATION_NOT_ELIGIBLE'
 		);
 		expect((await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.cancellation).toBeUndefined();
 	}

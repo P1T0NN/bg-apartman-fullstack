@@ -5,15 +5,15 @@ import type { ActionCtx, MutationCtx } from '../_generated/server.js';
 // CONFIG
 import { EMAIL_DATA } from './data/emailData.js';
 
-// TYPES
-import type { SendEmailOptions } from './types/emailTypes.js';
-
 // TEMPLATES
 import { renderFooterTemplate } from './templates/footerTemplate.js';
 import { renderHeaderTemplate } from './templates/headerTemplate.js';
 
 // UTILS
 import { escapeHtml } from '../../shared/utils/escapeHtml.js';
+
+// TYPES
+import type { SendEmailOptions } from './types/emailTypes.js';
 
 export const resend = new Resend(components.resend, { testMode: false });
 

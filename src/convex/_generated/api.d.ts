@@ -47,6 +47,8 @@ import type * as emails_sendEmail from "../emails/sendEmail.js";
 import type * as emails_templates_footerTemplate from "../emails/templates/footerTemplate.js";
 import type * as emails_templates_headerTemplate from "../emails/templates/headerTemplate.js";
 import type * as emails_translations_sendBookingCancellationEmailTranslation from "../emails/translations/sendBookingCancellationEmailTranslation.js";
+import type * as emails_translations_sendBookingConfirmationEmailTranslation from "../emails/translations/sendBookingConfirmationEmailTranslation.js";
+import type * as emails_translations_sendBookingExpirationEmailTranslation from "../emails/translations/sendBookingExpirationEmailTranslation.js";
 import type * as emails_translations_sendBookingRecoveryEmailTranslation from "../emails/translations/sendBookingRecoveryEmailTranslation.js";
 import type * as emails_translations_sendBookingRequestEmailTranslation from "../emails/translations/sendBookingRequestEmailTranslation.js";
 import type * as emails_types_emailTypes from "../emails/types/emailTypes.js";
@@ -99,7 +101,10 @@ import type * as tables_bookingRecoveryTokens_mutations_storeBookingRecoveryToke
 import type * as tables_bookingRecoveryTokens_ratelimiting_bookingRecoveryTokenRateLimits from "../tables/bookingRecoveryTokens/ratelimiting/bookingRecoveryTokenRateLimits.js";
 import type * as tables_bookingRecoveryTokens_validators_bookingRecoveryTokenValidators from "../tables/bookingRecoveryTokens/validators/bookingRecoveryTokenValidators.js";
 import type * as tables_bookings_aggregates_bookingOwnerAggregate from "../tables/bookings/aggregates/bookingOwnerAggregate.js";
+import type * as tables_bookings_crons_expireBookingRequestsCron from "../tables/bookings/crons/expireBookingRequestsCron.js";
 import type * as tables_bookings_emails_sendBookingCancellationEmail from "../tables/bookings/emails/sendBookingCancellationEmail.js";
+import type * as tables_bookings_emails_sendBookingConfirmationEmail from "../tables/bookings/emails/sendBookingConfirmationEmail.js";
+import type * as tables_bookings_emails_sendBookingExpirationEmail from "../tables/bookings/emails/sendBookingExpirationEmail.js";
 import type * as tables_bookings_emails_sendBookingRequestEmail from "../tables/bookings/emails/sendBookingRequestEmail.js";
 import type * as tables_bookings_helpers_completeBooking from "../tables/bookings/helpers/completeBooking.js";
 import type * as tables_bookings_helpers_enrichBookingPage from "../tables/bookings/helpers/enrichBookingPage.js";
@@ -112,7 +117,6 @@ import type * as tables_bookings_mutations_claimBooking from "../tables/bookings
 import type * as tables_bookings_mutations_completeBookingAdmin from "../tables/bookings/mutations/completeBookingAdmin.js";
 import type * as tables_bookings_mutations_createBooking from "../tables/bookings/mutations/createBooking.js";
 import type * as tables_bookings_mutations_enqueueBookingCancellationEmail from "../tables/bookings/mutations/enqueueBookingCancellationEmail.js";
-import type * as tables_bookings_mutations_enqueueBookingRequestEmail from "../tables/bookings/mutations/enqueueBookingRequestEmail.js";
 import type * as tables_bookings_mutations_updateBookingStatus from "../tables/bookings/mutations/updateBookingStatus.js";
 import type * as tables_bookings_queries_fetchBooking from "../tables/bookings/queries/fetchBooking.js";
 import type * as tables_bookings_queries_fetchBookingConfirmation from "../tables/bookings/queries/fetchBookingConfirmation.js";
@@ -205,6 +209,8 @@ declare const fullApi: ApiFromModules<{
   "emails/templates/footerTemplate": typeof emails_templates_footerTemplate;
   "emails/templates/headerTemplate": typeof emails_templates_headerTemplate;
   "emails/translations/sendBookingCancellationEmailTranslation": typeof emails_translations_sendBookingCancellationEmailTranslation;
+  "emails/translations/sendBookingConfirmationEmailTranslation": typeof emails_translations_sendBookingConfirmationEmailTranslation;
+  "emails/translations/sendBookingExpirationEmailTranslation": typeof emails_translations_sendBookingExpirationEmailTranslation;
   "emails/translations/sendBookingRecoveryEmailTranslation": typeof emails_translations_sendBookingRecoveryEmailTranslation;
   "emails/translations/sendBookingRequestEmailTranslation": typeof emails_translations_sendBookingRequestEmailTranslation;
   "emails/types/emailTypes": typeof emails_types_emailTypes;
@@ -257,7 +263,10 @@ declare const fullApi: ApiFromModules<{
   "tables/bookingRecoveryTokens/ratelimiting/bookingRecoveryTokenRateLimits": typeof tables_bookingRecoveryTokens_ratelimiting_bookingRecoveryTokenRateLimits;
   "tables/bookingRecoveryTokens/validators/bookingRecoveryTokenValidators": typeof tables_bookingRecoveryTokens_validators_bookingRecoveryTokenValidators;
   "tables/bookings/aggregates/bookingOwnerAggregate": typeof tables_bookings_aggregates_bookingOwnerAggregate;
+  "tables/bookings/crons/expireBookingRequestsCron": typeof tables_bookings_crons_expireBookingRequestsCron;
   "tables/bookings/emails/sendBookingCancellationEmail": typeof tables_bookings_emails_sendBookingCancellationEmail;
+  "tables/bookings/emails/sendBookingConfirmationEmail": typeof tables_bookings_emails_sendBookingConfirmationEmail;
+  "tables/bookings/emails/sendBookingExpirationEmail": typeof tables_bookings_emails_sendBookingExpirationEmail;
   "tables/bookings/emails/sendBookingRequestEmail": typeof tables_bookings_emails_sendBookingRequestEmail;
   "tables/bookings/helpers/completeBooking": typeof tables_bookings_helpers_completeBooking;
   "tables/bookings/helpers/enrichBookingPage": typeof tables_bookings_helpers_enrichBookingPage;
@@ -270,7 +279,6 @@ declare const fullApi: ApiFromModules<{
   "tables/bookings/mutations/completeBookingAdmin": typeof tables_bookings_mutations_completeBookingAdmin;
   "tables/bookings/mutations/createBooking": typeof tables_bookings_mutations_createBooking;
   "tables/bookings/mutations/enqueueBookingCancellationEmail": typeof tables_bookings_mutations_enqueueBookingCancellationEmail;
-  "tables/bookings/mutations/enqueueBookingRequestEmail": typeof tables_bookings_mutations_enqueueBookingRequestEmail;
   "tables/bookings/mutations/updateBookingStatus": typeof tables_bookings_mutations_updateBookingStatus;
   "tables/bookings/queries/fetchBooking": typeof tables_bookings_queries_fetchBooking;
   "tables/bookings/queries/fetchBookingConfirmation": typeof tables_bookings_queries_fetchBookingConfirmation;

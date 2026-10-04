@@ -5,18 +5,63 @@ import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.j
 
 import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
-import { expect, test, vi } from 'vitest';
-import { convexTest } from 'convex-test';
-import { api } from '../../src/convex/_generated/api';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { convexTest, type TestConvex } from 'convex-test';
+import { api, components } from '../../src/convex/_generated/api';
 import schema from '../../src/convex/schema';
+import authSchema from '../../src/convex/betterAuth/component/schema';
+import { registerResend, successfulResendResponse } from '../fixtures/resend';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 
-function setup() {
+beforeEach(() => {
+	vi.useFakeTimers();
+	vi.stubEnv('RESEND_API_KEY', 'test-key');
+	vi.stubEnv('EMAIL_FROM', 'test@example.com');
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockImplementation((_url, options) =>
+				Promise.resolve(successfulResendResponse(options?.body))
+			)
+	);
+});
+
+const testBackends: TestConvex<typeof schema>[] = [];
+afterEach(async () => {
+	vi.useFakeTimers();
+	for (const t of testBackends) await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+	testBackends.length = 0;
+	vi.useRealTimers();
+	vi.unstubAllEnvs();
+	vi.unstubAllGlobals();
+});
+
+async function setup() {
 	const t = convexTest(schema, modules);
 	aggregateTest.register(t, 'bookingOwnerAggregate');
 	rateLimiterTest.register(t);
-	return t;
+	registerResend(t);
+	t.registerComponent(
+		'betterAuth',
+		authSchema,
+		import.meta.glob('../../src/convex/betterAuth/component/**/*.ts')
+	);
+	const host = await t.mutation(components.betterAuth.adapter.create, {
+		input: {
+			model: 'user',
+			data: {
+				name: 'Host',
+				email: 'host@example.com',
+				emailVerified: true,
+				createdAt: Date.now(),
+				updatedAt: Date.now()
+			}
+		}
+	});
+	testBackends.push(t);
+	return { t, hostId: host._id };
 }
 
 const createBooking = api.tables.bookings.mutations.createBooking.createBooking;
@@ -68,8 +113,10 @@ const guest = {
 };
 
 test('requests freeze server-owned terms and confirmation preserves them after listing edits', async () => {
-	const t = setup();
-	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
 	const request = {
 		accommodationId,
 		checkInDate: '2999-07-20',
@@ -106,7 +153,7 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 			cancellationPolicy: custom
 		})
 	);
-	const host = t.withIdentity({ subject: 'host-1', tokenIdentifier: 'issuer|host-1' });
+	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	await host.mutation(updateBookingStatus, { id, status: 'confirmed' });
 	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toEqual(original);
 	const confirmation =
@@ -140,9 +187,9 @@ test('requests reject unknown property timezones, elapsed check-in, and DST gaps
 			[{ checkOut: '02:30' }, '2027-10-28', 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE'],
 			[{ checkInStart: '13:00' }, '2027-01-01', 'INVALID_BOOKING']
 		] as const) {
-			const t = setup();
+			const { t, hostId } = await setup();
 			const accommodationId = await t.run((ctx) =>
-				ctx.db.insert('accommodations', { ...accommodation, ...changes })
+				ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId, ...changes })
 			);
 			await expect(
 				t.mutation(createBooking, {
@@ -167,10 +214,11 @@ test('request dates use the property calendar even when its date differs from UT
 	vi.useFakeTimers();
 	try {
 		vi.setSystemTime(new Date('2027-01-02T00:30:00Z'));
-		const t = setup();
+		const { t, hostId } = await setup();
 		const accommodationId = await t.run((ctx) =>
 			ctx.db.insert('accommodations', {
 				...accommodation,
+				ownerId: hostId,
 				timeZone: 'America/Los_Angeles',
 				checkInStart: '17:00'
 			})
@@ -192,19 +240,21 @@ test('request dates use the property calendar even when its date differs from UT
 });
 
 test('host bookings prioritize the oldest pending requests and the newest other statuses', async () => {
-	const t = setup();
-	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
-	const host = t.withIdentity({ subject: 'host-1', tokenIdentifier: 'issuer|host-1' });
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
+	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	vi.useFakeTimers();
 	try {
-		const insert = (status: 'pending' | 'confirmed', checkInDate: string, hostId = 'host-1') =>
+		const insert = (status: 'pending' | 'confirmed', checkInDate: string, bookingHostId = hostId) =>
 			t.run((ctx) =>
 				ctx.db.insert('bookings', {
 					cancellationTerms: bookingCancellationTerms(checkInDate, '2999-12-31'),
 					...guest,
 					firstName: 'Alex',
 					accommodationId,
-					hostId,
+					hostId: bookingHostId,
 					status,
 					checkInDate,
 					checkOutDate: '2999-12-31',
@@ -253,8 +303,10 @@ test('host bookings prioritize the oldest pending requests and the newest other 
 });
 
 test('createBooking stores a guest request and rejects invalid stays and missing accommodations', async () => {
-	const t = setup();
-	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
 
 	await expect(
 		t.mutation(createBooking, {
@@ -292,11 +344,11 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 		searchText: 'guest alex@example.com'
 	});
 	expect(stored[0].ownerId).toBeUndefined();
-	expect(stored[0].hostId).toBe('host-1');
+	expect(stored[0].hostId).toBe(hostId);
 	expect(stored[0].specialRequests).toBeUndefined();
 
 	const missingId = await t.run(async (ctx) => {
-		const id = await ctx.db.insert('accommodations', accommodation);
+		const id = await ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId });
 		await ctx.db.delete(id);
 		return id;
 	});
@@ -313,8 +365,10 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 });
 
 test('signed-in guests own their booking and see it in my-bookings with the owner total', async () => {
-	const t = setup();
-	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
 	const signedInGuest = t.withIdentity({ subject: 'guest-1', tokenIdentifier: 'issuer|guest-1' });
 
 	const bookingId = await signedInGuest.mutation(createBooking, {
@@ -370,9 +424,11 @@ test('signed-in guests own their booking and see it in my-bookings with the owne
 });
 
 test('host manages bookings for their own accommodations', async () => {
-	const t = setup();
-	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
-	const host = t.withIdentity({ subject: 'host-1', tokenIdentifier: 'issuer|host-1' });
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
+	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	const stranger = t.withIdentity({ subject: 'host-2', tokenIdentifier: 'issuer|host-2' });
 	expect(await host.query(hasPendingHostBookings, {})).toBe(false);
 	await expect(t.query(hasPendingHostBookings, {})).rejects.toMatchObject({
@@ -396,7 +452,7 @@ test('host manages bookings for their own accommodations', async () => {
 	).toHaveLength(1);
 	const page = await host.query(fetchHostBookings, base);
 	expect(page.items).toHaveLength(1);
-	expect(page.items[0]).toMatchObject({ _id: bookingId, hostId: 'host-1', status: 'pending' });
+	expect(page.items[0]).toMatchObject({ _id: bookingId, hostId: hostId, status: 'pending' });
 
 	expect((await stranger.query(fetchHostBookings, base)).items).toEqual([]);
 	await expect(

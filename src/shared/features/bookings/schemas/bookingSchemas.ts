@@ -12,6 +12,7 @@ export const BOOKING_STATUSES = [
 	'confirmed',
 	'declined',
 	'cancelled',
+	'expired',
 	'completed'
 ] as const;
 
@@ -44,6 +45,7 @@ export const BOOKING_STATUS_TRANSITIONS = {
 	confirmed: ['completed', 'cancelled'],
 	declined: [],
 	cancelled: [],
+	expired: [],
 	completed: []
 } satisfies Record<BookingStatus, readonly BookingStatus[]>;
 

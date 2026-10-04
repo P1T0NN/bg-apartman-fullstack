@@ -91,3 +91,20 @@ export type BookingRequestEmailBodyData = {
 	url: string;
 	findBookingUrl: string;
 };
+
+export type BookingGuestEmailData = Pick<
+	BookingRequestEmailData,
+	'bookingId' | 'booking' | 'accommodationName'
+>;
+
+export type BookingGuestEmailBodyData = Pick<
+	BookingRequestEmailBodyData,
+	| 'accommodationName'
+	| 'guestName'
+	| 'checkIn'
+	| 'checkOut'
+	| 'adults'
+	| 'children'
+	| 'url'
+	| 'findBookingUrl'
+>;

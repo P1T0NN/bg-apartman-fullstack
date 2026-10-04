@@ -20,6 +20,7 @@ export const backendErrorDataSchema = z.discriminatedUnion('code', [
 	z.object({ code: z.literal('BOOKING_ALREADY_CLAIMED') }),
 	z.object({ code: z.literal('BOOKING_NOT_FOUND') }),
 	z.object({ code: z.literal('INVALID_BOOKING_STATUS') }),
+	z.object({ code: z.literal('BOOKING_REQUEST_EXPIRED') }),
 	z.object({ code: z.literal('INVALID_BOOKING_CANCELLATION') }),
 	z.object({ code: z.literal('BOOKING_CANCELLATION_NOT_ELIGIBLE') }),
 	z.object({ code: z.literal('BOOKING_CANCELLATION_CHANGED') }),

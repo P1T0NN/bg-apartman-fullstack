@@ -61,6 +61,11 @@
 			label: m['MyBookingsPage.MyBookingItem.completed'],
 			hint: m['MyBookingsPage.MyBookingItem.completedHint'],
 			variant: 'outline'
+		},
+		expired: {
+			label: m['BookingsFeature.status.expired'],
+			hint: m['BookingsFeature.status.expiredHint'],
+			variant: 'outline'
 		}
 	} satisfies Record<
 		BookingStatus,

@@ -13,6 +13,8 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 	if (!parsed.success) return;
 
 	switch (parsed.data.code) {
+		case 'BOOKING_REQUEST_EXPIRED':
+			return m['BackendMessages.bookingRequestExpired']();
 		case 'ACCOUNT_HAS_ACTIVE_BOOKINGS':
 			return m['BackendMessages.accountHasActiveBookings']();
 		case 'ACCOUNT_HAS_ACCOMMODATIONS':

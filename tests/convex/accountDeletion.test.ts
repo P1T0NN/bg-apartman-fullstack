@@ -81,7 +81,7 @@ async function setup() {
 	const account = { id: user._id, email: user.email };
 	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
 	async function seedBooking(
-		status: 'pending' | 'confirmed' | 'cancelled' | 'declined' | 'completed',
+		status: 'pending' | 'confirmed' | 'cancelled' | 'declined' | 'completed' | 'expired',
 		relation: 'host' | 'owner' | 'email' = 'host'
 	) {
 		return t.run((ctx) =>
@@ -183,7 +183,7 @@ for (const relation of ['host', 'owner', 'email'] as const) {
 	);
 }
 
-test.each(['cancelled', 'declined', 'completed'] as const)(
+test.each(['cancelled', 'declined', 'completed', 'expired'] as const)(
 	'allows deletion with %s history and keeps that history',
 	async (status) => {
 		const { t, account, seedBooking, removeAccount, findAccount } = await setup();

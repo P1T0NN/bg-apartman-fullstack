@@ -1,3 +1,6 @@
+// UTILS
+import { calculateBookingRequestExpiry } from './calculateBookingRequestExpiry.js';
+
 // TYPES
 import type { BookingStatus } from '../schemas/bookingSchemas.js';
 import type { BookingCancellationTerms } from '../types/bookingTypes.js';
@@ -6,10 +9,22 @@ import type { BookingCancellationTerms } from '../types/bookingTypes.js';
 export function canCancelBooking(
 	booking: {
 		status: BookingStatus;
+		_creationTime?: number;
+		requestExpiresAt?: number;
 		cancellationTerms: Pick<BookingCancellationTerms, 'checkInAt'>;
 	},
 	now: number
 ): boolean {
+	if (booking.status === 'pending' && booking._creationTime !== undefined) {
+		return (
+			now < calculateBookingRequestExpiry({ ...booking, _creationTime: booking._creationTime })
+		);
+	}
+
+	if (booking.status === 'pending' && booking.requestExpiresAt !== undefined) {
+		return now < booking.requestExpiresAt;
+	}
+
 	return (
 		(booking.status === 'pending' || booking.status === 'confirmed') &&
 		now < booking.cancellationTerms.checkInAt

@@ -6,6 +6,12 @@ import { BOOKINGS_CONFIG } from '../shared/features/bookings/config.js';
 const crons = cronJobs();
 
 crons.interval(
+	'expire unanswered booking requests',
+	{ minutes: BOOKINGS_CONFIG.REQUEST_EXPIRATION_INTERVAL_MINUTES },
+	internal.tables.bookings.crons.expireBookingRequestsCron.expireBookingRequestsCron
+);
+
+crons.interval(
 	'clean up abandoned R2 uploads',
 	{ minutes: STORAGE_CONFIG.cleanupIntervalMinutes },
 	internal.storage.actions.cleanupStaleUploads

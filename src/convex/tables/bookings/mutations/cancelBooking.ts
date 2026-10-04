@@ -11,6 +11,7 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 // UTILS
 import { canCancelBooking } from '../../../../shared/features/bookings/utils/canCancelBooking.js';
 import { checkBookingCancellationRefund } from '../../../../shared/features/bookings/utils/checkBookingCancellationRefund.js';
+import { calculateBookingRequestExpiry } from '../../../../shared/features/bookings/utils/calculateBookingRequestExpiry.js';
 
 // SCHEMAS
 import { cancelBookingSchema } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
@@ -42,6 +43,10 @@ export const cancelBooking = authenticatedMutation({
 			throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING_CANCELLATION' });
 
 		const now = Date.now();
+		const requestExpired =
+			booking.status === 'pending' && now >= calculateBookingRequestExpiry(booking);
+		if (requestExpired)
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_REQUEST_EXPIRED' });
 
 		if (!canCancelBooking(booking, now))
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_CANCELLATION_NOT_ELIGIBLE' });

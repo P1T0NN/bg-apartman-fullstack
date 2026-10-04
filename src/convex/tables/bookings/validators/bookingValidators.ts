@@ -62,6 +62,7 @@ export const bookingStatusCounts = v.object({
 	confirmed: v.number(),
 	declined: v.number(),
 	cancelled: v.number(),
+	expired: v.number(),
 	completed: v.number()
 });
 

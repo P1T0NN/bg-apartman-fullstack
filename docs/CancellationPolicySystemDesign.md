@@ -1054,9 +1054,10 @@ flow: booking requests, cancellations, booking recovery, authentication OTPs,
 account deletion verification and contact messages. Existing templates and
 translations are retained. See the [official component documentation](https://github.com/get-convex/resend).
 
-Booking mutations commit scheduled internal enqueue mutations with the booking
-operation. Each recipient is enqueued separately; the returned component ID is
-stored transactionally as `bookings.requestEmailIds.guest/host` or
+Booking creation directly enqueues both request receipts and stores their component
+IDs in the same transaction as the pending booking; an enqueue failure rolls back
+creation. Cancellation mutations retain scheduled internal enqueue mutations.
+Returned component IDs are stored transactionally as `bookings.requestEmailIds.guest/host` or
 `bookings.cancellation.emailIds.guest/host`. The component owns delivery status;
 there are no application attempt counters, retry delays, notification-state
 mutations or delivery queries. The component may batch multiple recipients in
@@ -1123,3 +1124,35 @@ Files removed:
 - `src/convex/tables/bookings/mutations/recordBookingRequestNotification.ts`
 - `src/convex/tables/bookings/mutations/recordBookingCancellationNotification.ts`
 - `src/convex/tables/bookings/queries/fetchBookingCancellationNotification.ts`
+
+## Unanswered request expiration
+
+A pending request has a 24 elapsed-hour response window, capped by its frozen
+scheduled check-in instant. New requests persist `requestExpiresAt` during creation.
+The five-minute `expireBookingRequestsCron` processes indexed batches of 25 pending
+requests, atomically setting terminal `expired`, `expiredAt` (processing time) and
+`expirationEmailId` while enqueueing a guest-only expiration notice through Resend.
+Expiration is not a cancellation: it creates no cancellation actor, charge or refund
+outcome. Confirmed stays and terminal history remain untouched. Guest ownership,
+claimability, frozen terms and booking totals remain intact.
+
+Existing pending records without a deadline are initialized in bounded batches
+using `_creationTime + 24 hours`, capped by frozen `checkInAt`. Overdue existing
+requests expire and receive notices. Full batches schedule continuation calls; the
+cron never scans the whole booking table. Host pending actions and guest withdrawal
+reject at the exact deadline, independently of cron timing. Expired requests cannot
+be reopened, but a guest may submit a new request subject to current availability.
+
+Status and email enqueue share a transaction. An enqueue failure rolls back that
+batch; a subsequent cron can retry. Provider delivery failures are retried by the
+Resend component with stable `booking-expiration/<bookingId>/guest` keys. Missing
+listings do not prevent expiration. Notifications use frozen property-local stay
+times and safe public status/recovery links; no recovery credential is emailed by
+this flow. Guest and host views label this outcome "Request expired". Only pending
+or confirmed records block account deletion, so expiration releases that restriction.
+
+The 24-hour window follows [Airbnb request expiry](https://www.airbnb.com/help/article/28)
+and [Vrbo 24-hour review](https://help.vrbo.com/articles/How-do-I-accept-a-booking-request).
+The earlier check-in cutoff and five-minute processing interval are project choices.
+Production rollout also initializes and notifies existing overdue pending requests;
+verify recipient data and monitor cron failures and component delivery status.

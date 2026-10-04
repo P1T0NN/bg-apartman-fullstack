@@ -10,5 +10,6 @@ export const BOOKING_STATUS_LABELS = {
 	confirmed: () => m['BookingsFeature.status.confirmed'](),
 	declined: () => m['BookingsFeature.status.declined'](),
 	cancelled: () => m['BookingsFeature.status.cancelled'](),
+	expired: () => m['BookingsFeature.status.expired'](),
 	completed: () => m['BookingsFeature.status.completed']()
 } satisfies Record<BookingStatus, () => string>;
