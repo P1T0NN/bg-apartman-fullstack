@@ -4,6 +4,7 @@ export const ACCOMMODATION_CONFIG = {
 	/** R2 key prefix for accommodation photos. */
 	uploadNamespace: 'accommodations/images',
 	mapSearchPageSize: 500,
+	MAX_BLOCKED_DATES_PER_OPERATION: 30,
 	searchMaximumRowsRead: 1000,
 	/** Initial recommendation prior: neutral 3/5, with the weight of five reviews. */
 	recommendationBaselineAverage: 3,

@@ -4,8 +4,7 @@
 
 	// LIBRARIES
 	import { useQuery } from 'convex-svelte';
-
-	// CONVEX
+	import { m } from '@/lib/paraglide/messages';
 	import { api } from '@convex/_generated/api';
 
 	// COMPONENTS
@@ -15,10 +14,7 @@
 	import EmptyData from '@/components/ui/custom-components/empty-data/empty-data.svelte';
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
 
-	// CONFIG
-	import { m } from '@/lib/paraglide/messages';
-
-	// FEATURES
+	// FORMS
 	import { createMyAccommodationTabListingForm } from '@/features/accommodations/forms/myAccommodationTabListingForm.js';
 
 	// TYPES

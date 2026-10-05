@@ -1,5 +1,8 @@
 <script lang="ts">
 	// COMPONENTS
+	import AccommodationReservationRulesPreview from '@/features/accommodations/components/accommodation-reservation-rules/accommodation-reservation-rules-preview.svelte';
+
+	import AccommodationBookingMode from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode.svelte';
 	import { Button } from '@/components/ui/button/index.js';
 	import AddAccommodationSaveButton from './add-accommodation-save-button.svelte';
 	import * as Field from '@/components/ui/field/index.js';
@@ -52,6 +55,9 @@
 			{m['AddAccommodationPage.AddAccommodationFormReview.noPhotos']()}
 		</p>
 	{/if}
+	<AccommodationBookingMode
+		mode={context.inputValue('bookingMode') === 'instant' ? 'instant' : 'request'}
+	/>
 	<h3 class="text-xl font-semibold">
 		{String(context.values.name) || m['AddAccommodationPage.untitled']()}
 	</h3>
@@ -140,6 +146,8 @@
 		'timeZone'
 	)}
 </p>
+
+<AccommodationReservationRulesPreview values={context.values} />
 
 <AccommodationCancellationPolicyPreview
 	policy={context.getValue('cancellationPolicy')}

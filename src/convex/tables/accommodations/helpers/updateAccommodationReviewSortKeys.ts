@@ -19,7 +19,7 @@ export async function updateAccommodationReviewSortKeys(
 ): Promise<void> {
 	const accommodation = await ctx.db.get('accommodations', accommodationId);
 
-	if (!accommodation) return;
+	if (!accommodation || accommodation.status === 'deleted') return;
 
 	const [count, sum] = await Promise.all([
 		reviewAggregate.count(ctx, { namespace: accommodationId }),

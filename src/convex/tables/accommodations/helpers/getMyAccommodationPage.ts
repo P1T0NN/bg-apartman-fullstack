@@ -40,6 +40,9 @@ export function getMyAccommodationPage({
 							? q.search('name', term).eq('ownerId', ownerId).eq('type', type)
 							: q.search('name', term).eq('ownerId', ownerId)
 					)
+					// Tombstones cannot be expressed by the index; pages stay bounded.
+					// eslint-disable-next-line @convex-dev/no-filter-in-query
+					.filter((q) => q.neq(q.field('status'), 'deleted'))
 		});
 	}
 
@@ -48,10 +51,16 @@ export function getMyAccommodationPage({
 			? ctx.db
 					.query('accommodations')
 					.withIndex('by_owner_id_type', (q) => q.eq('ownerId', ownerId).eq('type', type))
+					// Tombstones cannot be expressed by the index; pages stay bounded.
+					// eslint-disable-next-line @convex-dev/no-filter-in-query
+					.filter((q) => q.neq(q.field('status'), 'deleted'))
 					.order('desc')
 			: ctx.db
 					.query('accommodations')
 					.withIndex('by_owner_id', (q) => q.eq('ownerId', ownerId))
+					// Tombstones cannot be expressed by the index; pages stay bounded.
+					// eslint-disable-next-line @convex-dev/no-filter-in-query
+					.filter((q) => q.neq(q.field('status'), 'deleted'))
 					.order('desc');
 
 	return getPagination(accommodations, { paginationOpts });

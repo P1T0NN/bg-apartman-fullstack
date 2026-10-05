@@ -703,7 +703,7 @@ Edited:
 - `src/utils/getBackendErrorMessage.ts`
 - `src/components/pages/(protected)/host/add-accommodation/add-accommodation-form/add-accommodation-form.svelte`
 - `src/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-listing/my-accommodation-tab-listing-editor.svelte`
-- `src/components/pages/(unprotected)/book/booking-checkout/booking-checkout.svelte`
+- `src/components/pages/(unprotected)/book/book-checkout/book-checkout.svelte`
 - `src/convex/convex.config.ts`
 - `src/convex/builders/convexFunctionBuilders.ts`
 - `src/convex/tables/accommodations/mutations/createAccommodation.ts`
@@ -804,7 +804,7 @@ Files edited:
 - `src/components/pages/(unprotected)/accommodation/accommodation-details/accommodation-details-rules.svelte`
 - `src/components/pages/(unprotected)/accommodation/accommodation-navigation.svelte`
 - `src/components/pages/(unprotected)/accommodation/accommodation-summary/accommodation-summary.svelte`
-- `src/components/pages/(unprotected)/book/booking-checkout/booking-checkout.svelte`
+- `src/components/pages/(unprotected)/book/book-checkout/book-checkout.svelte`
 - `src/components/pages/(unprotected)/book-confirmation/booking-confirmation-details.svelte`
 - `src/components/pages/(unprotected)/find-booking/find-booking-details-dialog/find-booking-details-dialog-content.svelte`
 - `src/components/pages/(protected)/guest/my-bookings/my-booking-item.svelte`
@@ -1054,11 +1054,12 @@ flow: booking requests, cancellations, booking recovery, authentication OTPs,
 account deletion verification and contact messages. Existing templates and
 translations are retained. See the [official component documentation](https://github.com/get-convex/resend).
 
-Booking creation directly enqueues both request receipts and stores their component
-IDs in the same transaction as the pending booking; an enqueue failure rolls back
+Booking creation directly enqueues both request receipts
+in the same transaction as the pending booking; an enqueue failure rolls back
 creation. Cancellation mutations retain scheduled internal enqueue mutations.
-Returned component IDs are stored transactionally as `bookings.requestEmailIds.guest/host` or
-`bookings.cancellation.emailIds.guest/host`. The component owns delivery status;
+Request, confirmation and expiration IDs are not stored on bookings. Cancellation
+notice IDs remain in `bookings.cancellation.emailIds.guest/host`.
+The component owns email records, delivery status and idempotency keys;
 there are no application attempt counters, retry delays, notification-state
 mutations or delivery queries. The component may batch multiple recipients in
 one provider request: an API failure retries that batch with its unchanged key,
@@ -1127,11 +1128,16 @@ Files removed:
 
 ## Unanswered request expiration
 
+This applies only to Request booking. Instant Booking creates an immediately
+confirmed stay with no `requestExpiresAt`; it follows the same frozen cancellation
+policy and confirmed-booking cancellation/ownership rules. See
+[booking method behavior and availability safeguards](./BookingPageDesign.md#booking-method-placement-and-host-guidance).
+
 A pending request has a 24 elapsed-hour response window, capped by its frozen
 scheduled check-in instant. New requests persist `requestExpiresAt` during creation.
 The five-minute `expireBookingRequestsCron` processes indexed batches of 25 pending
-requests, atomically setting terminal `expired`, `expiredAt` (processing time) and
-`expirationEmailId` while enqueueing a guest-only expiration notice through Resend.
+requests, atomically setting terminal `expired` and `expiredAt` (processing time)
+while enqueueing a guest-only expiration notice through Resend.
 Expiration is not a cancellation: it creates no cancellation actor, charge or refund
 outcome. Confirmed stays and terminal history remain untouched. Guest ownership,
 claimability, frozen terms and booking totals remain intact.

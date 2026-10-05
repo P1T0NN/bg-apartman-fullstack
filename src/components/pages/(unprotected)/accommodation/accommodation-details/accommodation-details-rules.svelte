@@ -1,4 +1,7 @@
 <script lang="ts">
+	// COMPONENTS
+	import AccommodationReservationRulesGuest from '@/features/accommodations/components/accommodation-reservation-rules-guest/accommodation-reservation-rules-guest.svelte';
+
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 
@@ -63,4 +66,5 @@
 			{accommodation.houseRules}
 		</p>
 	{/if}
+	<div class="mt-6"><AccommodationReservationRulesGuest {accommodation} /></div>
 </section>

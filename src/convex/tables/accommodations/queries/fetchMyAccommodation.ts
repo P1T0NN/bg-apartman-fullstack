@@ -14,17 +14,26 @@ export const fetchMyAccommodation = authenticatedQuery({
 		v.object({
 			_id: v.id('accommodations'),
 			name: v.string(),
+			timeZone: v.string(),
+			status: v.union(v.literal('published'), v.literal('unpublished')),
 			address: v.object({ city: v.string(), country: v.string() })
 		}),
 		v.null()
 	),
 	handler: async (ctx, { id }) => {
 		const accommodation = await ctx.db.get('accommodations', id);
-		if (!accommodation || accommodation.ownerId !== getOwnerId(ctx.identity)) return null;
+		if (
+			!accommodation ||
+			accommodation.ownerId !== getOwnerId(ctx.identity) ||
+			accommodation.status === 'deleted'
+		)
+			return null;
 
 		return {
 			_id: accommodation._id,
 			name: accommodation.name,
+			timeZone: accommodation.timeZone,
+			status: accommodation.status,
 			address: {
 				city: accommodation.address.city,
 				country: accommodation.address.country

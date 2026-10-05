@@ -13,6 +13,16 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 	if (!parsed.success) return;
 
 	switch (parsed.data.code) {
+		case 'SAME_DAY_RESERVATION_DISABLED':
+			return m['BackendMessages.sameDayReservationDisabled']();
+		case 'BOOKING_START_PASSED':
+			return m['BackendMessages.bookingStartPassed']();
+		case 'BOOKING_MODE_CHANGED':
+			return m['BackendMessages.bookingModeChanged']();
+		case 'BOOKING_DATES_UNAVAILABLE':
+			return m['BackendMessages.bookingDatesUnavailable']();
+		case 'BOOKING_AVAILABILITY_UNAVAILABLE':
+			return m['BackendMessages.bookingAvailabilityUnavailable']();
 		case 'BOOKING_REQUEST_EXPIRED':
 			return m['BackendMessages.bookingRequestExpired']();
 		case 'ACCOUNT_HAS_ACTIVE_BOOKINGS':
@@ -31,6 +41,10 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.bookingCancellationChanged']();
 		case 'INVALID_BOOKING':
 			return m['BackendMessages.invalidBooking']();
+		case 'INVALID_BLOCKED_DATE_RANGE':
+			return m['BackendMessages.invalidBlockedDateRange']();
+		case 'BLOCKED_DATES_BOOKING_CONFLICT':
+			return m['BackendMessages.blockedDatesBookingConflict']();
 		case 'BOOKING_TERMS_UNAVAILABLE':
 			return m['BackendMessages.bookingTermsUnavailable']();
 		case 'BOOKING_CHECK_IN_TIME_UNAVAILABLE':
@@ -63,6 +77,8 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.reviewNotFound']();
 		case 'ACCOMMODATION_NOT_FOUND':
 			return m['BackendMessages.accommodationNotFound']();
+		case 'ACCOMMODATION_HAS_ACTIVE_BOOKINGS':
+			return m['BackendMessages.accommodationHasActiveBookings']();
 		case 'INVALID_FEEDBACK':
 			return m['BackendMessages.invalidFeedback']();
 		case 'INVALID_CONTACT_FORM':

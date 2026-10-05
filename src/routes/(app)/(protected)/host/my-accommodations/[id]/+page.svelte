@@ -7,6 +7,7 @@
 	import TabsUrl from '@/components/ui/custom-components/tabs-url/tabs-url.svelte';
 	import EmptyData from '@/components/ui/custom-components/empty-data/empty-data.svelte';
 	import MyAccommodationHeader from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-header.svelte';
+	import MyAccommodationLoading from '@/components/pages/(protected)/host/my-accommodation/loading/my-accommodation-loading.svelte';
 	import MyAccommodationTabListing from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-listing/my-accommodation-tab-listing.svelte';
 	import MyAccommodationTabCalendar from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-calendar/my-accommodation-tab-calendar.svelte';
 	import MyAccommodationTabSettings from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-settings/my-accommodation-tab-settings.svelte';
@@ -21,46 +22,52 @@
 <SvelteHead title={m['MyAccommodationPage.pageTitle']()} noindex />
 
 <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 pb-10">
-	{#if data.accommodation}
-		<MyAccommodationHeader accommodation={data.accommodation} />
+	{#await data.accommodation}
+		<div role="status" aria-label={m['MyAccommodationPage.loading']()}>
+			<MyAccommodationLoading />
+		</div>
+	{:then accommodation}
+		{#if accommodation}
+			<MyAccommodationHeader {accommodation} />
 
-		<TabsUrl param="tab" defaultValue="listing" class="gap-7">
-			<div class="border-b">
-				<TabsList
-					variant="line"
-					class="h-12 w-full justify-start gap-3 sm:w-fit sm:gap-8"
-					aria-label={m['MyAccommodationPage.MyAccommodationTabs.label']()}
-				>
-					<TabsTrigger value="listing">
-						{m['MyAccommodationPage.MyAccommodationTabs.listing']()}
-					</TabsTrigger>
+			<TabsUrl param="tab" defaultValue="listing" class="gap-7">
+				<div class="border-b">
+					<TabsList
+						variant="line"
+						class="h-12 w-full justify-start gap-3 sm:w-fit sm:gap-8"
+						aria-label={m['MyAccommodationPage.MyAccommodationTabs.label']()}
+					>
+						<TabsTrigger value="listing">
+							{m['MyAccommodationPage.MyAccommodationTabs.listing']()}
+						</TabsTrigger>
 
-					<TabsTrigger value="calendar">
-						{m['MyAccommodationPage.MyAccommodationTabs.calendar']()}
-					</TabsTrigger>
+						<TabsTrigger value="calendar">
+							{m['MyAccommodationPage.MyAccommodationTabs.calendar']()}
+						</TabsTrigger>
 
-					<TabsTrigger value="settings">
-						{m['MyAccommodationPage.MyAccommodationTabs.settings']()}
-					</TabsTrigger>
-				</TabsList>
-			</div>
+						<TabsTrigger value="settings">
+							{m['MyAccommodationPage.MyAccommodationTabs.settings']()}
+						</TabsTrigger>
+					</TabsList>
+				</div>
 
-			<TabsContent value="listing" class="data-[state=inactive]:hidden">
-				<MyAccommodationTabListing />
-			</TabsContent>
+				<TabsContent value="listing" class="data-[state=inactive]:hidden">
+					<MyAccommodationTabListing />
+				</TabsContent>
 
-			<TabsContent value="calendar">
-				<MyAccommodationTabCalendar />
-			</TabsContent>
+				<TabsContent value="calendar">
+					<MyAccommodationTabCalendar {accommodation} />
+				</TabsContent>
 
-			<TabsContent value="settings">
-				<MyAccommodationTabSettings />
-			</TabsContent>
-		</TabsUrl>
-	{:else}
-		<EmptyData
-			title={m['MyAccommodationPage.notFound']()}
-			description={m['MyAccommodationPage.notFoundHint']()}
-		/>
-	{/if}
+				<TabsContent value="settings">
+					<MyAccommodationTabSettings />
+				</TabsContent>
+			</TabsUrl>
+		{:else}
+			<EmptyData
+				title={m['MyAccommodationPage.notFound']()}
+				description={m['MyAccommodationPage.notFoundHint']()}
+			/>
+		{/if}
+	{/await}
 </div>

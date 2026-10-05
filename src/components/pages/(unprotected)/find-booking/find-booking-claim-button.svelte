@@ -1,6 +1,4 @@
 <script lang="ts">
-	// SVELTEKIT IMPORTS
-	import { goto } from '$app/navigation';
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages';
 	// COMPONENTS
@@ -10,6 +8,7 @@
 	// HOOKS
 	import { useClaimBooking } from '@/features/bookings/hooks/useClaimBooking.svelte.js';
 	// UTILS
+	import { gotoParaglide } from '@/utils/gotoParaglide.js';
 	import { toastMessage } from '@/utils/toastMessage.js';
 	// TYPES
 	import type { Id } from '@convex/_generated/dataModel';
@@ -19,8 +18,7 @@
 	async function startClaim() {
 		try {
 			claim.save(bookingId, token);
-			// eslint-disable-next-line svelte/no-navigation-without-resolve -- Endpoint constants already call resolve().
-			await goto(PROTECTED_PAGE_ENDPOINTS.CLAIM_BOOKING);
+			await gotoParaglide(PROTECTED_PAGE_ENDPOINTS.CLAIM_BOOKING);
 		} catch (error) {
 			toastMessage({
 				type: 'error',

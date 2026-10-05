@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AccommodationBookingMode from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode.svelte';
+
 	// SVELTEKIT IMPORTS
 	import { page } from '$app/state';
 
@@ -69,6 +71,7 @@
 		</h2>
 
 		<AccommodationCardRating reviews={accommodation.reviews} />
+		<AccommodationBookingMode mode={accommodation.bookingMode} compact />
 
 		<p class="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
 			<Plural

@@ -6,7 +6,7 @@ import { v } from 'convex/values';
 
 // CONFIG
 import { ACCOMMODATION_CONFIG } from '../../../shared/features/accommodations/config.js';
-import { BOOKING_STATUSES } from '../../../shared/features/bookings/schemas/bookingSchemas.js';
+import { BOOKING_STATUSES } from '../../../shared/features/bookings/data/bookingsData.js';
 
 // SCHEMAS
 import { accommodations } from '../accommodations/schema.js';
@@ -20,6 +20,9 @@ export const bookingCancellationTerms = v.object({
 	checkOut: v.string(),
 	checkOutAt: v.number(),
 	pricePerNightMinor: v.number(),
+	// Backfilled overnight stays have no day-use fee; daytime bookings freeze their own fee.
+	stayType: literals('overnight', 'day_use'),
+	pricePerDayUseMinor: v.union(v.number(), v.null()),
 	currency: v.string()
 });
 
@@ -47,21 +50,18 @@ export const bookingCancellation = v.object({
 });
 
 export const bookings = defineTable({
-	// Only bookings created after request emails were introduced have delivery history.
-	requestEmailIds: v.optional(bookingEmailIds),
-	// Recorded atomically when the host confirms; historical confirmations are not emailed.
-	confirmationEmailId: v.optional(vEmailId),
+	// Immutable choice at booking time; absent on historical request bookings.
+	bookingMode: accommodations.validator.fields.bookingMode,
 	// Optional for existing records; the cron initializes legacy pending deadlines in batches.
 	requestExpiresAt: v.optional(v.number()),
 	expiredAt: v.optional(v.number()),
-	expirationEmailId: v.optional(vEmailId),
 	// Present for guest cancellations; active and historical host-cancelled bookings have no record.
 	cancellation: v.optional(bookingCancellation),
 	// Set server-side when a signed-in guest books; also used to claim anonymous bookings.
 	ownerId: v.optional(v.string()),
 	// Owner of the booked accommodation, copied at creation; powers the host bookings page.
 	hostId: v.optional(v.string()),
-	// Booking request lifecycle; every new booking starts as 'pending'.
+	// Requests start pending; instant bookings start confirmed.
 	status: literals(...BOOKING_STATUSES),
 	/** Immutable property-local terms for every booking, backfilled before becoming required. */
 	cancellationTerms: bookingCancellationTerms,
@@ -87,6 +87,11 @@ export const bookings = defineTable({
 	.index('by_email_check_out_date', ['email', 'checkOutDate'])
 	.index('by_email_status', ['email', 'status'])
 	.index('by_status_request_expires_at', ['status', 'requestExpiresAt'])
+	.index('by_accommodation_id_status_check_out_at', [
+		'accommodationId',
+		'status',
+		'cancellationTerms.checkOutAt'
+	])
 	// Retained for _creationTime ordering; guest list queries sort newest first.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])

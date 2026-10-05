@@ -20,11 +20,15 @@ export const backfillBookingTiming = migrations.define({
 			checkInStart: accommodation.checkInStart,
 			checkInAt: getZonedTimestamp(booking.checkInDate, accommodation.checkInStart, timeZone),
 			pricePerNightMinor: accommodation.pricePerNightMinor,
+			stayType: 'overnight' as const,
+			pricePerDayUseMinor: null,
 			currency: COMPANY_DATA.CURRENCY
 		};
 		await ctx.db.patch('bookings', booking._id, {
 			cancellationTerms: {
 				...original,
+				stayType: original.stayType ?? 'overnight',
+				pricePerDayUseMinor: original.pricePerDayUseMinor ?? null,
 				checkOut,
 				checkOutAt: terms?.checkOutAt ?? getZonedTimestamp(booking.checkOutDate, checkOut, timeZone)
 			}

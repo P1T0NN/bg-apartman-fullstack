@@ -18,6 +18,7 @@ export async function resolveImageUrls(
 		_id: item._id,
 		_creationTime: item._creationTime,
 		name: item.name,
+		bookingMode: item.bookingMode ?? 'request',
 		type: item.type,
 		address: { city: item.address.city, country: item.address.country },
 		latitude: item.latitude,

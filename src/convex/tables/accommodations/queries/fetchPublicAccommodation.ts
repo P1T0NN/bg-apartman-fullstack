@@ -11,8 +11,19 @@ import { resolveStoredFileUrls } from '../../../storage/r2.js';
 import { getAccommodationReviewSummary } from '../../reviews/helpers/getAccommodationReviewSummary.js';
 import { reviewSummary } from '../../reviews/validators/reviewValidators.js';
 
+// HELPERS
+import { getAccommodationCalendar } from '../../accommodationBlockedDates/helpers/getAccommodationCalendar.js';
+
+// VALIDATORS
+import { calendarResult } from '../../accommodationBlockedDates/validators/accommodationBlockedDatesValidators.js';
+
+// TYPES
+import type { PublicAccommodation } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
+
 export const fetchPublicAccommodation = query({
-	args: { id: v.id('accommodations') },
+	args: {
+		id: v.id('accommodations')
+	},
 	returns: v.union(
 		docValidator('accommodations', accommodations)
 			.omit(
@@ -22,7 +33,11 @@ export const fetchPublicAccommodation = query({
 				'guestRatingAverage',
 				'guestReviewCount'
 			)
-			.extend({ imageUrls: v.array(v.string()), reviews: reviewSummary }),
+			.extend({
+				imageUrls: v.array(v.string()),
+				reviews: reviewSummary,
+				availability: calendarResult
+			}),
 		v.null()
 	),
 	handler: async (ctx, { id }) => {
@@ -39,10 +54,19 @@ export const fetchPublicAccommodation = query({
 			...details
 		} = accommodation;
 
-		const [imageUrls, summary] = await Promise.all([
+		const [imageUrls, summary, availability] = await Promise.all([
 			resolveStoredFileUrls(imageKeys),
-			getAccommodationReviewSummary(ctx, id)
+			getAccommodationReviewSummary(ctx, id),
+			getAccommodationCalendar(ctx, accommodation)
 		]);
-		return { ...details, imageUrls, reviews: summary };
+
+		const publicAccommodation: PublicAccommodation = {
+			...details,
+			imageUrls,
+			reviews: summary,
+			availability
+		};
+
+		return publicAccommodation;
 	}
 });

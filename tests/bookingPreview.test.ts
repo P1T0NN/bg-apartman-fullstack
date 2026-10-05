@@ -69,3 +69,27 @@ test('createBookingSchema trims guest details, coerces counts and requires a val
 	expect(parsed.children).toBe(1);
 	expect(parsed.specialRequests).toBeUndefined();
 });
+
+test('arrival-today preview enforces overnight stays and the exact local cutoff', () => {
+	const today = '2027-01-01';
+	const rules = {
+		...limits,
+		today,
+		sameDayReservation: true,
+		checkInStart: '14:00',
+		timeZone: 'Europe/Belgrade',
+		now: Date.parse('2027-01-01T12:59:59Z')
+	};
+	const request = { ...stay, checkInDate: today, checkOutDate: '2027-01-04' };
+	expect(createBookingSchema(rules).safeParse(request).success).toBe(true);
+	expect(createBookingSchema(rules).safeParse({ ...request, checkOutDate: today }).success).toBe(
+		false
+	);
+	expect(
+		createBookingSchema({ ...rules, sameDayReservation: false }).safeParse(request).success
+	).toBe(false);
+	expect(
+		createBookingSchema({ ...rules, now: Date.parse('2027-01-01T13:00:00Z') }).safeParse(request)
+			.success
+	).toBe(false);
+});

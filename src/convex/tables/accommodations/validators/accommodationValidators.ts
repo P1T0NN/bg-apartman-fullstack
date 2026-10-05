@@ -66,7 +66,10 @@ const accommodationListItem = accommodationDoc
 		'partiesAllowed',
 		'houseRules',
 		'cancellationPolicy',
+		'sameDayReservation',
 		'status',
+		'deletedAt',
+		'deletedBy',
 		'updatedAt',
 		'recommendationSortKey',
 		'guestRatingAverage',
@@ -90,19 +93,25 @@ export const createAccommodationValidator = accommodations.validator
 	.omit(
 		'ownerId',
 		'status',
+		'deletedAt',
+		'deletedBy',
 		'updatedAt',
 		'pricePerNightMinor',
 		'recommendationSortKey',
 		'guestRatingAverage',
 		'guestReviewCount'
 	)
-	.extend({ nightlyPrice: v.number() });
+	.extend({
+		nightlyPrice: v.number()
+	});
 
 /** Section-agnostic update payload: any subset of the editable listing fields plus the target id. */
 export const updateAccommodationValidator = accommodations.validator
 	.omit(
 		'ownerId',
 		'status',
+		'deletedAt',
+		'deletedBy',
 		'updatedAt',
 		'pricePerNightMinor',
 		'recommendationSortKey',

@@ -1,7 +1,4 @@
 <script lang="ts">
-	// SVELTEKIT IMPORTS
-	import { goto } from '$app/navigation';
-
 	// LIBRARIES
 	import { getLocalTimeZone } from '@internationalized/date';
 
@@ -27,6 +24,7 @@
 	import { m } from '@/lib/paraglide/messages';
 	import { getLocale } from '@/lib/paraglide/runtime';
 	import { parseIsoDate, toIsoDate } from '@/shared/utils/date.js';
+	import { gotoParaglide } from '@/utils/gotoParaglide.js';
 	import { toastMessage } from '@/utils/toastMessage.js';
 	import { cn } from '@/utils/utils.js';
 
@@ -123,8 +121,7 @@
 
 		onsearch?.();
 
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- searchUrl is built from the resolved endpoint
-		goto(searchUrl);
+		gotoParaglide(searchUrl);
 	}
 </script>
 

@@ -16,6 +16,10 @@ export type PublicAccommodation = Omit<
 > & {
 	imageUrls: string[];
 	reviews: ReviewSummary;
+	availability: {
+		blockedDates: string[];
+		bookings: { checkInDate: string; checkOutDate: string }[];
+	};
 };
 
 /** Accommodation row returned by the list queries: only list fields, with resolved image urls. */
@@ -38,6 +42,7 @@ export type AccommodationCard = Omit<
 	| 'partiesAllowed'
 	| 'houseRules'
 	| 'cancellationPolicy'
+	| 'sameDayReservation'
 	| 'status'
 	| 'updatedAt'
 	| 'recommendationSortKey'
@@ -60,10 +65,13 @@ export type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
 
 export type AccommodationSort = (typeof ACCOMMODATION_SORTS)[number];
 
+export type AccommodationPublishStatus = 'published' | 'unpublished';
+
 /** Header summary for the owner's my-accommodation workspace. */
 export type MyAccommodationSummary = {
 	_id: Id<'accommodations'>;
 	name: string;
+	status: AccommodationPublishStatus;
 	address: { city: string; country: string };
 };
 

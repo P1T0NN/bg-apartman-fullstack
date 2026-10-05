@@ -3,12 +3,12 @@
 	"example_message": "Hello world {username}",
 	"HomePage": {
 		"title": "Apartments and stays in Serbia",
-		"description": "Find apartments, holiday homes and rooms across Serbia and the Balkans â€” real guest reviews and clear cancellation terms.",
+		"description": "Find apartments, holiday homes and rooms across Serbia and the Balkans, real guest reviews and clear cancellation terms.",
 		"HeroSection": {
 			"imageAlt": "Belgrade at sunset, Serbia",
 			"eyebrow": "Serbia and the Balkans",
 			"title": "Book apartments and holiday homes across Serbia",
-			"description": "From Belgrade city breaks to Zlatibor and Kopaonik â€” compare real guest reviews and book directly with clear cancellation terms.",
+			"description": "From Belgrade city breaks to Zlatibor and Kopaonik, compare real guest reviews and book directly with clear cancellation terms.",
 			"verifiedReviews": "Reviews from real stays",
 			"noAccount": "No account needed to book",
 			"cancellation": "Clear cancellation terms"
@@ -79,7 +79,7 @@
 	"HelpFindAndBookPage": {
 		"pageTitle": "Find and book a stay",
 		"metaDescription": "How to search BGApartman, filter and sort results, read a listing, and send a booking request, with no payment taken online.",
-		"lead": "Booking a stay on BGApartman starts with a search. You choose where and when, compare places on a list and a map, then send a request to the property. No account is required and no payment is taken online. This guide walks through every step.",
+		"lead": "Search by destination, dates and guests, compare places on the list and map, then review the booking method. Request booking needs host approval; Instant Booking confirms immediately. No account is required and no payment is collected here.",
 		"summaryTitle": "The short version",
 		"summaryOne": "Search by destination, dates and guests from the home page or the search page.",
 		"summaryTwo": "Filter by price, property type, rooms and amenities, then sort the results your way.",
@@ -99,20 +99,20 @@
 		"sortBody": "Sort the results by Recommended, price from low to high or high to low, and guest rating. Recommended weighs guest ratings and price to surface the best all-round options first.",
 		"listingTitle": "Read the listing before you book",
 		"listingBody": "Open any result to see the full listing: photos, how many guests it sleeps, amenities, the location on a map, house rules and the cancellation policy. Guest reviews and the rating are further down the page. Check the minimum and maximum stay and the check-in and checkout times before you continue.",
-		"requestTitle": "Send a booking request",
+		"requestTitle": "Book instantly or send a request",
 		"requestIntro": "When a place looks right, continue to the booking form.",
 		"requestStepDates": "Confirm dates and guests",
 		"requestStepDatesBody": "The form re-checks the minimum stay, maximum stay and capacity against the listing.",
 		"requestStepDetails": "Add your details",
 		"requestStepDetailsBody": "First name, last name, email and phone, plus any special requests. No account is needed to send a request.",
-		"requestStepSend": "Send the request",
-		"requestStepSendBody": "The property receives it as Pending and responds with a confirmation or a decline.",
-		"requestNoPayment": "No payment is collected when you send a request. The property confirms availability first, and you arrange arrival and payment directly with them.",
+		"requestStepSend": "Review the booking method and submit",
+		"requestStepSendBody": "Book instantly confirms your stay immediately without host approval. Send booking request creates a Pending request that the host must accept. Unanswered requests expire within 24 hours, or at scheduled check-in if sooner.",
+		"requestNoPayment": "No payment is collected when you book or send a request. Arrange arrival and payment directly with the property.",
 		"afterTitle": "After you send it",
-		"afterBody1": "A confirmation page saves your request details; bookmark the link to find it again. The booking starts as Pending and the property answers next.",
+		"afterBody1": "The confirmation page shows your current status. Instant bookings are Confirmed immediately; requests remain Pending until the host accepts. Bookmark the link to check again.",
 		"afterBody2": "You can view it any time from Find booking with your email address, or claim it into your account to see it under My bookings.",
 		"paymentsTitle": "A note on payments",
-		"paymentsBody": "BGApartman does not collect or process payments yet. Sending a request costs nothing, and the property confirms availability before any money is discussed. When payments launch, this page will explain how they work.",
+		"paymentsBody": "BGApartman does not collect or process payments yet. Arrange payment directly with the property. Check the booking method and cancellation terms before submitting.",
 		"relatedTitle": "Related help",
 		"relatedBooking": "How booking works",
 		"relatedClaim": "Claim a booking",
@@ -198,7 +198,7 @@
 		"createStepPricing": "Pricing and availability",
 		"createStepPricingBody": "Set the nightly price and the minimum stay, with an optional maximum stay.",
 		"createStepRules": "Guest rules",
-		"createStepRulesBody": "Set the check-in window and checkout time, then decide on smoking, pets, parties and any extra rules.",
+		"createStepRulesBody": "Choose Request booking or Instant Booking, then set check-in, checkout and house rules. We strongly recommend Request booking so you can verify availability and prepare before accepting. Instant Booking confirms even before you see the notification.",
 		"createStepCancellation": "Cancellation policy",
 		"createStepCancellationBody": "Keep the default full refund or set refund percentages for cancellations closer to check-in.",
 		"createStepReview": "Review and publish",
@@ -206,16 +206,16 @@
 		"manageTitle": "Manage your accommodation",
 		"manageIntro": "Open My accommodations to see every listing you host. Search by name or filter by property type, then open a listing to manage it. Each listing has three tabs:",
 		"manageTabListing": "Listing",
-		"manageTabListingBody": "Edit any section of your listing: basics, location, amenities, photos, pricing, guest rules and cancellation policy. Each section saves on its own when you choose Save.",
+		"manageTabListingBody": "Edit basics, location, amenities, photos, pricing, booking and house rules, or cancellation policy. Choose the booking method under Booking & house rules. Each section saves independently.",
 		"manageTabCalendar": "Calendar",
 		"manageTabCalendarBody": "A preview of availability management. Calendar sync is not active yet.",
 		"manageTabSettings": "Settings",
 		"manageTabSettingsBody": "A preview of listing settings, such as unpublishing and billing. These actions are not active yet.",
 		"availableNow": "Available now",
 		"previewOnly": "Preview only",
-		"manageLocked": "Changes you save apply to new requests only. Bookings that already exist keep the terms they were created with.",
+		"manageLocked": "Changes apply to future bookings. Existing bookings keep their original terms and method; switching to Instant Booking does not confirm earlier pending requests.",
 		"bookingsTitle": "Manage booking requests",
-		"bookingsIntro": "Every request for your listings lands in Bookings. Use the status tabs or search by the guest's last name or email, and open Details for contact information, special requests and the stay summary.",
+		"bookingsIntro": "Requests and instant bookings appear in Bookings. Instant bookings arrive already Confirmed and notify both you and the guest. Use status tabs or guest search, and open Details for contact information, special requests and stay details.",
 		"bookingsOrder": "Pending requests appear oldest first so you answer the longest wait, and every other status lists newest first.",
 		"bookingsActionsTitle": "What you can do depends on the status",
 		"bookingsPendingActions": "Confirm the stay, or decline the request.",
@@ -353,14 +353,14 @@
 	"HelpBookingPage": {
 		"pageTitle": "Booking",
 		"metaDescription": "How bookings work on BGApartman: what pending, confirmed, declined, cancelled and completed mean, how each status is reached, and what happens next.",
-		"lead": "A BGApartman booking begins as a request, not a payment. You send your dates and details, the property answers, and a status follows the booking from that first request to the end of your stay. Here is what each status means and how a booking moves between them.",
+		"lead": "Each accommodation offers Request booking or Instant Booking. A request needs host approval; an instant booking confirms immediately. No payment is collected here. Your booking status records what happens from submission through the end of your stay.",
 		"summaryTitle": "The short version",
-		"summaryRequest": "A booking starts as a request. Nothing is confirmed and no payment is due at that point.",
-		"summaryStatuses": "Five statuses track every booking: Pending, Confirmed, Declined, Cancelled and Completed.",
-		"summaryHost": "The property confirms or declines requests, and marks stays completed after checkout.",
+		"summaryRequest": "Check the booking method: Request booking needs host approval; Instant Booking confirms immediately.",
+		"summaryStatuses": "Bookings can be Pending, Confirmed, Declined, Cancelled, Request expired or Completed.",
+		"summaryHost": "Hosts accept or decline requests. Instant bookings skip that approval step. Hosts mark actual stays completed after checkout.",
 		"summaryNoPayment": "BGApartman does not collect payments. You arrange payment directly with the property.",
 		"journeyTitle": "How a booking moves",
-		"journeyIntro": "Most bookings follow four steps, and each one is visible in your booking status.",
+		"journeyIntro": "Request bookings follow the approval steps below. Instant Booking skips Pending and starts Confirmed.",
 		"journeyStepRequest": "You send a request",
 		"journeyStepRequestBody": "Choose dates and guests, then send your contact details. No account is needed.",
 		"journeyStepPendingBody": "The property reviews availability for your dates.",
@@ -374,11 +374,11 @@
 		"whatHappensNext": "What happens next",
 		"pendingSubtitle": "Awaiting confirmation",
 		"pendingMeaning": "Your request is saved and the property has not answered yet. Nothing is booked and no payment is due.",
-		"pendingHow": "Every new request starts here. Sending one is free and needs no account.",
-		"pendingNext": "The property confirms or declines it. You can follow the request in My bookings.",
+		"pendingHow": "Request bookings start here. Instant bookings start Confirmed instead.",
+		"pendingNext": "The host must accept or decline within 24 hours, or before scheduled check-in if sooner. Unanswered requests expire and the guest receives an email. Follow your status from the saved confirmation link, Find booking or My bookings.",
 		"confirmedSubtitle": "The property accepted your dates",
 		"confirmedMeaning": "Your booking is real. The property confirmed availability for your stay.",
-		"confirmedHow": "The property confirms a pending request.",
+		"confirmedHow": "The host accepts a pending request, or you submit an Instant Booking. A confirmation email is sent to the booking contact.",
 		"confirmedNext": "Stay, and the property completes the booking after checkout. The property can still cancel before check-in.",
 		"declinedSubtitle": "The request was not accepted",
 		"declinedMeaning": "The property could not host this stay, so it is not booked.",
@@ -419,7 +419,7 @@
 		"summaryThree": "The timezone is recorded with your booking and does not change when the listing is edited.",
 		"summaryFour": "Daylight-saving changes come from the named timezone; one day always counts as 24 hours.",
 		"whyTitle": "Why one shared timezone",
-		"whyBody1": "A stay happens at the property, so its schedule is written on the property's clock. When a listing says check-in is from 14:00, that means 14:00 where the property is â€” the time that matters for keys, staff and the house itself.",
+		"whyBody1": "A stay happens at the property, so its schedule is written on the property's clock. When a listing says check-in is from 14:00, that means 14:00 where the property is, the time that matters for keys, staff and the house itself.",
 		"whyBody2": "A single timezone also keeps deadlines unambiguous. A cancellation deadline is one exact moment in time, wherever in the world the guest is reading it.",
 		"sourceTitle": "Where the timezone comes from",
 		"sourceIntro": "Hosts do not choose a timezone. BGApartman detects it from the property's location.",
@@ -443,9 +443,9 @@
 		"usedForReviewBody": "The 90-day review window after checkout ends in the property's local time.",
 		"lockedTitle": "Locked in when you book",
 		"lockedBody1": "When you send a booking request, the property's timezone and the exact check-in and checkout moments are recorded with the booking.",
-		"lockedBody2": "If the host later edits the listing â€” even its address or map pin â€” your booked times, cancellation deadlines and review window stay exactly as they were. A listing edit only affects new requests.",
+		"lockedBody2": "If the host later edits the listing, even its address or map pin, your booked times, cancellation deadlines and review window stay exactly as they were. A listing edit only affects new requests.",
 		"timeTitle": "How time is counted",
-		"timeBody1": "Time before check-in is counted in elapsed hours, so one day always means 24 hours â€” even across a daylight-saving change. Three days before check-in is exactly 72 hours before the recorded check-in moment.",
+		"timeBody1": "Time before check-in is counted in elapsed hours, so one day always means 24 hours, even across a daylight-saving change. Three days before check-in is exactly 72 hours before the recorded check-in moment.",
 		"timeBody2": "Each deadline shows the offset that applies on its own date, so the hour is never ambiguous.",
 		"timeExampleTitle": "The same moment, two clocks",
 		"timeExampleProperty": "14:00, property local time in Belgrade",
@@ -482,9 +482,9 @@
 		"customTableRefund": "Refund",
 		"rangeSeven": "7 or more days before check-in",
 		"rangeSevenRefund": "Full refund (100%)",
-		"rangeFive": "5â€“7 days before check-in",
-		"rangeThree": "3â€“5 days before check-in",
-		"rangeOne": "1â€“3 days before check-in",
+		"rangeFive": "5–7 days before check-in",
+		"rangeThree": "3–5 days before check-in",
+		"rangeOne": "1–3 days before check-in",
 		"rangeFinal": "Final 24 hours before check-in",
 		"hostSets": "The host sets 100%, 50%, or 0%",
 		"boundaryTitle": "Where the boundaries sit",
@@ -529,7 +529,7 @@
 			"emailPlaceholder": "you@example.com",
 			"emailHint": "Enter the email address you used when booking to request a secure link.",
 			"submit": "Send booking link",
-			"submitting": "Sending linkâ€¦",
+			"submitting": "Sending link…",
 			"checkInbox": "Check your inbox",
 			"inboxHint": "Open the link in your email to view your bookings. If it doesn't arrive, check your spam folder and the email address above."
 		},
@@ -590,7 +590,7 @@
 			"noBookingDescription": "Find your booking using the link in your email, then select Add to my account.",
 			"stay": "{checkIn} to {checkOut}",
 			"confirm": "Confirm and add booking",
-			"adding": "Adding bookingâ€¦",
+			"adding": "Adding booking…",
 			"added": "Booking added to your account.",
 			"alreadyAdded": "This booking is already in your account.",
 			"myBookings": "Go to My bookings",
@@ -703,15 +703,19 @@
 			"unavailable": "Removed accommodation"
 		}
 	},
-	"BookingPage": {
+	"BookAccommodationPage": {
 		"title": "Plan your booking",
+		"notFound": "This stay is no longer available",
+		"notFoundHint": "Return to search to find another place for your trip."
+	},
+	"BookingPage": {
 		"BookingHeader": {
 			"back": "Back to accommodation",
 			"title": "Make it your next stay.",
 			"preview": "Request to book",
 			"description": "Choose your dates, add your details and review your stay before sending your booking request."
 		},
-		"BookingSummary": {
+		"BookSummary": {
 			"title": "Your stay, at a glance",
 			"nightlyRate": "Nightly rate",
 			"nights": "Nights",
@@ -719,20 +723,25 @@
 			"fees": "Taxes and additional fees",
 			"unconfirmed": "To be confirmed",
 			"estimate": "Accommodation estimate",
-			"breakdown": "Nightly rate Ã— {nights} nights",
+			"breakdown": "Nightly rate × {nights} nights",
 			"chooseDates": "Choose valid dates and guest counts to see your estimate.",
-			"disclaimer": "This estimate covers accommodation only. Availability, fees and the final total have not been confirmed.",
+			"disclaimer": "This estimate covers the accommodation only. Additional fees and payment arrangements must be confirmed with the host. No payment is collected here.",
 			"previewNotice": "Your details are sent only when you submit the booking request. No payment is taken now."
 		},
-		"BookingCheckout": {
+		"BookCheckoutConfirmButton": {
+			"confirm": "Send booking request"
+		},
+		"BookCheckoutForm": {
 			"trip": "Your trip",
 			"tripHint": "Check your dates and who's coming. All fields in this section are required.",
 			"checkOutTime": "Before {time}, local property time",
-			"adults": "Adults",
-			"children": "Children",
 			"limits": "Minimum stay: {minimum} night(s). This property accommodates up to {guests} guests.",
 			"guestDetails": "Your details",
-			"guestHint": "Details for the lead guest. These fields are required; no account is needed to book.",
+			"guestHint": "Details for the lead guest. These fields are required; no account is needed to book."
+		},
+		"BookingCheckout": {
+			"adults": "Adults",
+			"children": "Children",
 			"firstName": "First name",
 			"firstNamePlaceholder": "John",
 			"lastName": "Last name",
@@ -745,8 +754,8 @@
 			"phoneHint": "Include your country code. This would be used for arrival arrangements.",
 			"requests": "Add a special request (optional)",
 			"requestsLabel": "Special requests (optional)",
+			"requestsPlaceholder": "For example, I expect to arrive around 16:00 and need step-free access.",
 			"requestsHint": "For example, an arrival time or accessibility requirement. Requests need host confirmation.",
-			"confirm": "Send booking request",
 			"booked": "Booking request sent"
 		},
 		"BookingConfirmation": {
@@ -755,12 +764,12 @@
 			"viewAccommodation": "View accommodation",
 			"next": "What happens next?",
 			"nextHint": "The host must accept or decline within 24 hours, or before scheduled check-in if sooner. Unanswered requests expire automatically. Your stay is booked only after the host confirms.",
-			"saveLink": "Bookmark this page to keep your request details close at hand.",
+			"saveLink": "Bookmark this page to keep your booking status and stay details close at hand.",
 			"noPayment": "No payment has been taken.",
 			"stay": "Accommodation",
 			"dates": "Dates",
 			"bookedHint": "We saved your request for this stay. The host has up to 24 hours to accept or decline, or until scheduled check-in if sooner.",
-			"notFound": "We couldn't find this booking request",
+			"notFound": "We couldn't find this booking",
 			"notFoundHint": "The link may be incomplete or no longer valid. Return home to keep planning."
 		}
 	},
@@ -849,7 +858,7 @@
 			"capacity": "Maximum guests",
 			"reviewRules": "Review stay requirements",
 			"planBooking": "Plan your booking",
-			"priceHint": "This is the listed nightly rate. Your stay estimate appears on the next step; the host confirms availability after your request."
+			"priceHint": "This is the listed nightly rate. Review your stay estimate and booking method on the next step."
 		},
 		"AccommodationReviewBookingItem": {
 			"leaveReview": "Leave a review"
@@ -1065,11 +1074,11 @@
 			"disabled": "Disabled"
 		},
 		"AccommodationCancellationPolicyItem": {
-			"fiveToSevenDays": "5â€“7 days",
+			"fiveToSevenDays": "5–7 days",
 			"fiveToSevenDaysExample": "For example, 6 days before",
-			"threeToFiveDays": "3â€“5 days",
+			"threeToFiveDays": "3–5 days",
 			"threeToFiveDaysExample": "For example, 4 days before",
-			"oneToThreeDays": "1â€“3 days",
+			"oneToThreeDays": "1–3 days",
 			"oneToThreeDaysExample": "For example, 2 days before",
 			"under24Hours": "Final 24 hours",
 			"under24HoursExample": "For example, 12 hours before",
@@ -1103,14 +1112,58 @@
 		"AccommodationTimeZone": {
 			"label": "Property timezone",
 			"hint": "Detected from your property map pin. Check-in, checkout and cancellation deadlines use this local timezone."
+		},
+		"BookingMode": {
+			"label": "Booking method",
+			"instant": "Instant Booking",
+			"request": "Request booking",
+			"requestRecommended": "Request booking (strongly recommended)",
+			"instantHint": "Your stay is confirmed as soon as you book. No host approval is required.",
+			"requestHint": "Your stay is confirmed only after the host accepts. Unanswered requests expire within 24 hours, or at scheduled check-in if sooner.",
+			"hostHint": "Request booking lets you review and accept each stay. Instant Booking confirms reservations automatically without your approval.",
+			"recommendation": "We strongly recommend Request booking so you can verify availability and prepare before accepting a stay. With Instant Booking, a reservation is confirmed even if you have not seen the notification, which can lead to an unprepared property or difficulties at arrival. Only enable it if you can keep availability current, monitor new bookings promptly, and ensure check-in arrangements are ready.",
+			"bookInstantly": "Book instantly",
+			"confirmed": "Your booking is confirmed",
+			"confirmedNext": "Your stay is confirmed. Check your confirmation email, review the check-in details, and contact your host before arrival if you need to arrange access. No payment was collected here.",
+			"instantPreview": "This is an estimate. Selecting Book instantly confirms your stay immediately. No payment is collected here.",
+			"instantHeader": "Book your stay instantly",
+			"instantHeaderHint": "Review your stay and contact details before booking. Your reservation is confirmed immediately without host approval. No payment is collected here."
+		},
+		"ReservationRulesHost": {
+			"sameDayLabel": "Allow bookings for arrival today",
+			"sameDayHint": "When off, arrival must be tomorrow or later. When on, guests may book an arrival today, such as today to tomorrow. Every booking requires an overnight stay.",
+			"sameDayLimitations": "Today and the cutoff use the accommodation’s timezone. Booking must be completed strictly before check-in starts. Enabling this cannot reopen a stay whose check-in time has passed. Availability, guest limits, house rules and minimum/maximum nights still apply; request bookings still need approval before the stay starts."
+		},
+		"ReservationRulesGuest": {
+			"title": "Booking date rules",
+			"sameDayOn": "Arrival today is allowed only when booking before check-in starts at {time}. Once that time passes, choose a later arrival date.",
+			"sameDayOff": "Arrival today is unavailable. Choose tomorrow or a later arrival date.",
+			"conditions": "Dates must be available and the stay must meet the accommodation’s minimum and maximum nights, guest limit ({guests}) and house rules. Minimum stay: {minimum} nights. Dates and booking deadlines use {timeZone}.",
+			"approval": "This accommodation requires host approval. A request does not hold the dates; the host must accept before the response deadline and before your scheduled arrival, whichever comes first.",
+			"dayUse": "Day-use stay",
+			"duration": "Stay duration",
+			"overnightRequired": "Every booking requires an overnight stay. Departure must be on a later date than arrival."
 		}
 	},
 	"BookingsFeature": {
-		"BookingStayDates": {
+		"BookingStayDatesCalendar": {
 			"stayDates": "Stay dates",
+			"unavailable": "Booked or blocked night"
+		},
+		"BookingStayDatesHeader": {
 			"checkIn": "Check-in",
 			"checkOut": "Check-out",
 			"selectDates": "Select your dates"
+		},
+		"BookingStayDatesLegend": {
+			"legend": "Calendar legend",
+			"selectable": "Selectable date",
+			"arrivalDeparture": "Arrival / departure",
+			"selectedNights": "Selected nights",
+			"today": "Today (outlined)",
+			"tooEarly": "Too early to book",
+			"availabilityHint": "Red, crossed-out squares mark booked or blocked nights. You cannot arrive or stay on those nights. You may select one as your checkout date if every preceding night is available. Availability is checked again when you submit; selecting dates does not reserve them.",
+			"unavailable": "Booked or blocked night"
 		},
 		"status": {
 			"pending": "Pending",
@@ -1119,7 +1172,16 @@
 			"cancelled": "Cancelled",
 			"expired": "Request expired",
 			"expiredHint": "The host did not accept or decline before the response deadline. This stay is not booked. You can submit a new request.",
-			"completed": "Completed"
+			"completed": "Completed",
+			"confirmedHint": "Your stay is confirmed. Check your confirmation email and review the check-in details before arrival.",
+			"declinedHint": "The host declined this request. Your stay is not booked. You can choose another accommodation or different dates.",
+			"cancelledHint": "This booking has been cancelled. Your stay is no longer booked.",
+			"completedHint": "This stay has been completed."
+		},
+		"BookingSortSelect": {
+			"label": "Sort bookings by date",
+			"newest": "Newest first",
+			"oldest": "Oldest first"
 		}
 	},
 	"FavoritesFeature": {
@@ -1658,7 +1720,7 @@
 		"otpExpired": "That code has expired. Request a new one.",
 		"tooManyAttempts": "Too many attempts. Try again in a few minutes.",
 		"pastStayDate": "Check-in must be today or a future date.",
-		"stayDateOrder": "Check-out must be after check-in.",
+		"stayDateOrder": "Departure must be after arrival. To arrive and leave on the same date, choose a day-use stay if this accommodation offers one.",
 		"minimumStay": "Choose at least {count} nights for this property.",
 		"maximumStay": "This property allows stays of up to {count} nights.",
 		"guestLimit": "Enter at least one adult and no more than {count} guests in total, using whole numbers.",
@@ -1696,7 +1758,14 @@
 		"uploadBatchTooLarge": "The combined image upload cannot exceed {maxSizeMB} MB.",
 		"bookingTermsUnavailable": "This property needs its timezone and cancellation terms confirmed before it can accept new bookings. Please contact the host.",
 		"bookingCheckOutTimeUnavailable": "The checkout time is unavailable or occurs twice on this date because the clocks change. Please contact the host to arrange a different checkout time.",
-		"bookingCheckInTimeUnavailable": "The check-in time is unavailable or occurs twice on this date because the clocks change. Please contact the host to arrange a different check-in time."
+		"bookingCheckInTimeUnavailable": "The check-in time is unavailable or occurs twice on this date because the clocks change. Please contact the host to arrange a different check-in time.",
+		"bookingModeChanged": "The host changed the booking method. Refresh this page and review how your stay will be confirmed before continuing.",
+		"bookingDatesUnavailable": "These dates are already booked. Choose different dates.",
+		"bookingAvailabilityUnavailable": "Availability could not be verified. Please try again later or contact support.",
+		"sameDayReservationDisabled": "This accommodation does not accept bookings for arrival today. Choose tomorrow or a later date in the accommodation's timezone.",
+		"bookingStartPassed": "The scheduled arrival time has already started or passed in the accommodation's timezone. Choose a later arrival date, even if bookings for arrival today are enabled.",
+		"invalidBlockedDateRange": "Select 1-30 consecutive dates, starting today or later in the accommodation's timezone.",
+		"blockedDatesBookingConflict": "These dates overlap a confirmed booking. No dates were blocked."
 	},
 	"AddAccommodationPage": {
 		"title": "Add an accommodation",
@@ -1714,8 +1783,8 @@
 			"photosHint": "Add 5?10 photos. The first photo is your cover. Use the arrows to reorder.",
 			"pricingTitle": "Set your nightly price and dates",
 			"pricingHint": "Guests can arrive from the first date and must leave by the last date.",
-			"rulesTitle": "Set expectations for your guests",
-			"rulesHint": "Times are local to the property. Keep additional rules short and clear.",
+			"rulesTitle": "Choose how guests book and set their stay rules",
+			"rulesHint": "Choose host approval or immediate confirmation, then set arrival times and house rules.",
 			"reviewTitle": "Take a final look",
 			"reviewHint": "Check the details below before making this accommodation public.",
 			"cancellationPolicyTitle": "Cancellation Policy",
@@ -1729,7 +1798,7 @@
 			"amenities": "Amenities",
 			"photos": "Photos & description",
 			"pricing": "Pricing & availability",
-			"rules": "Guest rules",
+			"rules": "Booking & house rules",
 			"review": "Review & publish",
 			"cancellationPolicy": "Cancellation Policy"
 		},
@@ -1902,6 +1971,7 @@
 		"MyAccommodationHeader": {
 			"back": "My accommodations",
 			"published": "Published",
+			"unpublished": "Unpublished",
 			"view": "View public listing"
 		},
 		"MyAccommodationTabListing": {
@@ -1941,43 +2011,17 @@
 			"photosHint": "Give guests a clear picture of your space. Add at least 5 photos.",
 			"pricing": "Pricing & length of stay",
 			"pricingHint": "Set your standard nightly rate and the length of stay you accept.",
-			"rules": "Guest rules",
-			"rulesHint": "Set arrival and departure times, permissions, and house rules."
+			"rules": "Booking & house rules",
+			"rulesHint": "Choose how bookings are confirmed, then set arrival and departure times and house rules."
 		},
 		"MyAccommodationTabCalendar": {
-			"title": "Availability",
-			"description": "A view of your nights, reservations, and time set aside for yourself.",
-			"blockDates": "Block dates",
-			"today": "Today",
-			"previousMonth": "Previous month",
-			"nextMonth": "Next month",
-			"caption": "{month}, sample availability calendar",
 			"available": "Available",
 			"booked": "Booked",
 			"imported": "Synced booking",
 			"blocked": "Blocked",
-			"selected": "Selected dates",
 			"exampleRange": "26-28 October",
-			"rangeHint": "3 nights - Sample date selection",
-			"availability": "Availability",
-			"reason": "Block reason",
-			"maintenance": "Maintenance",
-			"privateNote": "Private note",
-			"sampleNote": "Refresh paint before the next arrival.",
-			"noteHint": "Only visible to you.",
-			"nightlyRate": "Nightly rate (EUR)",
-			"rateHint": "Optional rate override for these nights.",
-			"save": "Save dates",
-			"rules": "Availability rules",
-			"rulesHint": "Defaults for future bookings. These are sample settings.",
-			"stayLength": "Length of stay",
-			"stayValue": "2-30 nights",
-			"advanceNotice": "Advance notice",
-			"noticeValue": "At least 1 day",
-			"preparation": "Preparation time",
-			"preparationValue": "1 night between stays",
-			"bookingWindow": "Booking window",
-			"windowValue": "6 months ahead"
+			"loading": "Loading availability...",
+			"loadError": "Availability could not be loaded. Dates cannot be selected safely. Try another month or reload the page."
 		},
 		"MyAccommodationCalendarDayItem": {
 			"available": "Available",
@@ -1985,8 +2029,9 @@
 			"imported": "Synced booking",
 			"blocked": "Blocked",
 			"selected": "Selected dates",
-			"reservation": "Reserved",
-			"ownerStay": "Owner stay"
+			"bookedUnavailable": "Unavailable: already booked",
+			"importedUnavailable": "Unavailable: synced booking",
+			"unknown": "Availability unknown"
 		},
 		"MyAccommodationTabSettings": {
 			"financial": "Financial",
@@ -2015,26 +2060,94 @@
 			"export": "Export your calendar",
 			"exportHint": "Share availability using an iCal link.",
 			"copyLink": "Copy iCal link",
-			"syncHint": "Calendar updates may take time. Check the last successful sync before confirming a booking on another platform.",
-			"dangerZone": "Danger zone",
-			"dangerHint": "Control whether this accommodation is visible or remove it permanently.",
-			"unpublish": "Unpublish accommodation",
-			"unpublishHint": "Hide the listing from new guests. Keep its details so you can publish it again later.",
-			"delete": "Delete accommodation",
+			"syncHint": "Calendar updates may take time. Check the last successful sync before confirming a booking on another platform."
+		},
+		"MyAccommodationTabSettingsDangerZone": {
+			"title": "Danger zone",
+			"description": "Control whether this accommodation is visible or remove it permanently.",
+			"visibilityTitle": "Listing visibility",
+			"visibilityHint": "Hide the listing from new guests while keeping its details, or publish it again when you are ready.",
+			"deleteTitle": "Delete accommodation",
 			"deleteHint": "Permanently remove this listing. This cannot be undone. Existing bookings must be resolved first."
+		},
+		"DangerZoneStatusButton": {
+			"unpublish": "Unpublish accommodation",
+			"publish": "Publish accommodation",
+			"unpublishedToast": "Listing unpublished. It is hidden from new guests.",
+			"publishedToast": "Listing published. Guests can find it again."
+		},
+		"DangerZoneDeleteButton": {
+			"delete": "Delete accommodation"
+		},
+		"MyAccommodationTabCalendarHeader": {
+			"title": "Availability",
+			"description": "A view of your nights, reservations, and time set aside for yourself.",
+			"blockDates": "Block dates"
+		},
+		"MyAccommodationCalendar": {
+			"title": "Availability"
+		},
+		"MyAccommodationCalendarMonth": {
+			"caption": "{month}, availability calendar"
+		},
+		"loading": "Loading your accommodation",
+		"MyAccommodationCalendarHeader": {
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month"
+		},
+		"MyAccommodationCalendarBookedDay": {
+			"booked": "Booked"
+		},
+		"MyAccommodationCalendarBlockedDay": {
+			"ownerStay": "Blocked"
+		},
+		"MyAccommodationTabSelectedDates": {
+			"selected": "Selected dates",
+			"rangeHint": "Select up to 30 consecutive dates. Each selected date blocks that night, including the last date. Select one date to block one night. Confirmed bookings cannot be blocked.",
+			"availability": "Availability",
+			"blocked": "Blocked",
+			"reason": "Block reason",
+			"maintenance": "Maintenance",
+			"privateNote": "Private note",
+			"sampleNote": "Refresh paint before the next arrival.",
+			"noteHint": "Only visible to you.",
+			"nightlyRate": "Nightly rate (EUR)",
+			"rateHint": "Optional rate override for these nights.",
+			"save": "Save dates",
+			"timeZone": "Dates use the accommodation's timezone: {timeZone}.",
+			"nights": "Nights selected: {count}",
+			"unblockDates": "Unblock dates",
+			"blockedSuccess": "Selected nights blocked.",
+			"unblockedSuccess": "Manual blocks removed. Existing reservations are unchanged.",
+			"pendingWarning": "Pending requests affected: {count}. Their nights must be unblocked before confirmation.",
+			"pendingHint": "Pending requests do not hold dates. Blocking does not cancel requests; they cannot be approved while their nights are blocked. Unblocking removes only manual blocks and never cancels a booking."
+		},
+		"MyAccommodationTabCalendarAvailability": {
+			"rules": "Availability rules",
+			"rulesHint": "Defaults for future bookings. These are sample settings.",
+			"stayLength": "Length of stay",
+			"stayValue": "2-30 nights",
+			"advanceNotice": "Advance notice",
+			"noticeValue": "At least 1 day",
+			"preparation": "Preparation time",
+			"preparationValue": "1 night between stays",
+			"bookingWindow": "Booking window",
+			"windowValue": "6 months ahead"
 		}
 	},
 	"MyBookingsPage": {
 		"pageTitle": "My bookings",
 		"searchPlaceholder": "Search by last name or email...",
+		"statusTabsLabel": "Filter by booking status",
+		"allStatuses": "All",
 		"noMatchingBookings": "No matching bookings",
 		"noBookingsYet": "No bookings yet",
 		"searchEmptyDescription": "Nothing matches \"{term}\".",
+		"filtersEmptyDescription": "No bookings match this status.",
 		"emptyDescription": "Bookings you make will appear here.",
 		"findAccommodation": "Find accommodation",
 		"MyBookingsHeader": {
-			"bookingsFound": "Saved bookings: {count} - Newest requests first",
-			"filteredLabel": "Search results",
 			"description": "See where you're staying, when you're going and whether your booking is confirmed."
 		},
 		"MyBookingItem": {
@@ -2067,7 +2180,13 @@
 			"phone": "Phone number",
 			"requests": "Special requests",
 			"requestsHint": "Special requests are subject to confirmation by the property.",
-			"requested": "Request sent on {date}"
+			"requested": "Request sent on {date}",
+			"cancellation": "Cancellation",
+			"cancellationFullRefund": "Full refund available until {date}.",
+			"cancellationPartialRefund": "{percentage}% refund available until {date}.",
+			"cancellationNoRefund": "No refund if you cancel now.",
+			"cancellationClosed": "The cancellation window has closed.",
+			"cancellationPolicyLink": "See the full cancellation policy"
 		}
 	},
 	"HostBookingsPage": {
@@ -2161,10 +2280,7 @@
 		},
 		"HostBookingsDetailsDialogSpecialRequests": {
 			"requests": "Special requests"
-		},
-		"pendingOrder": "Oldest requests first",
-		"defaultOrder": "Newest requests first",
-		"searchOrder": "Matching guest requests"
+		}
 	},
 	"ErrorMessages": {
 		"unexpected": "Something went wrong. Please try again.",
@@ -2261,6 +2377,7 @@
 	"BookingsFeature.BookingCancellationPolicy.noPaymentCollected": "No payment was collected. These percentages describe the policy; there is no payment to refund.",
 	"BookingsFeature.BookingCancellationPolicy.noPaymentRequired": "No payment is collected when you request a booking. These percentages describe the cancellation policy.",
 	"BookingsFeature.BookingCancellationPolicy.propertyTime": "All deadlines use the property's local time ({timeZone}). Each date shows its time offset.",
+	"BookingsFeature.BookingCancellationPolicy.policyTime": "Cancellation deadlines use the property's local time ({timeZone}).",
 	"BookingsFeature.BookingCancellationPolicy.selectDates": "Choose your stay dates to see exact cancellation deadlines.",
 	"BookingsFeature.BookingCancellationPolicy.invalidDate": "We cannot determine check-in for this date. Choose another check-in date to see exact deadlines.",
 	"BookingsFeature.BookingCancellationPolicy.checkInPassed": "The scheduled check-in time has passed. This pre-check-in policy no longer applies.",
@@ -2273,7 +2390,6 @@
 	"BookingsFeature.BookingCancellationPolicyItem.beforeCheckInUndated": "Before the scheduled check-in time",
 	"AccommodationPage.AccommodationNavigation.cancellation": "Cancellation",
 	"AccommodationPage.AccommodationSummary.cancellationDetails": "See cancellation deadlines",
-	"MyBookingsPage.MyBookingItem.cancellationDetails": "Cancellation policy and deadlines",
 	"BookingsFeature.BookingCancellationPolicyItem.passed": "Deadline passed",
 	"BookingsFeature.BookingCancellationPolicyItem.untilDays": "Until {days} days before check-in",
 	"BookingsFeature.BookingCancellationPolicyItem.afterUntilDays": "After that, until {days} days before check-in",
@@ -2306,5 +2422,6 @@
 	"BookingsFeature.BookingCancellationDialogHeader.withdraw": "Withdraw request",
 	"BookingsFeature.BookingCancellationDialogHeader.cancel": "Cancel booking",
 	"BackendMessages.accountHasActiveBookings": "You cannot delete this account while it has pending requests or confirmed stays. Resolve these bookings first; confirmed stays must be cancelled or marked completed after checkout.",
-	"BackendMessages.accountHasAccommodations": "Remove this account's accommodation listings before deleting it. Booking history will be retained."
+	"BackendMessages.accountHasAccommodations": "Remove this account's accommodation listings before deleting it. Booking history will be retained.",
+	"BackendMessages.accommodationHasActiveBookings": "This accommodation still has pending requests or confirmed stays. Resolve these bookings before deleting it; booking history is retained."
 }

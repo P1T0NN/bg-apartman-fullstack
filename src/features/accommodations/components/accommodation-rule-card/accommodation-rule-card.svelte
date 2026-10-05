@@ -4,12 +4,14 @@
 	import { cn } from '@/utils/utils.js';
 
 	let {
+		icon,
 		label,
 		description,
 		checked,
 		disabled = false,
 		onCheckedChange
 	}: {
+		icon: string;
 		label: string;
 		description: string;
 		checked: boolean;
@@ -30,6 +32,10 @@
 	)}
 	onclick={() => onCheckedChange(!checked)}
 >
+	<span
+		class={cn(icon, 'size-6 shrink-0', checked ? 'text-primary' : 'text-muted-foreground')}
+		aria-hidden="true"
+	></span>
 	<span class="flex min-w-0 flex-1 flex-col gap-1">
 		<span class="font-medium">{label}</span>
 		<span class="text-muted-foreground">{description}</span>

@@ -52,8 +52,7 @@ export const bookingPage = v.object({
 	items: v.array(bookingItem),
 	nextCursor: v.union(v.string(), v.null()),
 	hasNextPage: v.boolean(),
-	pageSize: v.number(),
-	total: v.optional(v.number())
+	pageSize: v.number()
 });
 
 /** Exact per-status counts for the host's whole pipeline, independent of the active filters. */

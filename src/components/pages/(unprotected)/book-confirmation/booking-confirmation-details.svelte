@@ -31,6 +31,7 @@
 	const nights = $derived(
 		(Date.parse(confirmation.checkOutDate) - Date.parse(confirmation.checkInDate)) / DAY_IN_MS
 	);
+	const isDayUse = $derived(confirmation.checkInDate === confirmation.checkOutDate);
 </script>
 
 <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
@@ -55,6 +56,12 @@
 							{formatDate(Date.parse(confirmation.checkInDate), getLocale())}
 						</time>
 					</dd>
+					{#if isDayUse}
+						<dd class="mt-1 text-sm text-muted-foreground">
+							{confirmation.cancellationTerms.checkInStart} ({confirmation.cancellationTerms
+								.timeZone})
+						</dd>
+					{/if}
 				</div>
 
 				<div>
@@ -66,6 +73,11 @@
 							{formatDate(Date.parse(confirmation.checkOutDate), getLocale())}
 						</time>
 					</dd>
+					{#if isDayUse}
+						<dd class="mt-1 text-sm text-muted-foreground">
+							{confirmation.cancellationTerms.checkOut} ({confirmation.cancellationTerms.timeZone})
+						</dd>
+					{/if}
 				</div>
 			</dl>
 
@@ -73,17 +85,23 @@
 
 			<dl class="grid grid-cols-2 gap-5">
 				<div>
-					<dt class="text-sm text-muted-foreground">{m['BookingPage.BookingSummary.nights']()}</dt>
-					<dd class="mt-2 text-xl font-semibold tabular-nums">{nights}</dd>
+					<dt class="text-sm text-muted-foreground">
+						{isDayUse
+							? m['AccommodationsFeature.ReservationRulesGuest.duration']()
+							: m['BookingPage.BookSummary.nights']()}
+					</dt>
+					<dd class="mt-2 text-xl font-semibold tabular-nums">
+						{isDayUse ? m['AccommodationsFeature.ReservationRulesGuest.dayUse']() : nights}
+					</dd>
 				</div>
 
 				<div>
-					<dt class="text-sm text-muted-foreground">{m['BookingPage.BookingSummary.guests']()}</dt>
+					<dt class="text-sm text-muted-foreground">{m['BookingPage.BookSummary.guests']()}</dt>
 
 					<dd class="mt-2 text-xl font-semibold tabular-nums">
 						{confirmation.adults + confirmation.children}
 					</dd>
-					
+
 					<dd class="mt-1 text-xs leading-5 text-muted-foreground">
 						{m['BookingPage.BookingCheckout.adults']()}: {confirmation.adults} &middot; {m[
 							'BookingPage.BookingCheckout.children'
@@ -122,9 +140,11 @@
 		</h2>
 
 		<p class="mt-3 text-sm leading-6 text-muted-foreground">
-			{confirmation.status === 'expired'
-				? m['BookingsFeature.status.expiredHint']()
-				: m['BookingPage.BookingConfirmation.nextHint']()}
+			{confirmation.status === 'pending'
+				? m['BookingPage.BookingConfirmation.nextHint']()
+				: confirmation.status === 'confirmed'
+					? m['AccommodationsFeature.BookingMode.confirmedNext']()
+					: m[`BookingsFeature.status.${confirmation.status}Hint`]()}
 		</p>
 
 		<Separator class="my-6" />
@@ -137,7 +157,7 @@
 
 			<p class="text-sm leading-6">{m['BookingPage.BookingConfirmation.saveLink']()}</p>
 		</div>
-		
+
 		<p class="mt-6 text-xs leading-5 text-muted-foreground">
 			{m['BookingPage.BookingConfirmation.noPayment']()}
 		</p>

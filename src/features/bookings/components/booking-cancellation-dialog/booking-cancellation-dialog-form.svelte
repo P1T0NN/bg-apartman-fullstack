@@ -94,7 +94,7 @@
 			{#if submitting}
 				<Spinner data-icon="inline-start" />
 			{/if}
-			
+
 			{isWithdrawal
 				? m['BookingsFeature.BookingCancellationDialogForm.confirmWithdrawal']()
 				: m['BookingsFeature.BookingCancellationDialogForm.confirmCancellation']()}

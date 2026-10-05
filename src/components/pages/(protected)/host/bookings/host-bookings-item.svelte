@@ -64,14 +64,18 @@
 		</div>
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
 			<span>
-				<Plural
-					count={nights}
-					forms={{
-						one: m['HostBookingsPage.HostBookingsItem.night'](),
-						other: m['HostBookingsPage.HostBookingsItem.nights']()
-					}}
-					locale={getLocale()}
-				/>
+				{#if nights === 0}
+					{m['AccommodationsFeature.ReservationRulesGuest.dayUse']()}
+				{:else}
+					<Plural
+						count={nights}
+						forms={{
+							one: m['HostBookingsPage.HostBookingsItem.night'](),
+							other: m['HostBookingsPage.HostBookingsItem.nights']()
+						}}
+						locale={getLocale()}
+					/>
+				{/if}
 			</span>
 			<span
 				title={m['HostBookingsPage.HostBookingsItem.guestBreakdown']({

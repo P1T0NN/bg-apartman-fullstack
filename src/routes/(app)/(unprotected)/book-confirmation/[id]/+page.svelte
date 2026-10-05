@@ -31,7 +31,12 @@
 	const confirmation = $derived(result.data);
 </script>
 
-<SvelteHead title={m['BookingPage.BookingCheckout.booked']()} noindex />
+<SvelteHead
+	title={confirmation && confirmation.status !== 'pending'
+		? m[`BookingsFeature.status.${confirmation.status}`]()
+		: m['BookingPage.BookingCheckout.booked']()}
+	noindex
+/>
 
 <main class="mx-auto w-full max-w-5xl px-4 py-12 pb-16 sm:px-6 sm:py-16 lg:px-8">
 	{#if result.error}

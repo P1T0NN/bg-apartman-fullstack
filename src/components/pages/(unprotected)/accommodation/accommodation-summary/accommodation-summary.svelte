@@ -9,11 +9,12 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import AccommodationBookingMode from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode.svelte';
 	import * as Card from '@/components/ui/card/index.js';
 	import { Button } from '@/components/ui/button/index.js';
+	import ButtonLink from '@/components/ui/custom-components/button-link/button-link.svelte';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
 	import Price from '@/components/ui/custom-components/price/price.svelte';
-	import AccommodationGuestCancellationPolicy from '@/features/accommodations/components/accommodation-guest-cancellation-policy/accommodation-guest-cancellation-policy.svelte';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -89,14 +90,14 @@
 		</Card.Content>
 
 		<Card.Footer class="flex-col items-stretch gap-3">
-			<AccommodationGuestCancellationPolicy
-				{accommodation}
-				checkInDate={page.url.searchParams.get('checkIn') ?? ''}
-				compact
-			/>
-			<a href="#cancellation-policy" class="text-sm underline underline-offset-4">
+			<AccommodationBookingMode mode={accommodation.bookingMode} compact />
+			<ButtonLink
+				href={`${UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(accommodation._id)}${page.url.search}#cancellation-policy`}
+				variant="link"
+				class="h-auto justify-start p-0"
+			>
 				{m['AccommodationPage.AccommodationSummary.cancellationDetails']()}
-			</a>
+			</ButtonLink>
 			<Button
 				href={UNPROTECTED_PAGE_ENDPOINTS.BOOK_ACCOMMODATION(accommodation._id) + page.url.search}
 				class="min-h-11"

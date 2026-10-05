@@ -33,6 +33,7 @@ const accommodation = {
 	beds: 3,
 	bathrooms: 1,
 	pricePerNightMinor: 8025,
+	sameDayReservation: false,
 	recommendationSortKey: -3,
 	guestRatingAverage: 0,
 	guestReviewCount: 0,

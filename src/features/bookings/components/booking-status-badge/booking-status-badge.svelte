@@ -9,7 +9,7 @@
 	import { BOOKING_STATUS_LABELS } from '@/features/bookings/data/bookingStatusLabels.js';
 
 	// TYPES
-	import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+	import type { BookingStatus } from '@/shared/features/bookings/types/bookingTypes.js';
 
 	let { status }: { status: BookingStatus } = $props();
 

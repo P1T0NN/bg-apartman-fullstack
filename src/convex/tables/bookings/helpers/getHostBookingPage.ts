@@ -7,6 +7,7 @@ import type { Doc } from '../../../_generated/dataModel.js';
 import type { QueryCtx } from '../../../_generated/server.js';
 import type { ConvexPaginatedPage } from '../../../../shared/features/pagination/types/paginationTypesConvex.js';
 import type { PaginationOptions } from 'convex/server';
+import type { BookingSort } from '../../../../shared/features/bookings/types/bookingTypes.js';
 import type { BookingFilters } from './readBookingFilters.js';
 
 type Booking = Doc<'bookings'>;
@@ -17,13 +18,15 @@ export async function getHostBookingPage({
 	hostId,
 	paginationOpts,
 	search,
-	filters
+	filters,
+	sort
 }: {
 	ctx: QueryCtx;
 	hostId: string;
 	paginationOpts: PaginationOptions;
 	search?: string;
 	filters: BookingFilters;
+	sort?: BookingSort;
 }): Promise<ConvexPaginatedPage<Booking>> {
 	const { status } = filters;
 
@@ -46,5 +49,10 @@ export async function getHostBookingPage({
 				.withIndex('by_host_id_status', (q) => q.eq('hostId', hostId).eq('status', status))
 		: ctx.db.query('bookings').withIndex('by_host_id', (q) => q.eq('hostId', hostId));
 
-	return getPagination(bookings.order(status === 'pending' ? 'asc' : 'desc'), { paginationOpts });
+	// Pending requests default to the longest wait; every other list defaults to newest.
+	const effectiveSort = sort ?? (status === 'pending' ? 'oldest' : 'newest');
+
+	return getPagination(bookings.order(effectiveSort === 'oldest' ? 'asc' : 'desc'), {
+		paginationOpts
+	});
 }

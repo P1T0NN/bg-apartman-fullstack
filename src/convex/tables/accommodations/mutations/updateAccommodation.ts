@@ -35,6 +35,8 @@ export const updateAccommodation = authenticatedUploadMutation({
 		if (!existing || existing.ownerId !== getOwnerId(ctx.identity)) {
 			throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 		}
+		if (existing.status === 'deleted')
+			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 
 		const changesPosition = args.latitude !== undefined || args.longitude !== undefined;
 		const hasIncompletePosition =

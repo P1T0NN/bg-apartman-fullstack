@@ -63,7 +63,7 @@ export async function sendEmail(
 	const from = process.env.EMAIL_FROM;
 
 	if (!from) throw new Error('Missing EMAIL_FROM');
-	
+
 	return resend.sendEmail(ctx, {
 		from,
 		to,

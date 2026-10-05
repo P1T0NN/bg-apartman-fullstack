@@ -76,6 +76,7 @@ async function setup(email = 'alex+stay@example.com') {
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -195,7 +196,6 @@ test('claim preview never changes ownership; explicit and repeated claims update
 		paginationOpts: { cursor: null, numItems: 10 }
 	});
 	expect(mine.items.map((item) => item._id)).toContain(bookingId);
-	expect(mine.total).toBe(1);
 });
 
 test('claim uses the current verified account email rather than JWT email claims', async () => {

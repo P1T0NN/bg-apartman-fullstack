@@ -15,6 +15,8 @@ import { checkBookingCancellationRefund } from '../src/shared/features/bookings/
 import type { BookingCancellationTerms } from '../src/shared/features/bookings/types/bookingTypes.js';
 
 const terms: BookingCancellationTerms = {
+	stayType: 'overnight',
+	pricePerDayUseMinor: null,
 	policy: {
 		version: 1,
 		mode: 'custom',

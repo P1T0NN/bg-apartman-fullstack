@@ -275,6 +275,7 @@ export const seedAccommodations = internalMutation({
 			const noun = pick(NOUNS, random);
 
 			const listing: WithoutSystemFields<Doc<'accommodations'>> = {
+				sameDayReservation: false,
 				ownerId,
 				cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 				name: `${adjective} ${noun} ${type}`,
@@ -387,6 +388,8 @@ export const seedReviews = internalMutation({
 
 				const bookingId = await ctx.db.insert('bookings', {
 					cancellationTerms: {
+						stayType: 'overnight',
+						pricePerDayUseMinor: null,
 						policy: accommodation.cancellationPolicy,
 						timeZone: accommodation.timeZone,
 						checkInStart: accommodation.checkInStart,

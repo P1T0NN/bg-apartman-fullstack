@@ -78,5 +78,7 @@ export const EMPTY_ACCOMMODATION: Omit<AccommodationDetails, 'latitude' | 'longi
 	petsAllowed: false,
 	partiesAllowed: false,
 	houseRules: '',
+	bookingMode: 'request',
+	sameDayReservation: false,
 	cancellationPolicy: DEFAULT_CANCELLATION_POLICY_DRAFT
 };

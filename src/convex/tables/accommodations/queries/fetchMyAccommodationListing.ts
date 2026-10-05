@@ -26,7 +26,12 @@ export const fetchMyAccommodationListing = authenticatedQuery({
 	),
 	handler: async (ctx, { id }) => {
 		const accommodation = await ctx.db.get('accommodations', id);
-		if (!accommodation || accommodation.ownerId !== getOwnerId(ctx.identity)) return null;
+		if (
+			!accommodation ||
+			accommodation.ownerId !== getOwnerId(ctx.identity) ||
+			accommodation.status === 'deleted'
+		)
+			return null;
 
 		const listing = omit(accommodation, [
 			'ownerId',

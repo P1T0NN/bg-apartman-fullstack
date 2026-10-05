@@ -10,4 +10,6 @@ export const favorites = defineTable({
 	// Retained for _creationTime ordering; the favorites list sorts newest first.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])
-	.index('by_owner_id_accommodation_id', ['ownerId', 'accommodationId']);
+	.index('by_owner_id_accommodation_id', ['ownerId', 'accommodationId'])
+	// Used when a removed listing deletes every favorite that referenced it.
+	.index('by_accommodation_id', ['accommodationId']);

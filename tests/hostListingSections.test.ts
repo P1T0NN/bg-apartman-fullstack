@@ -6,6 +6,34 @@ import {
 	accommodationRulesSchema
 } from '../src/shared/features/accommodations/schemas/accommodationSchemas.js';
 
+const reservationRules = {
+	checkInStart: '14:00',
+	timeZone: 'Europe/Belgrade',
+	checkInEnd: '22:00',
+	checkOut: '11:00',
+	smokingAllowed: false,
+	petsAllowed: false,
+	partiesAllowed: false,
+	houseRules: ''
+};
+
+test('host rules retain arrival-today and discard retired single-day settings', () => {
+	expect(accommodationRulesSchema.parse(reservationRules)).toMatchObject({
+		sameDayReservation: false
+	});
+	const parsed = accommodationRulesSchema.parse({
+		...reservationRules,
+		sameDayReservation: true,
+		singleDayReservation: true,
+		dayUseStart: '10:00',
+		dayUseEnd: '18:00',
+		dayUsePrice: 45
+	});
+	expect(parsed.sameDayReservation).toBe(true);
+	for (const key of ['singleDayReservation', 'dayUseStart', 'dayUseEnd', 'dayUsePrice'])
+		expect(parsed).not.toHaveProperty(key);
+});
+
 test('listing sections validate independently and strip unrelated fields', () => {
 	const pricing = accommodationPricingSchema.safeParse({
 		nightlyPrice: '85.50',

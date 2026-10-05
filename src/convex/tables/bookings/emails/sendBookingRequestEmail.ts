@@ -21,12 +21,13 @@ export async function sendBookingRequestEmail(
 	data: BookingRequestEmailData
 ): ReturnType<typeof sendEmail> {
 	const { subject, heading, body } = sendBookingRequestEmailTranslation.en;
-	
+
 	const { COLORS, TYPOGRAPHY } = EMAIL_DATA;
 
 	const terms = data.booking.cancellationTerms;
 
-	const path = data.recipient === 'host' ? '/host/bookings' : `/book-confirmation/${data.bookingId}`;
+	const path =
+		data.recipient === 'host' ? '/host/bookings' : `/book-confirmation/${data.bookingId}`;
 
 	const bodyData: BookingRequestEmailBodyData = {
 		accommodationName: data.accommodationName,

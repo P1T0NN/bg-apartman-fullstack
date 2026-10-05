@@ -2,7 +2,7 @@
 import { calculateBookingRequestExpiry } from './calculateBookingRequestExpiry.js';
 
 // TYPES
-import type { BookingStatus } from '../schemas/bookingSchemas.js';
+import type { BookingStatus } from '../types/bookingTypes.js';
 import type { BookingCancellationTerms } from '../types/bookingTypes.js';
 
 /** Scheduled check-in is the exclusive boundary, even if the status is still active. */

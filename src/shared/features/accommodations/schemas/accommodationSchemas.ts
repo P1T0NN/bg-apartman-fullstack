@@ -82,6 +82,8 @@ export const accommodationPricingSchema = z.object({
 const TIME_SLOT_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 
 export const accommodationRulesSchema = z.object({
+	bookingMode: z.enum(['request', 'instant']).default('request'),
+	sameDayReservation: z.boolean().default(false),
 	timeZone: timeZoneSchema,
 	checkInStart: z.string().regex(TIME_SLOT_PATTERN),
 	checkInEnd: z.string().regex(TIME_SLOT_PATTERN),

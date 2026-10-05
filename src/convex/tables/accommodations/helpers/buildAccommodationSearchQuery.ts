@@ -77,6 +77,9 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 			.withIndex('by_address_country_city', (q) => q.eq('address.country', country));
 	}
 
+	// Only published listings are publicly searchable; unpublished and deleted rows stay owner-only.
+	accommodationsQuery = accommodationsQuery.filter((q) => q.eq(q.field('status'), 'published'));
+
 	if (bounds) {
 		// Exclude longitude misses before paginating map pins, preserving existing map pages.
 		accommodationsQuery = accommodationsQuery.filter((q) => {

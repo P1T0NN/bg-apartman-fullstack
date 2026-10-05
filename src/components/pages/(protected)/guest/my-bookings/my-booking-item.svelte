@@ -5,25 +5,28 @@
 	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
 	import { Badge, type BadgeVariant } from '@/components/ui/badge/index.js';
 	import { Button } from '@/components/ui/button/index.js';
+	import ButtonLink from '@/components/ui/custom-components/button-link/button-link.svelte';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
 	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
 	import MyReviewDetailsDialog from '@/components/pages/(protected)/guest/my-reviews/my-review-details-dialog/my-review-details-dialog.svelte';
 	import ReviewDialog from '@/features/reviews/components/review-dialog/review-dialog.svelte';
-	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 	import { getBookingNights } from '@/shared/features/bookings/utils/getBookingNights.js';
+	import { checkBookingCancellationRefund } from '@/shared/features/bookings/utils/checkBookingCancellationRefund.js';
+	import { displayCancellationPolicyPeriods } from '@/shared/features/accommodations/utils/displayCancellationPolicyPeriods.js';
+	import { formatZonedDateTime } from '@/shared/features/timezone/utils/formatZonedDateTime.js';
 	import { formatFullName } from '@/shared/utils/formatFullName.js';
-	import { formatDate } from '@/shared/utils/date.js';
+	import { DAY_IN_MS, formatDate } from '@/shared/utils/date.js';
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 	import { canReviewBooking } from '@/shared/features/reviews/utils/canReviewBooking.js';
 
 	// TYPES
 	import type { FunctionReturnType } from 'convex/server';
 	import type { api } from '@convex/_generated/api';
-	import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+	import type { BookingStatus } from '@/shared/features/bookings/types/bookingTypes.js';
 
 	let {
 		booking,
@@ -75,6 +78,41 @@
 	const status = $derived(statuses[booking.status]);
 	const guestName = $derived(formatFullName(booking.firstName, booking.lastName));
 	const nights = $derived(getBookingNights(booking.checkInDate, booking.checkOutDate));
+
+	const isActiveBooking = $derived(booking.status === 'pending' || booking.status === 'confirmed');
+	const policyPeriods = $derived(
+		displayCancellationPolicyPeriods(booking.cancellationTerms.policy)
+	);
+	const currentRefund = $derived(
+		isActiveBooking ? checkBookingCancellationRefund(booking.cancellationTerms, now) : null
+	);
+	const currentPolicyPeriod = $derived(
+		policyPeriods.find((period) => period.percentage === currentRefund)
+	);
+	const currentPolicyDeadline = $derived(
+		booking.cancellationTerms.checkInAt - ((currentPolicyPeriod?.untilHours ?? 0) * DAY_IN_MS) / 24
+	);
+	const cancellationDeadlineLabel = $derived(
+		formatZonedDateTime(currentPolicyDeadline, getLocale(), booking.cancellationTerms.timeZone)
+	);
+	const cancellationPolicyHref = $derived(
+		`${UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(booking.accommodationId)}?section=cancellation-policy#cancellation-policy`
+	);
+
+	const cancellationSummary = $derived.by(() => {
+		if (!isActiveBooking) return undefined;
+		if (currentRefund === null) return m['MyBookingsPage.MyBookingItem.cancellationClosed']();
+		if (currentRefund === 100) {
+			return m['MyBookingsPage.MyBookingItem.cancellationFullRefund']({
+				date: cancellationDeadlineLabel
+			});
+		}
+		if (currentRefund === 0) return m['MyBookingsPage.MyBookingItem.cancellationNoRefund']();
+		return m['MyBookingsPage.MyBookingItem.cancellationPartialRefund']({
+			percentage: currentRefund,
+			date: cancellationDeadlineLabel
+		});
+	});
 </script>
 
 <article class="overflow-hidden rounded-2xl border bg-card text-card-foreground">
@@ -144,14 +182,18 @@
 					<dt class="text-xs text-muted-foreground">{m['MyBookingsPage.MyBookingItem.trip']()}</dt>
 					<dd class="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm font-medium">
 						<span>
-							<Plural
-								count={nights}
-								forms={{
-									one: m['MyBookingsPage.MyBookingItem.night'](),
-									other: m['MyBookingsPage.MyBookingItem.nights']()
-								}}
-								locale={getLocale()}
-							/>
+							{#if nights === 0}
+								{m['AccommodationsFeature.ReservationRulesGuest.dayUse']()}
+							{:else}
+								<Plural
+									count={nights}
+									forms={{
+										one: m['MyBookingsPage.MyBookingItem.night'](),
+										other: m['MyBookingsPage.MyBookingItem.nights']()
+									}}
+									locale={getLocale()}
+								/>
+							{/if}
 						</span>
 						<span class="text-muted-foreground" aria-hidden="true">&middot;</span>
 						<span>
@@ -166,72 +208,28 @@
 						</span>
 					</dd>
 				</div>
+				{#if cancellationSummary}
+					<div class="col-span-2 sm:col-span-3">
+						<dt class="text-xs text-muted-foreground">
+							{m['MyBookingsPage.MyBookingItem.cancellation']()}
+						</dt>
+						<dd class="mt-1 text-sm font-medium">
+							<p>{cancellationSummary}</p>
+							{#if booking.accommodation}
+								<ButtonLink
+									href={cancellationPolicyHref}
+									variant="link"
+									class="mt-1 h-auto justify-start p-0"
+								>
+									{m['MyBookingsPage.MyBookingItem.cancellationPolicyLink']()}
+								</ButtonLink>
+							{/if}
+						</dd>
+					</div>
+				{/if}
 			</dl>
 		</div>
 	</div>
-
-	<div
-		class="flex flex-col gap-4 border-t bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6"
-	>
-		<p class="max-w-prose text-sm leading-5 text-muted-foreground">{status.hint()}</p>
-		<BookingCancellationDialog
-			{booking}
-			accommodationName={booking.accommodation?.name ??
-				m['MyBookingsPage.MyBookingItem.unavailable']()}
-			{now}
-		/>
-		{#if booking.reviewId}
-			<MyReviewDetailsDialog reviewId={booking.reviewId} />
-		{:else if booking.accommodation && canReviewBooking(booking, now)}
-			<ReviewDialog
-				bookingId={booking._id}
-				accommodationName={booking.accommodation.name}
-				checkInDate={booking.checkInDate}
-				checkOutDate={booking.checkOutDate}
-				timeZone={booking.cancellationTerms.timeZone}
-			/>
-		{/if}
-		{#if booking.accommodation}
-			<Button
-				href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(booking.accommodationId)}
-				variant="outline"
-				size="lg"
-				class="w-full shrink-0 sm:w-auto"
-				aria-label={m['MyBookingsPage.MyBookingItem.viewAccommodationLabel']({
-					name: booking.accommodation.name
-				})}
-			>
-				{m['MyBookingsPage.MyBookingItem.viewAccommodation']()}
-				<ArrowUpRightIcon data-icon="inline-end" />
-			</Button>
-		{/if}
-	</div>
-
-	{#if booking.cancellation}
-		<div class="border-t px-5 py-4 sm:px-6">
-			<BookingCancellationDetails
-				cancellation={booking.cancellation}
-				timeZone={booking.cancellationTerms.timeZone}
-			/>
-		</div>
-	{/if}
-
-	<details class="group border-t px-5 sm:px-6">
-		<summary
-			class="flex min-h-12 cursor-pointer items-center gap-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2"
-		>
-			{m['MyBookingsPage.MyBookingItem.cancellationDetails']()}
-		</summary>
-		<div class="pb-6">
-			<BookingCancellationPolicy
-				policy={booking.cancellationTerms.policy}
-				timeZone={booking.cancellationTerms.timeZone}
-				checkInAt={booking.cancellationTerms.checkInAt}
-				status={booking.status}
-				booked
-			/>
-		</div>
-	</details>
 
 	<details class="group border-t px-5 sm:px-6">
 		<summary
@@ -288,4 +286,52 @@
 			</p>
 		</div>
 	</details>
+
+	<div
+		class="flex flex-col gap-4 border-t bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6"
+	>
+		<p class="max-w-prose text-sm leading-5 text-muted-foreground">{status.hint()}</p>
+		<div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+			<BookingCancellationDialog
+				{booking}
+				accommodationName={booking.accommodation?.name ??
+					m['MyBookingsPage.MyBookingItem.unavailable']()}
+				{now}
+			/>
+			{#if booking.reviewId}
+				<MyReviewDetailsDialog reviewId={booking.reviewId} />
+			{:else if booking.accommodation && canReviewBooking(booking, now)}
+				<ReviewDialog
+					bookingId={booking._id}
+					accommodationName={booking.accommodation.name}
+					checkInDate={booking.checkInDate}
+					checkOutDate={booking.checkOutDate}
+					timeZone={booking.cancellationTerms.timeZone}
+				/>
+			{/if}
+			{#if booking.accommodation}
+				<Button
+					href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(booking.accommodationId)}
+					variant="outline"
+					size="lg"
+					class="w-full shrink-0 sm:w-auto"
+					aria-label={m['MyBookingsPage.MyBookingItem.viewAccommodationLabel']({
+						name: booking.accommodation.name
+					})}
+				>
+					{m['MyBookingsPage.MyBookingItem.viewAccommodation']()}
+					<ArrowUpRightIcon data-icon="inline-end" />
+				</Button>
+			{/if}
+		</div>
+	</div>
+
+	{#if booking.cancellation}
+		<div class="border-t px-5 py-4 sm:px-6">
+			<BookingCancellationDetails
+				cancellation={booking.cancellation}
+				timeZone={booking.cancellationTerms.timeZone}
+			/>
+		</div>
+	{/if}
 </article>

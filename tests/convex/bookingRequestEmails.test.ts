@@ -5,16 +5,27 @@ import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { api, components, internal } from '../../src/convex/_generated/api';
-import schema from '../../src/convex/schema';
+import schema, { tables } from '../../src/convex/schema';
+import { defineSchema, defineTable } from 'convex/server';
+import { v } from 'convex/values';
+import { bookings } from '../../src/convex/tables/bookings/schema';
 import authSchema from '../../src/convex/betterAuth/component/schema';
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
 import { BOOKINGS_CONFIG } from '../../src/shared/features/bookings/config';
 import { calculateBookingRequestExpiry } from '../../src/shared/features/bookings/utils/calculateBookingRequestExpiry';
+import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 const create = api.tables.bookings.mutations.createBooking.createBooking;
 const updateStatus = api.tables.bookings.mutations.updateBookingStatus.updateBookingStatus;
 const expire = internal.tables.bookings.crons.expireBookingRequestsCron.expireBookingRequestsCron;
+const blockDates = api.tables.accommodationBlockedDates.mutations.blockDates.blockDates;
+const unblockDates = api.tables.accommodationBlockedDates.mutations.unblockDates.unblockDates;
+const publicCalendar =
+	api.tables.accommodations.queries.fetchPublicAccommodation.fetchPublicAccommodation;
+const hostCalendar =
+	api.tables.accommodationBlockedDates.queries.fetchMyAccommodationCalendar
+		.fetchMyAccommodationCalendar;
 
 const accommodation = {
 	ownerId: 'host-1',
@@ -30,6 +41,7 @@ const accommodation = {
 	beds: 3,
 	bathrooms: 1,
 	pricePerNightMinor: 8025,
+	sameDayReservation: false,
 	recommendationSortKey: -3,
 	guestRatingAverage: 0,
 	guestReviewCount: 0,
@@ -77,6 +89,7 @@ async function setup() {
 	registerResend(t);
 	rateLimiterTest.register(t);
 	aggregateTest.register(t, 'bookingOwnerAggregate');
+	aggregateTest.register(t, 'reviewsAggregate');
 	t.registerComponent(
 		'betterAuth',
 		authSchema,
@@ -122,11 +135,513 @@ function emails() {
 	);
 }
 
+test('manual blocks allow exactly 30 inclusive nights, are idempotent, and support partial unblocking', async () => {
+	const { t, host, accommodationId } = await setup();
+	const owner = t.withIdentity({ subject: host._id });
+	const range = { accommodationId, startDate: '2026-11-01', lastDate: '2026-11-30' };
+	await owner.mutation(blockDates, range);
+	await owner.mutation(blockDates, range);
+	expect(await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect())).toHaveLength(
+		30
+	);
+	await owner.mutation(unblockDates, { ...range, startDate: '2026-11-10', lastDate: '2026-11-12' });
+	await owner.mutation(unblockDates, { ...range, startDate: '2026-11-10', lastDate: '2026-11-12' });
+	const dates = await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect());
+	expect(dates).toHaveLength(27);
+	expect(dates.map((row) => row.date)).not.toContain('2026-11-11');
+	expect(dates.map((row) => row.date)).toContain('2026-11-30');
+	await owner.mutation(blockDates, {
+		accommodationId,
+		startDate: '2026-12-01',
+		lastDate: '2026-12-30'
+	});
+	expect(await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect())).toHaveLength(
+		57
+	);
+});
+
+test.each([
+	['2026-11-01', '2026-12-01'], // 31 inclusive nights
+	['2026-11-05', '2026-11-01'],
+	['2026-02-30', '2026-03-01'],
+	['2026-09-30', '2026-10-01']
+])(
+	'blocking and unblocking reject invalid ranges %s–%s without writes',
+	async (startDate, lastDate) => {
+		const { t, host, accommodationId } = await setup();
+		const owner = t.withIdentity({ subject: host._id });
+		for (const mutation of [blockDates, unblockDates]) {
+			await expect(
+				owner.mutation(mutation, { accommodationId, startDate, lastDate })
+			).rejects.toMatchObject({ data: { code: 'INVALID_BLOCKED_DATE_RANGE' } });
+		}
+		expect(await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect())).toEqual([]);
+	}
+);
+
+test('manual blocks and the private calendar enforce listing ownership', async () => {
+	const { t, accommodationId } = await setup();
+	const stranger = t.withIdentity({ subject: 'stranger' });
+	const args = { accommodationId, startDate: '2026-11-01', lastDate: '2026-11-01' };
+	for (const mutation of [blockDates, unblockDates]) {
+		await expect(t.mutation(mutation, args)).rejects.toMatchObject({
+			data: { code: 'UNAUTHENTICATED' }
+		});
+		await expect(stranger.mutation(mutation, args)).rejects.toMatchObject({
+			data: { code: 'FORBIDDEN' }
+		});
+	}
+	await expect(
+		stranger.query(hostCalendar, {
+			accommodationId
+		})
+	).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+});
+
+test.each(['request', 'instant'] as const)(
+	'blocked nights reject %s bookings but allow checkout on the blocked date',
+	async (bookingMode) => {
+		const { t, host, accommodationId, args, drain } = await setup();
+		await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode }));
+		const owner = t.withIdentity({ subject: host._id });
+		await owner.mutation(blockDates, {
+			accommodationId,
+			startDate: '2026-11-03',
+			lastDate: '2026-11-03'
+		});
+		await expect(
+			t.mutation(create, { ...args, expectedBookingMode: bookingMode })
+		).rejects.toMatchObject({ data: { code: 'BOOKING_DATES_UNAVAILABLE' } });
+		const id = await t.mutation(create, {
+			...args,
+			checkOutDate: '2026-11-03',
+			expectedBookingMode: bookingMode
+		});
+		expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.checkOutDate).toBe('2026-11-03');
+		await drain();
+	}
+);
+
+test('blocking confirmed nights fails atomically and unblocking cannot remove the booking', async () => {
+	const { t, host, accommodationId, args, drain } = await setup();
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	const id = await t.mutation(create, { ...args, expectedBookingMode: 'instant' });
+	const owner = t.withIdentity({ subject: host._id });
+	await expect(
+		owner.mutation(blockDates, { accommodationId, startDate: '2026-10-31', lastDate: '2026-11-02' })
+	).rejects.toMatchObject({ data: { code: 'BLOCKED_DATES_BOOKING_CONFLICT' } });
+	expect(await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect())).toEqual([]);
+	await owner.mutation(unblockDates, {
+		accommodationId,
+		startDate: '2026-11-01',
+		lastDate: '2026-11-04'
+	});
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.status).toBe('confirmed');
+	await owner.mutation(blockDates, {
+		accommodationId,
+		startDate: '2026-11-05',
+		lastDate: '2026-11-05'
+	});
+	await drain();
+});
+
+test('blocking warns about pending requests and prevents confirmation until unblocked', async () => {
+	const { t, host, accommodationId, args, drain } = await setup();
+	const id = await t.mutation(create, args);
+	const owner = t.withIdentity({ subject: host._id });
+	const range = { accommodationId, startDate: '2026-11-02', lastDate: '2026-11-02' };
+	expect(await owner.mutation(blockDates, range)).toEqual({ pendingRequests: 1 });
+	await expect(owner.mutation(updateStatus, { id, status: 'confirmed' })).rejects.toMatchObject({
+		data: { code: 'BOOKING_DATES_UNAVAILABLE' }
+	});
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.status).toBe('pending');
+	await owner.mutation(unblockDates, range);
+	await owner.mutation(updateStatus, { id, status: 'confirmed' });
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.status).toBe('confirmed');
+	await drain();
+});
+
+test('calendar returns real occupancy without guest details and rejects incomplete reads', async () => {
+	const { t, host, accommodationId, args, drain } = await setup();
+	const owner = t.withIdentity({ subject: host._id });
+	await owner.mutation(blockDates, {
+		accommodationId,
+		startDate: '2026-11-10',
+		lastDate: '2026-11-11'
+	});
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	await t.mutation(create, { ...args, expectedBookingMode: 'instant' });
+	const expected = {
+		blockedDates: ['2026-11-10', '2026-11-11'],
+		bookings: [{ checkInDate: args.checkInDate, checkOutDate: args.checkOutDate }]
+	};
+	const publicResult = await t.query(publicCalendar, { id: accommodationId });
+	expect(publicResult?.availability).toEqual(expected);
+	expect(publicResult).not.toHaveProperty('ownerId');
+	expect(await owner.query(hostCalendar, { accommodationId })).toEqual(expected);
+	await t.run(async (ctx) => {
+		// Duplicate corruption must never be silently truncated into apparently available dates.
+		for (let index = 0; index <= BOOKINGS_CONFIG.AVAILABILITY_CHECK_LIMIT; index++)
+			await ctx.db.insert('accommodationBlockedDates', { accommodationId, date: '2026-11-10' });
+	});
+	await expect(t.query(publicCalendar, { id: accommodationId })).rejects.toMatchObject({
+		data: { code: 'BOOKING_AVAILABILITY_UNAVAILABLE' }
+	});
+	await drain();
+});
+
+test('checkout availability rejects unpublished listings while the owner calendar remains accessible', async () => {
+	const { t, host, accommodationId } = await setup();
+	const owner = t.withIdentity({ subject: host._id });
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { status: 'unpublished' }));
+	expect(await t.query(publicCalendar, { id: accommodationId })).toBeNull();
+	expect(await owner.query(hostCalendar, { accommodationId })).toEqual({
+		blockedDates: [],
+		bookings: []
+	});
+});
+
+test('blocking uses the property-local date and counts calendar nights across daylight saving changes', async () => {
+	const { t, host, accommodationId } = await setup();
+	const owner = t.withIdentity({ subject: host._id });
+	await owner.mutation(blockDates, {
+		accommodationId,
+		startDate: '2026-10-01',
+		lastDate: '2026-10-30'
+	});
+	expect(await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect())).toHaveLength(
+		30
+	);
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, { timeZone: 'Pacific/Kiritimati' })
+	);
+	// At noon UTC on October 1 it is already October 2 in this property.
+	await expect(
+		owner.mutation(unblockDates, {
+			accommodationId,
+			startDate: '2026-10-01',
+			lastDate: '2026-10-01'
+		})
+	).rejects.toMatchObject({ data: { code: 'INVALID_BLOCKED_DATE_RANGE' } });
+	await owner.mutation(unblockDates, {
+		accommodationId,
+		startDate: '2026-10-02',
+		lastDate: '2026-10-02'
+	});
+	expect(await t.run((ctx) => ctx.db.query('accommodationBlockedDates').collect())).toHaveLength(
+		29
+	);
+});
+
+test('concurrent host blocking and instant booking cannot both take the same night', async () => {
+	const { t, host, accommodationId, args, drain } = await setup();
+	const owner = t.withIdentity({ subject: host._id });
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	const attempts = await Promise.allSettled([
+		owner.mutation(blockDates, {
+			accommodationId,
+			startDate: '2026-11-02',
+			lastDate: '2026-11-02'
+		}),
+		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+	]);
+	expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1);
+	await drain();
+});
+
+test('email-reference cleanup is bounded, repeatable, and preserves booking and cancellation history', async () => {
+	const { t, args, drain } = await setup();
+	const id = await t.mutation(create, args);
+	await drain();
+	const original = await t.run((ctx) => ctx.db.get('bookings', id));
+	if (!original) throw new Error('Test booking not found');
+	const { sendBookingRequestEmail } =
+		await import('../../src/convex/tables/bookings/emails/sendBookingRequestEmail');
+	const existingEmailId = await t.run((ctx) =>
+		sendBookingRequestEmail(ctx, {
+			bookingId: id,
+			booking: original,
+			accommodationName: accommodation.name,
+			email: original.email,
+			recipient: 'guest'
+		})
+	);
+	const { _id, _creationTime, ...data } = original;
+	const legacySchema = defineSchema({
+		...tables,
+		bookings: defineTable(
+			bookings.validator.extend({
+				requestEmailIds: v.optional(v.object({ guest: v.string(), host: v.string() })),
+				confirmationEmailId: v.optional(v.string()),
+				hostConfirmationEmailId: v.optional(v.string()),
+				expirationEmailId: v.optional(v.string())
+			})
+		)
+	});
+	const legacy = convexTest(legacySchema, modules);
+	const cancellation = {
+		actor: 'guest' as const,
+		cancelledBy: 'guest-user',
+		cancelledAt: Date.now(),
+		reason: 'Changed plans',
+		kind: 'withdrawal' as const,
+		refundPercentage: null,
+		emailIds: { guest: existingEmailId }
+	};
+	const ids = await legacy.run(async (ctx) => [
+		await ctx.db.insert('bookings', {
+			...data,
+			status: 'cancelled',
+			cancellation,
+			requestEmailIds: { guest: 'request-guest', host: 'request-host' },
+			confirmationEmailId: 'confirmation-guest',
+			hostConfirmationEmailId: 'confirmation-host',
+			expirationEmailId: 'expiration-guest'
+		}),
+		await ctx.db.insert('bookings', data)
+	]);
+	const before = await legacy.run(async (ctx) =>
+		Promise.all(ids.map((bookingId) => ctx.db.get('bookings', bookingId)))
+	);
+	vi.mocked(fetch).mockClear();
+	const migration = internal.migrations.removeBookingEmailIds.removeBookingEmailIds;
+	for (let run = 0; run < 2; run++) {
+		let result = await legacy.mutation(migration, {
+			cursor: null,
+			batchSize: 1,
+			oneBatchOnly: true,
+			dryRun: false
+		});
+		let processed = result.processed;
+		while (!result.isDone) {
+			result = await legacy.mutation(migration, {
+				cursor: result.continueCursor,
+				batchSize: 1,
+				oneBatchOnly: true,
+				dryRun: false
+			});
+			expect(result.processed).toBeLessThanOrEqual(1);
+			processed += result.processed;
+		}
+		expect(processed).toBe(2);
+	}
+	const after = await legacy.run(async (ctx) =>
+		Promise.all(ids.map((bookingId) => ctx.db.get('bookings', bookingId)))
+	);
+	const {
+		requestEmailIds: _requestIds,
+		confirmationEmailId: _confirmationId,
+		hostConfirmationEmailId: _hostId,
+		expirationEmailId: _expirationId,
+		...expected
+	} = before[0] ?? {};
+	expect(after[0]).toEqual(expected);
+	expect(after[1]).toEqual(before[1]);
+	expect(after[0]?.cancellation).toEqual(cancellation);
+	expect(fetch).not.toHaveBeenCalled();
+	expect(await legacy.run((ctx) => ctx.db.system.query('_scheduled_functions').take(1))).toEqual(
+		[]
+	);
+});
+
+test.each([false, true])(
+	'instant bookings confirm immediately and notify both parties (signed in: %s)',
+	async (signedIn) => {
+		const { t, args, accommodationId, host, drain } = await setup();
+		await t.run((ctx) =>
+			ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' })
+		);
+		const guest = signedIn
+			? t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' })
+			: t;
+		const id = await guest.mutation(create, { ...args, expectedBookingMode: 'instant' });
+		const booking = await t.run((ctx) => ctx.db.get('bookings', id));
+		expect(booking).toMatchObject({
+			status: 'confirmed',
+			bookingMode: 'instant'
+		});
+		expect(booking?.ownerId).toBe(signedIn ? 'guest-user' : undefined);
+		expect(booking?.requestExpiresAt).toBeUndefined();
+		expect(fetch).not.toHaveBeenCalled();
+		await drain();
+		const messages = emails();
+		expect(messages).toHaveLength(2);
+		const guestEmail = messages.find((message) => message.to === 'guest@example.com');
+		const hostEmail = messages.find((message) => message.to === 'host@example.com');
+		expect(messages.filter((message) => message.to === 'guest@example.com')).toHaveLength(1);
+		expect(messages.filter((message) => message.to === 'host@example.com')).toHaveLength(1);
+		expect(messages.some((message) => message.subject === 'Your booking is confirmed')).toBe(false);
+		expect(guestEmail.subject).toBe('Your Instant Booking is confirmed');
+		expect(guestEmail.text).toContain('confirmed immediately');
+		expect(hostEmail.text).toContain('no approval is required');
+		expect(hostEmail.text).toContain('+381 64 1234567');
+		expect(hostEmail.text).toContain('Late arrival');
+		expect(hostEmail.reply_to).toEqual(['guest@example.com']);
+		expect(hostEmail.text).not.toContain('/find-booking');
+		const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
+		await expect(account.mutation(updateStatus, { id, status: 'confirmed' })).rejects.toMatchObject(
+			{ data: { code: 'INVALID_BOOKING_STATUS' } }
+		);
+		vi.setSystemTime(new Date('2026-10-03T12:00:00Z'));
+		await t.mutation(expire, {});
+		expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.status).toBe('confirmed');
+		await drain();
+		expect(emails()).toHaveLength(2);
+	}
+);
+
+test('instant booking sends only the host notice when guest and host share an email address', async () => {
+	const { t, args, accommodationId, drain } = await setup();
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	await t.mutation(create, {
+		...args,
+		email: ' HOST@EXAMPLE.COM ',
+		expectedBookingMode: 'instant'
+	});
+	await drain();
+	expect(emails()).toHaveLength(1);
+	expect(emails()[0]).toMatchObject({
+		to: 'host@example.com',
+		subject: 'New confirmed Instant Booking for your accommodation'
+	});
+	expect(emails()[0].text).toContain('no approval is required');
+});
+
+test('mode changes and missing instant consent cannot silently confirm a request', async () => {
+	const { t, args, accommodationId } = await setup();
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	for (const expectedBookingMode of ['request', undefined] as const) {
+		await expect(t.mutation(create, { ...args, expectedBookingMode })).rejects.toMatchObject({
+			data: { code: 'BOOKING_MODE_CHANGED' }
+		});
+	}
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'request' }));
+	await expect(
+		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+	).rejects.toMatchObject({ data: { code: 'BOOKING_MODE_CHANGED' } });
+	expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
+	expect(fetch).not.toHaveBeenCalled();
+});
+
+test('changing the listing mode leaves existing pending requests under host approval', async () => {
+	const { t, args, accommodationId, host, drain } = await setup();
+	const id = await t.mutation(create, args);
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.status).toBe('pending');
+	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
+	await account.mutation(updateStatus, { id, status: 'confirmed' });
+	await drain();
+	expect(
+		emails().find((message) => message.subject === 'Your booking is confirmed').text
+	).toContain('Your host has accepted');
+});
+
+test('confirmed dates block instant booking, allow same-day turnover, and reopen after cancellation', async () => {
+	const { t, args, accommodationId, host, drain } = await setup();
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	const instantArgs = { ...args, expectedBookingMode: 'instant' as const };
+	const id = await t.mutation(create, instantArgs);
+	await expect(t.mutation(create, instantArgs)).rejects.toMatchObject({
+		data: { code: 'BOOKING_DATES_UNAVAILABLE' }
+	});
+	await t.mutation(create, {
+		...instantArgs,
+		checkInDate: '2026-11-05',
+		checkOutDate: '2026-11-08'
+	});
+	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
+	await account.mutation(updateStatus, { id, status: 'cancelled' });
+	const replacement = await t.mutation(create, instantArgs);
+	expect((await t.run((ctx) => ctx.db.get('bookings', replacement)))?.status).toBe('confirmed');
+	await drain();
+});
+
+test('overlapping pending requests cannot both be confirmed', async () => {
+	const { t, args, host, drain } = await setup();
+	const first = await t.mutation(create, args);
+	const second = await t.mutation(create, args);
+	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
+	await account.mutation(updateStatus, { id: first, status: 'confirmed' });
+	await expect(
+		account.mutation(updateStatus, { id: second, status: 'confirmed' })
+	).rejects.toMatchObject({ data: { code: 'BOOKING_DATES_UNAVAILABLE' } });
+	expect((await t.run((ctx) => ctx.db.get('bookings', second)))?.status).toBe('pending');
+	await drain();
+});
+
+test('concurrent instant submissions cannot reserve the same dates twice', async () => {
+	const { t, args, accommodationId, drain } = await setup();
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	const attempts = await Promise.allSettled([
+		t.mutation(create, { ...args, expectedBookingMode: 'instant' }),
+		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+	]);
+	expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1);
+	const failure = attempts.find((attempt) => attempt.status === 'rejected');
+	expect(failure).toMatchObject({ reason: { data: { code: 'BOOKING_DATES_UNAVAILABLE' } } });
+	expect(await t.run((ctx) => ctx.db.query('bookings').take(2))).toHaveLength(1);
+	await drain();
+	expect(emails()).toHaveLength(2);
+});
+
+test('availability fails closed if the bounded index read is incomplete', async () => {
+	const { t, args, accommodationId, drain } = await setup();
+	const request = await t.mutation(create, args);
+	await t.run(async (ctx) => {
+		const booking = await ctx.db.get('bookings', request);
+		if (!booking) throw new Error('Test booking not found');
+		const { _id, _creationTime, ...details } = booking;
+		for (let index = 0; index <= BOOKINGS_CONFIG.AVAILABILITY_CHECK_LIMIT; index++) {
+			await ctx.db.insert('bookings', {
+				...details,
+				status: 'confirmed',
+				checkInDate: '2026-12-01',
+				checkOutDate: '2026-12-05',
+				cancellationTerms: bookingCancellationTerms('2026-12-01', '2026-12-05')
+			});
+		}
+		await ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' });
+	});
+	await expect(
+		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+	).rejects.toMatchObject({ data: { code: 'BOOKING_AVAILABILITY_UNAVAILABLE' } });
+	await expect(t.query(publicCalendar, { id: accommodationId })).rejects.toMatchObject({
+		data: { code: 'BOOKING_AVAILABILITY_UNAVAILABLE' }
+	});
+	await drain();
+	expect(emails()).toHaveLength(2);
+});
+
+test('instant host notification enqueue failure rolls back the reservation and guest email', async () => {
+	const { t, args, accommodationId } = await setup();
+	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
+	const emailModule =
+		await import('../../src/convex/tables/bookings/emails/sendBookingConfirmationEmail');
+	const original = emailModule.sendBookingConfirmationEmail;
+	vi.spyOn(emailModule, 'sendBookingConfirmationEmail').mockImplementation(async (ctx, data) => {
+		if (data.hostEmail) throw new Error('Host enqueue failed');
+		return original(ctx, data);
+	});
+	await expect(t.mutation(create, { ...args, expectedBookingMode: 'instant' })).rejects.toThrow(
+		'Host enqueue failed'
+	);
+	expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
+	expect(await t.run((ctx) => ctx.db.system.query('_scheduled_functions').take(1))).toEqual([]);
+	expect(fetch).not.toHaveBeenCalled();
+});
+
 test('creating an anonymous request atomically queues separate guest and host emails', async () => {
 	const { t, args, drain } = await setup();
 	const bookingId = await t.mutation(create, args);
 	const queued = await t.run((ctx) => ctx.db.get('bookings', bookingId));
-	expect(queued?.requestEmailIds).toEqual({ guest: expect.any(String), host: expect.any(String) });
+	expect(queued?.status).toBe('pending');
+	for (const field of [
+		'requestEmailIds',
+		'confirmationEmailId',
+		'hostConfirmationEmailId',
+		'expirationEmailId'
+	])
+		expect(queued).not.toHaveProperty(field);
 	expect(fetch).not.toHaveBeenCalled();
 	await drain();
 	const messages = emails();
@@ -151,7 +666,6 @@ test('creating an anonymous request atomically queues separate guest and host em
 	}
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	expect(booking?.status).toBe('pending');
-	expect(await emailStatuses(t, booking?.requestEmailIds)).toEqual({ guest: 'sent', host: 'sent' });
 });
 
 test('signed-in requests notify the booking contact and actual property host', async () => {
@@ -248,10 +762,9 @@ test('transient failure retries the same payload and key, while successful deliv
 			accommodationName: accommodation.name
 		})
 	);
-	expect(emailId).toBe(booking.requestEmailIds?.guest);
 	await drain();
 	expect(fetch).toHaveBeenCalledTimes(2);
-	expect(await emailStatuses(t, booking.requestEmailIds)).toEqual({ guest: 'sent', host: 'sent' });
+	expect(await emailStatuses(t, { guest: emailId })).toEqual({ guest: 'sent' });
 });
 
 test('a host enqueue failure rolls back the booking, guest enqueue and owner aggregate', async () => {
@@ -270,7 +783,6 @@ test('a host enqueue failure rolls back the booking, guest enqueue and owner agg
 	const page = await guest.query(api.tables.bookings.queries.fetchMyBookings.fetchMyBookings, {
 		paginationOpts: { cursor: null, numItems: 10 }
 	});
-	expect(page.total).toBe(0);
 	expect(page.items).toEqual([]);
 	expect(fetch).not.toHaveBeenCalled();
 });
@@ -304,7 +816,6 @@ test.each([false, true])(
 		await account.mutation(updateStatus, { id: bookingId, status: 'confirmed' });
 		const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 		expect(booking?.status).toBe('confirmed');
-		expect(booking?.confirmationEmailId).toEqual(expect.any(String));
 		expect(fetch).not.toHaveBeenCalled();
 		await expect(
 			account.mutation(updateStatus, { id: bookingId, status: 'confirmed' })
@@ -329,9 +840,6 @@ test.each([false, true])(
 		expect(messages[0].html).not.toContain('<img src=x');
 		expect(messages[0].html).toContain('&lt;script&gt;');
 		expect(messages[0].html).toContain('&lt;img');
-		expect(await emailStatuses(t, { guest: booking?.confirmationEmailId })).toEqual({
-			guest: 'sent'
-		});
 	}
 );
 
@@ -347,7 +855,6 @@ test('failed confirmation enqueue leaves the request pending and allows a later 
 	).rejects.toThrow('Missing EMAIL_FROM');
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	expect(booking?.status).toBe('pending');
-	expect(booking?.confirmationEmailId).toBeUndefined();
 	expect(fetch).not.toHaveBeenCalled();
 	vi.stubEnv('EMAIL_FROM', 'test@example.com');
 	await account.mutation(updateStatus, { id: bookingId, status: 'confirmed' });
@@ -374,9 +881,6 @@ test('unauthorized confirmation and declining a request do not queue a confirmat
 	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING_STATUS' } });
 	await drain();
 	expect(fetch).not.toHaveBeenCalled();
-	expect(
-		(await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.confirmationEmailId
-	).toBeUndefined();
 });
 
 test('confirmation delivery retries asynchronously without undoing the confirmed booking', async () => {
@@ -396,9 +900,6 @@ test('confirmation delivery retries asynchronously without undoing the confirmed
 	);
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	expect(booking?.status).toBe('confirmed');
-	expect(await emailStatuses(t, { guest: booking?.confirmationEmailId })).toEqual({
-		guest: 'sent'
-	});
 });
 
 test.each([false, true])(
@@ -423,8 +924,7 @@ test.each([false, true])(
 		const expired = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 		expect(expired).toMatchObject({
 			status: 'expired',
-			expiredAt: original.requestExpiresAt,
-			expirationEmailId: expect.any(String)
+			expiredAt: original.requestExpiresAt
 		});
 		expect(expired?.cancellation).toBeUndefined();
 		expect(expired?.cancellationTerms).toEqual(original.cancellationTerms);
@@ -446,14 +946,10 @@ test.each([false, true])(
 		expect(messages[0].text).toContain('Europe/Belgrade');
 		expect(messages[0].text).toContain(`/book-confirmation/${bookingId}`);
 		expect(messages[0].text).toContain('/find-booking');
-		expect(await emailStatuses(t, { guest: expired?.expirationEmailId })).toEqual({
-			guest: 'sent'
-		});
 		if (signedIn) {
 			const page = await guest.query(api.tables.bookings.queries.fetchMyBookings.fetchMyBookings, {
 				paginationOpts: { cursor: null, numItems: 10 }
 			});
-			expect(page.total).toBe(1);
 			expect(page.items[0].status).toBe('expired');
 		}
 	}
@@ -493,6 +989,9 @@ test('the exact deadline blocks host actions and guest withdrawal before the cro
 test('near-term requests expire at frozen check-in and initialize legacy deadlines without changing other statuses', async () => {
 	vi.setSystemTime(new Date('2026-10-01T11:00:00Z'));
 	const { t, args, accommodationId, drain } = await setup();
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, { sameDayReservation: true })
+	);
 	const bookingId = await t.mutation(create, {
 		...args,
 		checkInDate: '2026-10-01',
@@ -548,9 +1047,6 @@ test('expiration enqueue failure rolls back the status and can recover on the ne
 	vi.stubEnv('EMAIL_FROM', '');
 	await expect(t.mutation(expire, {})).rejects.toThrow('Missing EMAIL_FROM');
 	expect((await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.status).toBe('pending');
-	expect(
-		(await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.expirationEmailId
-	).toBeUndefined();
 	vi.stubEnv('EMAIL_FROM', 'test@example.com');
 	await t.run((ctx) => ctx.db.delete('accommodations', accommodationId));
 	vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 503 }));
@@ -584,9 +1080,7 @@ test('expiration batches and continuations process legacy requests once without 
 	await drain();
 	const bookings = await t.run((ctx) => ctx.db.query('bookings').take(count + 1));
 	expect(bookings).toHaveLength(count);
-	expect(
-		bookings.every((booking) => booking.status === 'expired' && booking.expirationEmailId)
-	).toBe(true);
+	expect(bookings.every((booking) => booking.status === 'expired')).toBe(true);
 	expect(emails()).toHaveLength(count);
 	expect(await t.mutation(expire, {})).toBe(0);
 	await drain();

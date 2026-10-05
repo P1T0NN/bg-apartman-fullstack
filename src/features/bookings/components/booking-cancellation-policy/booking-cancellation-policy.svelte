@@ -18,7 +18,7 @@
 
 	// TYPES
 	import type { CancellationPolicy } from '@/shared/features/accommodations/types/cancellationPolicyTypes.js';
-	import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+	import type { BookingStatus } from '@/shared/features/bookings/types/bookingTypes.js';
 
 	let {
 		policy,
@@ -27,6 +27,8 @@
 		booked = false,
 		status,
 		compact = false,
+		currentOnly = false,
+		staticPolicy = false,
 		timeline = false,
 		invalidDate = false
 	}: {
@@ -36,6 +38,8 @@
 		booked?: boolean;
 		status?: BookingStatus;
 		compact?: boolean;
+		currentOnly?: boolean;
+		staticPolicy?: boolean;
 		timeline?: boolean;
 		invalidDate?: boolean;
 	} = $props();
@@ -63,6 +67,8 @@
 	);
 
 	onMount(() => {
+		if (staticPolicy) return;
+
 		const refresh = () => {
 			now = Date.now();
 		};
@@ -102,107 +108,131 @@
 		{m['BookingsFeature.BookingCancellationPolicy.title']()}
 	</h3>
 
-	{#if booked}
-		<p class="text-xs text-muted-foreground">
-			{m['BookingsFeature.BookingCancellationPolicy.recordedTerms']()}
-		</p>
-	{/if}
-
-	{#if invalidDate}
-		<p role="status">
-			{m['BookingsFeature.BookingCancellationPolicy.invalidDate']()}
-		</p>
-	{:else if checkInAt !== undefined && now !== undefined && now >= checkInAt && active}
-		<p class="font-medium">
-			{m['BookingsFeature.BookingCancellationPolicy.checkInPassed']()}
-		</p>
-	{:else if currentRefund !== null}
-		<p class="font-medium" aria-live="polite">
-			{m['BookingsFeature.BookingCancellationPolicy.cancelNow']({
-				refund: m[`BookingsFeature.BookingCancellationPolicy.refund${currentRefund}`]()
-			})}
-		</p>
-	{:else}
-		<p class="font-medium">
-			{periods.length === 1
-				? m['BookingsFeature.BookingCancellationPolicy.fullRefund']()
-				: m['BookingsFeature.BookingCancellationPolicy.customRefund']()}
-		</p>
-	{/if}
-
-	{#if compact && currentDeadline !== undefined && currentPeriod}
-		<p class="text-muted-foreground">
-			{currentPeriod.untilHours === 0
-				? m['BookingsFeature.BookingCancellationPolicyItem.beforeCheckIn']({
-						date: formatZonedDateTime(currentDeadline, getLocale(), timeZone)
-					})
-				: m['BookingsFeature.BookingCancellationPolicyItem.until']({
-						date: formatZonedDateTime(currentDeadline, getLocale(), timeZone)
-					})}
-		</p>
-
-		<p class={cn('text-xs text-muted-foreground', timeline && 'flex items-center gap-2')}>
-			{#if timeline}
-				<span class="icon-[lucide--clock-3] size-4 shrink-0" aria-hidden="true"></span>
-			{/if}
-			{m['BookingsFeature.BookingCancellationPolicy.propertyTime']({ timeZone })}
-		</p>
-	{/if}
-
-	{#if !timeline || compact}
-		<p class="text-muted-foreground">
-			{booked
-				? m['BookingsFeature.BookingCancellationPolicy.noPaymentCollected']()
-				: m['BookingsFeature.BookingCancellationPolicy.noPaymentRequired']()}
-		</p>
-	{/if}
-
-	{#if !compact}
-		<p class={cn('text-xs text-muted-foreground', timeline && 'flex items-center gap-2')}>
-			{#if timeline}
-				<span class="icon-[lucide--clock-3] size-4 shrink-0" aria-hidden="true"></span>
-			{/if}
-			{m['BookingsFeature.BookingCancellationPolicy.propertyTime']({ timeZone })}
-		</p>
-
-		{#if checkInAt === undefined && !invalidDate}
+	{#if currentOnly}
+		{#if invalidDate}
+			<p role="status">{m['BookingsFeature.BookingCancellationPolicy.invalidDate']()}</p>
+		{:else if checkInAt === undefined}
 			<p class="text-muted-foreground">
 				{m['BookingsFeature.BookingCancellationPolicy.selectDates']()}
 			</p>
-		{/if}
-
-		<ul class={cn('divide-y border-y', timeline && 'ml-2 divide-y-0 border-y-0 pt-2')}>
-			{#each periods as period (period.untilHours)}
+		{:else if now !== undefined && now >= checkInAt && active}
+			<p role="status">{m['BookingsFeature.BookingCancellationPolicy.checkInPassed']()}</p>
+		{:else if currentPeriod}
+			<ul aria-live="polite" aria-atomic="true">
 				<BookingCancellationPolicyItem
-					{period}
+					period={currentPeriod}
 					{checkInAt}
 					{timeZone}
-					{timeline}
-					current={currentRefund === period.percentage}
-					now={active ? now : undefined}
+					current
+					{now}
 				/>
-			{/each}
-		</ul>
-
-		<p class="text-xs text-muted-foreground">
-			{m['BookingsFeature.BookingCancellationPolicy.beforeCheckInOnly']()}
-		</p>
-
-		{#if checkInAt === undefined}
+			</ul>
+		{/if}
+	{:else}
+		{#if booked}
 			<p class="text-xs text-muted-foreground">
-				{m['BookingsFeature.BookingCancellationPolicy.elapsedHours']()}
+				{m['BookingsFeature.BookingCancellationPolicy.recordedTerms']()}
 			</p>
 		{/if}
-	{/if}
 
-	{#if timeline && !compact}
-		<div class="flex items-center gap-3 rounded-lg bg-muted/50 p-4 text-xs text-muted-foreground">
-			<span class="icon-[lucide--info] size-4 shrink-0" aria-hidden="true"></span>
+		{#if invalidDate}
+			<p role="status">
+				{m['BookingsFeature.BookingCancellationPolicy.invalidDate']()}
+			</p>
+		{:else if checkInAt !== undefined && now !== undefined && now >= checkInAt && active}
+			<p class="font-medium">
+				{m['BookingsFeature.BookingCancellationPolicy.checkInPassed']()}
+			</p>
+		{:else if currentRefund !== null}
+			<p class="font-medium" aria-live="polite">
+				{m['BookingsFeature.BookingCancellationPolicy.cancelNow']({
+					refund: m[`BookingsFeature.BookingCancellationPolicy.refund${currentRefund}`]()
+				})}
+			</p>
+		{:else}
+			<p class="font-medium">
+				{periods.length === 1
+					? m['BookingsFeature.BookingCancellationPolicy.fullRefund']()
+					: m['BookingsFeature.BookingCancellationPolicy.customRefund']()}
+			</p>
+		{/if}
+
+		{#if compact && currentDeadline !== undefined && currentPeriod}
+			<p class="text-muted-foreground">
+				{currentPeriod.untilHours === 0
+					? m['BookingsFeature.BookingCancellationPolicyItem.beforeCheckIn']({
+							date: formatZonedDateTime(currentDeadline, getLocale(), timeZone)
+						})
+					: m['BookingsFeature.BookingCancellationPolicyItem.until']({
+							date: formatZonedDateTime(currentDeadline, getLocale(), timeZone)
+						})}
+			</p>
+
+			<p class={cn('text-xs text-muted-foreground', timeline && 'flex items-center gap-2')}>
+				{#if timeline}
+					<span class="icon-[lucide--clock-3] size-4 shrink-0" aria-hidden="true"></span>
+				{/if}
+				{m['BookingsFeature.BookingCancellationPolicy.propertyTime']({ timeZone })}
+			</p>
+		{/if}
+
+		{#if !timeline || compact}
 			<p class="text-muted-foreground">
 				{booked
 					? m['BookingsFeature.BookingCancellationPolicy.noPaymentCollected']()
 					: m['BookingsFeature.BookingCancellationPolicy.noPaymentRequired']()}
 			</p>
-		</div>
+		{/if}
+
+		{#if !compact}
+			<p class={cn('text-xs text-muted-foreground', timeline && 'flex items-center gap-2')}>
+				{#if timeline}
+					<span class="icon-[lucide--clock-3] size-4 shrink-0" aria-hidden="true"></span>
+				{/if}
+				{staticPolicy
+					? m['BookingsFeature.BookingCancellationPolicy.policyTime']({ timeZone })
+					: m['BookingsFeature.BookingCancellationPolicy.propertyTime']({ timeZone })}
+			</p>
+
+			{#if checkInAt === undefined && !invalidDate && !staticPolicy}
+				<p class="text-muted-foreground">
+					{m['BookingsFeature.BookingCancellationPolicy.selectDates']()}
+				</p>
+			{/if}
+
+			<ul class={cn('divide-y border-y', timeline && 'ml-2 divide-y-0 border-y-0 pt-2')}>
+				{#each periods as period (period.untilHours)}
+					<BookingCancellationPolicyItem
+						{period}
+						{checkInAt}
+						{timeZone}
+						{timeline}
+						current={currentRefund === period.percentage}
+						now={active ? now : undefined}
+					/>
+				{/each}
+			</ul>
+
+			<p class="text-xs text-muted-foreground">
+				{m['BookingsFeature.BookingCancellationPolicy.beforeCheckInOnly']()}
+			</p>
+
+			{#if checkInAt === undefined}
+				<p class="text-xs text-muted-foreground">
+					{m['BookingsFeature.BookingCancellationPolicy.elapsedHours']()}
+				</p>
+			{/if}
+		{/if}
+
+		{#if timeline && !compact}
+			<div class="flex items-center gap-3 rounded-lg bg-muted/50 p-4 text-xs text-muted-foreground">
+				<span class="icon-[lucide--info] size-4 shrink-0" aria-hidden="true"></span>
+				<p class="text-muted-foreground">
+					{booked
+						? m['BookingsFeature.BookingCancellationPolicy.noPaymentCollected']()
+						: m['BookingsFeature.BookingCancellationPolicy.noPaymentRequired']()}
+				</p>
+			</div>
+		{/if}
 	{/if}
 </section>

@@ -1,8 +1,8 @@
-// CONFIG
-import { BOOKING_STATUSES } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
+// DATA
+import { BOOKING_STATUSES } from '../../../../shared/features/bookings/data/bookingsData.js';
 
 // TYPES
-import type { BookingStatus } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
+import type { BookingStatus } from '../../../../shared/features/bookings/types/bookingTypes.js';
 
 export type BookingFilters = {
 	status?: BookingStatus;

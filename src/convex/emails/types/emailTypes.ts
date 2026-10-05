@@ -75,6 +75,7 @@ export type BookingRequestEmailData = {
 		| 'adults'
 		| 'children'
 		| 'cancellationTerms'
+		| 'bookingMode'
 	>;
 };
 
@@ -108,3 +109,10 @@ export type BookingGuestEmailBodyData = Pick<
 	| 'url'
 	| 'findBookingUrl'
 >;
+
+export type BookingConfirmationEmailBodyData = BookingGuestEmailBodyData & {
+	instant: boolean;
+	host: boolean;
+	phone: string;
+	specialRequests?: string;
+};

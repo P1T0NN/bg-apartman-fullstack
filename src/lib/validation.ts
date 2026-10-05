@@ -54,6 +54,12 @@ z.config({
 						return m['ValidationMessages.pastStayDate']();
 					case 'STAY_DATE_ORDER':
 						return m['ValidationMessages.stayDateOrder']();
+					case 'SAME_DAY_RESERVATION_DISABLED':
+						return m['BackendMessages.sameDayReservationDisabled']();
+					case 'BOOKING_START_PASSED':
+						return m['BackendMessages.bookingStartPassed']();
+					case 'BOOKING_CHECK_IN_TIME_UNAVAILABLE':
+						return m['BackendMessages.bookingCheckInTimeUnavailable']();
 					case 'STAY_BELOW_MINIMUM':
 						return m['ValidationMessages.minimumStay']({ count: issue.params.count });
 					case 'STAY_ABOVE_MAXIMUM':

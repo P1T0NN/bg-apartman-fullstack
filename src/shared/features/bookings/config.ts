@@ -1,5 +1,11 @@
-﻿export const BOOKINGS_CONFIG = {
+﻿// TYPES
+import type { BookingSort } from './types/bookingTypes.js';
+
+export const DEFAULT_BOOKING_SORT: BookingSort = 'newest';
+
+export const BOOKINGS_CONFIG = {
 	RECOVERY_TOKEN_LIFETIME_MS: 15 * 60 * 1000,
+	AVAILABILITY_CHECK_LIMIT: 1000,
 	REQUEST_RESPONSE_WINDOW_MS: 24 * 60 * 60 * 1000,
 	REQUEST_EXPIRATION_INTERVAL_MINUTES: 5,
 	REQUEST_EXPIRATION_BATCH_SIZE: 25,

@@ -11,7 +11,7 @@
 	import { m } from '@/lib/paraglide/messages';
 
 	// TYPES
-	import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+	import type { BookingStatus } from '@/shared/features/bookings/types/bookingTypes.js';
 
 	const sections = [
 		{ id: 'short-version', label: m['HelpBookingPage.summaryTitle']() },

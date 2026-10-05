@@ -2,7 +2,13 @@
 	// SVELTEKIT IMPORTS
 	import { page } from '$app/state';
 
+	// LIBRARIES
+	import { api } from '@convex/_generated/api';
+	import { m } from '@/lib/paraglide/messages';
+
 	// COMPONENTS
+	import AccommodationReservationRulesField from '@/features/accommodations/components/accommodation-reservation-rules/accommodation-reservation-rules-field.svelte';
+	import AccommodationBookingModeField from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode-field.svelte';
 	import Form from '@/components/ui/custom-components/form/form.svelte';
 	import FormTextarea from '@/components/ui/custom-components/form/form-textarea.svelte';
 	import AccommodationAmenities from '@/features/accommodations/components/accommodation-amenities/accommodation-amenities.svelte';
@@ -14,10 +20,6 @@
 	import { Button } from '@/components/ui/button/index.js';
 	import MyAccommodationTabListingSaveButton from './my-accommodation-tab-listing-save-button.svelte';
 
-	// CONFIG
-	import { api } from '@convex/_generated/api';
-	import { m } from '@/lib/paraglide/messages';
-
 	// HOOKS
 	import { useFormChanges } from '@/hooks/useFormChanges.svelte.js';
 
@@ -26,8 +28,13 @@
 	import type { EditAccommodationListingSection } from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type { PreviewFile } from '@/features/uploadFile/types/uploadFileTypes.js';
 
-	let { section, onclose }: { section: EditAccommodationListingSection; onclose: () => void } =
-		$props();
+	let {
+		section,
+		onclose
+	}: {
+		section: EditAccommodationListingSection;
+		onclose: () => void;
+	} = $props();
 
 	// SAFETY: Convex validates the untrusted route ID before running the mutation.
 	const accommodationId = $derived(page.params.id as Id<'accommodations'>);
@@ -60,16 +67,19 @@
 	const ruleToggles = $derived([
 		{
 			name: 'smokingAllowed',
+			icon: 'icon-[lucide--cigarette]',
 			label: m['AddAccommodationPage.AddAccommodationFormRules.smokingAllowed'](),
 			description: m['AddAccommodationPage.AddAccommodationFormRules.smokingAllowedHint']()
 		},
 		{
 			name: 'petsAllowed',
+			icon: 'icon-[lucide--paw-print]',
 			label: m['AddAccommodationPage.AddAccommodationFormRules.petsAllowed'](),
 			description: m['AddAccommodationPage.AddAccommodationFormRules.petsAllowedHint']()
 		},
 		{
 			name: 'partiesAllowed',
+			icon: 'icon-[lucide--party-popper]',
 			label: m['AddAccommodationPage.AddAccommodationFormRules.partiesAllowed'](),
 			description: m['AddAccommodationPage.AddAccommodationFormRules.partiesAllowedHint']()
 		}
@@ -129,9 +139,13 @@
 
 			{#if section.id === 'rules'}
 				<Field.Group>
+					<AccommodationBookingModeField {context} />
 					<AccommodationTimeZone {context} />
+					<AccommodationReservationRulesField {context} />
+
 					{#each ruleToggles as rule (rule.name)}
 						<AccommodationRuleCard
+							icon={rule.icon}
 							label={rule.label}
 							description={rule.description}
 							checked={context.checkboxValue(rule.name)}

@@ -1,6 +1,13 @@
 // TYPES
 import type { Doc } from '../../../../convex/_generated/dataModel.js';
 
+// DATA
+import type { BOOKING_SORTS, BOOKING_STATUSES } from '../data/bookingsData.js';
+
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+export type BookingSort = (typeof BOOKING_SORTS)[number];
+
 /** Aggregate key for per-owner booking totals. */
 export type BookingOwnerAggregateKey = number;
 
@@ -9,6 +16,19 @@ export type BookingRecoveryAccess = Pick<Doc<'bookingRecoveryTokens'>, 'email' |
 export type BookingCancellationTerms = Doc<'bookings'>['cancellationTerms'];
 
 export type BookingCancellation = NonNullable<Doc<'bookings'>['cancellation']>;
+
+export type BookingCheckoutValues = Pick<
+	Doc<'bookings'>,
+	| 'checkInDate'
+	| 'checkOutDate'
+	| 'adults'
+	| 'children'
+	| 'firstName'
+	| 'lastName'
+	| 'email'
+	| 'phone'
+	| 'specialRequests'
+>;
 
 export type Booking = Pick<
 	Doc<'bookings'>,

@@ -1,7 +1,4 @@
 <script lang="ts">
-	// SVELTEKIT IMPORTS
-	import { goto } from '$app/navigation';
-
 	// LIBRARIES
 	import { useQuery } from 'convex-svelte';
 	import { api } from '@convex/_generated/api';
@@ -25,6 +22,7 @@
 	import { useClaimBooking } from '@/features/bookings/hooks/useClaimBooking.svelte.js';
 
 	// UTILS
+	import { gotoParaglide } from '@/utils/gotoParaglide.js';
 	import { toastMessage } from '@/utils/toastMessage.js';
 	import { getBackendErrorMessage } from '@/utils/getBackendErrorMessage.js';
 	import { formatDate } from '@/shared/utils/date.js';
@@ -45,7 +43,7 @@
 
 			toastMessage({ type: 'success', message: m['ClaimBookingPage.ClaimBookingContent.added']() });
 
-			await goto(PROTECTED_PAGE_ENDPOINTS.MY_BOOKINGS);
+			await gotoParaglide(PROTECTED_PAGE_ENDPOINTS.MY_BOOKINGS);
 		} catch (error) {
 			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
 		}
@@ -53,7 +51,7 @@
 
 	async function recover() {
 		claim.clear();
-		await goto(UNPROTECTED_PAGE_ENDPOINTS.FIND_BOOKING);
+		await gotoParaglide(UNPROTECTED_PAGE_ENDPOINTS.FIND_BOOKING);
 	}
 </script>
 

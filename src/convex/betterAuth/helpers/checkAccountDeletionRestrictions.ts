@@ -35,6 +35,6 @@ export async function checkAccountDeletionRestrictions(
 		.first();
 
 	if (accommodation) return 'ACCOUNT_HAS_ACCOMMODATIONS' as const;
-	
+
 	return null;
 }

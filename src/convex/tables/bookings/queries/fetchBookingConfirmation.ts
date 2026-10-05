@@ -19,7 +19,7 @@ export const fetchBookingConfirmation = query({
 		if (!booking) return null;
 
 		const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
-		if (!accommodation) return null;
+		if (!accommodation || accommodation.status === 'deleted') return null;
 
 		return {
 			status: booking.status,

@@ -1,5 +1,8 @@
 <script lang="ts">
 	// COMPONENTS
+	import AccommodationReservationRulesField from '@/features/accommodations/components/accommodation-reservation-rules/accommodation-reservation-rules-field.svelte';
+
+	import AccommodationBookingModeField from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode-field.svelte';
 	import AddAccommodationContinueButton from './add-accommodation-continue-button.svelte';
 	import AccommodationRuleCard from '@/features/accommodations/components/accommodation-rule-card/accommodation-rule-card.svelte';
 	import AccommodationTimeZone from '@/features/accommodations/components/accommodation-time-zone/accommodation-time-zone.svelte';
@@ -61,16 +64,19 @@
 	const rules = $derived([
 		{
 			name: 'smokingAllowed',
+			icon: 'icon-[lucide--cigarette]',
 			label: m['AddAccommodationPage.AddAccommodationFormRules.smokingAllowed'](),
 			description: m['AddAccommodationPage.AddAccommodationFormRules.smokingAllowedHint']()
 		},
 		{
 			name: 'petsAllowed',
+			icon: 'icon-[lucide--paw-print]',
 			label: m['AddAccommodationPage.AddAccommodationFormRules.petsAllowed'](),
 			description: m['AddAccommodationPage.AddAccommodationFormRules.petsAllowedHint']()
 		},
 		{
 			name: 'partiesAllowed',
+			icon: 'icon-[lucide--party-popper]',
 			label: m['AddAccommodationPage.AddAccommodationFormRules.partiesAllowed'](),
 			description: m['AddAccommodationPage.AddAccommodationFormRules.partiesAllowedHint']()
 		}
@@ -78,7 +84,9 @@
 </script>
 
 <Field.Group>
+	<AccommodationBookingModeField {context} />
 	<AccommodationTimeZone {context} />
+	<AccommodationReservationRulesField {context} />
 
 	<div class="flex flex-row gap-4">
 		{#each checkInFields as field (field.name)}
@@ -102,6 +110,7 @@
 
 	{#each rules as rule (rule.name)}
 		<AccommodationRuleCard
+			icon={rule.icon}
 			label={rule.label}
 			description={rule.description}
 			checked={context.checkboxValue(rule.name)}

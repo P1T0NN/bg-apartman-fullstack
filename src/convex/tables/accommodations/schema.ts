@@ -47,6 +47,10 @@ export const accommodations = defineTable({
 	petsAllowed: v.boolean(),
 	partiesAllowed: v.boolean(),
 	houseRules: v.string(),
+	// Historical listings require host approval; new saves write the selected mode.
+	bookingMode: v.optional(literals('request', 'instant')),
+	// Required arrival-today setting, backfilled on legacy listings.
+	sameDayReservation: v.boolean(),
 	cancellationPolicy: v.union(
 		v.object({ version: v.literal(1), mode: v.literal('full_refund') }),
 		v.object({
@@ -58,7 +62,10 @@ export const accommodations = defineTable({
 			under24Hours: literals(100, 50, 0)
 		})
 	),
-	status: v.literal('published'),
+	status: literals('published', 'unpublished', 'deleted'),
+	/** Set with `status: 'deleted'`; the tombstone keeps booking and review receipts resolvable. */
+	deletedAt: v.optional(v.number()),
+	deletedBy: v.optional(v.string()),
 	updatedAt: v.number() // Unix milliseconds; Convex supplies _creationTime.
 })
 	// Retained for _creationTime ordering; owner list queries sort newest first.

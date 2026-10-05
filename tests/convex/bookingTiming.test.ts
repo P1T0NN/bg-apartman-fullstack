@@ -51,6 +51,7 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 9000,
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -86,6 +87,8 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 			policy: customPolicy
 		};
 		const partial = {
+			stayType: 'overnight' as const,
+			pricePerDayUseMinor: null,
 			policy: preserved.policy,
 			timeZone: preserved.timeZone,
 			checkInStart: preserved.checkInStart,

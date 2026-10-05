@@ -8,6 +8,7 @@ import { authenticatedMutation } from '../../../builders/convexFunctionBuilders.
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { completeBooking } from '../helpers/completeBooking.js';
+import { checkBookingAvailability } from '../helpers/checkBookingAvailability.js';
 
 // EMAILS
 import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationEmail.js';
@@ -15,14 +16,14 @@ import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationE
 // UTILS
 import { calculateBookingRequestExpiry } from '../../../../shared/features/bookings/utils/calculateBookingRequestExpiry.js';
 
-// CONFIG
+// DATA
 import {
 	BOOKING_STATUSES,
 	BOOKING_STATUS_TRANSITIONS
-} from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
+} from '../../../../shared/features/bookings/data/bookingsData.js';
 
 // TYPES
-import type { BookingStatus } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
+import type { BookingStatus } from '../../../../shared/features/bookings/types/bookingTypes.js';
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
 /** Host lifecycle actions: confirm or decline a request, cancel or complete a confirmed stay. */
@@ -50,13 +51,14 @@ export const updateBookingStatus = authenticatedMutation({
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_REQUEST_EXPIRED' });
 
 		if (args.status === 'confirmed') {
+			await checkBookingAvailability(ctx, booking);
 			const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
-			const confirmationEmailId = await sendBookingConfirmationEmail(ctx, {
+			await sendBookingConfirmationEmail(ctx, {
 				bookingId: booking._id,
 				booking,
 				accommodationName: accommodation?.name ?? ''
 			});
-			await ctx.db.patch('bookings', args.id, { status: 'confirmed', confirmationEmailId });
+			await ctx.db.patch('bookings', args.id, { status: 'confirmed' });
 		} else if (args.status === 'completed')
 			await completeBooking(ctx, booking, getOwnerId(ctx.identity));
 		else await ctx.db.patch('bookings', args.id, { status: args.status });

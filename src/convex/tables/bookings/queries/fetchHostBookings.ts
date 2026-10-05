@@ -1,6 +1,10 @@
 // CONVEX
 import { authenticatedQuery } from '../../../builders/convexFunctionBuilders.js';
 
+// LIBRARIES
+import { literals } from 'convex-helpers/validators';
+import { v } from 'convex/values';
+
 // HELPERS
 import { enrichBookingPage } from '../helpers/enrichBookingPage.js';
 import { getHostBookingPage } from '../helpers/getHostBookingPage.js';
@@ -13,9 +17,15 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { listPageArgs } from '../../../validators/listPageArgs.js';
 import { hostBookingPage } from '../validators/bookingValidators.js';
 
-/** One indexed page scoped to the signed-in host's accommodations, with guest search and status filter. */
+// CONFIG
+import { BOOKING_SORTS } from '../../../../shared/features/bookings/data/bookingsData.js';
+
+/** One indexed page scoped to the signed-in host's accommodations, with guest search, status filter and date sort. */
 export const fetchHostBookings = authenticatedQuery({
-	args: listPageArgs,
+	args: {
+		...listPageArgs,
+		sort: v.optional(literals(...BOOKING_SORTS))
+	},
 	returns: hostBookingPage,
 	handler: async (ctx, args) => {
 		const search = args.search?.trim() || undefined;
@@ -26,7 +36,8 @@ export const fetchHostBookings = authenticatedQuery({
 			hostId,
 			paginationOpts: args.paginationOpts,
 			search,
-			filters
+			filters,
+			sort: args.sort
 		});
 
 		const items = await enrichBookingPage(ctx, page.items, { onlyPublished: false });

@@ -11,6 +11,8 @@
 	// COMPONENTS
 	import { Badge } from '@/components/ui/badge/index.js';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
+
+	let { mode = 'request' }: { mode?: 'request' | 'instant' } = $props();
 </script>
 
 <header class="pt-4 pb-8 sm:pb-10">
@@ -24,12 +26,21 @@
 
 	<div class="mb-3 flex flex-wrap items-center gap-3">
 		<h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
-			{m['BookingPage.BookingHeader.title']()}
+			{mode === 'instant'
+				? m['AccommodationsFeature.BookingMode.instantHeader']()
+				: m['BookingPage.BookingHeader.title']()}
 		</h1>
-		<Badge variant="secondary">{m['BookingPage.BookingHeader.preview']()}</Badge>
+		
+		<Badge variant="secondary">
+			{mode === 'instant'
+				? m['AccommodationsFeature.BookingMode.instant']()
+				: m['BookingPage.BookingHeader.preview']()}
+		</Badge>
 	</div>
 
 	<p class="max-w-prose text-sm leading-6 text-muted-foreground">
-		{m['BookingPage.BookingHeader.description']()}
+		{mode === 'instant'
+			? m['AccommodationsFeature.BookingMode.instantHeaderHint']()
+			: m['BookingPage.BookingHeader.description']()}
 	</p>
 </header>

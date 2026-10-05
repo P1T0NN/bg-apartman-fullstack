@@ -91,6 +91,7 @@ async function setup(
 			beds: 2,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -161,14 +162,12 @@ test('withdrawal is atomic, has no policy outcome, preserves history and notifie
 			(await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.cancellation?.emailIds
 		)
 	).toEqual({ guest: 'sent', host: 'sent' });
-	const bodies = vi
-		.mocked(fetch)
-		.mock.calls.flatMap(([, options]) =>
-			JSON.parse(String(options?.body)).map((message: { to: string[] }) => ({
-				...message,
-				to: message.to[0]
-			}))
-		);
+	const bodies = vi.mocked(fetch).mock.calls.flatMap(([, options]) =>
+		JSON.parse(String(options?.body)).map((message: { to: string[] }) => ({
+			...message,
+			to: message.to[0]
+		}))
+	);
 	expect(bodies.map((body) => body.to).sort()).toEqual(['guest@example.com', 'host@example.com']);
 	for (const body of bodies) {
 		const heading =

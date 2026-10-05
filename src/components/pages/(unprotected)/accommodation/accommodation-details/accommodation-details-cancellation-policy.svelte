@@ -1,9 +1,6 @@
 <script lang="ts">
-	// SVELTEKIT IMPORTS
-	import { page } from '$app/state';
-
 	// COMPONENTS
-	import AccommodationGuestCancellationPolicy from '@/features/accommodations/components/accommodation-guest-cancellation-policy/accommodation-guest-cancellation-policy.svelte';
+	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -12,9 +9,10 @@
 </script>
 
 <div id="cancellation-policy" class="scroll-mt-24 py-9">
-	<AccommodationGuestCancellationPolicy
-		{accommodation}
+	<BookingCancellationPolicy
+		policy={accommodation.cancellationPolicy}
+		timeZone={accommodation.timeZone}
 		timeline
-		checkInDate={page.url.searchParams.get('checkIn') ?? ''}
+		staticPolicy
 	/>
 </div>

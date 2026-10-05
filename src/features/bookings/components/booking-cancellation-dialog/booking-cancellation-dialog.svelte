@@ -87,7 +87,7 @@
 	>
 		{#snippet trigger({ id })}
 			<Button
-				variant="outline"
+				variant="destructive"
 				commandfor={id}
 				command="show-modal"
 				class="min-h-11 w-full sm:w-auto"

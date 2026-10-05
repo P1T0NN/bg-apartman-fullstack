@@ -26,14 +26,18 @@
 	</dt>
 	<dd class="mt-1.5 flex flex-col gap-1 text-sm">
 		<span class="font-medium">
-			<Plural
-				count={nights}
-				forms={{
-					one: m['HostBookingsPage.HostBookingsDetailsDialogGuests.night'](),
-					other: m['HostBookingsPage.HostBookingsDetailsDialogGuests.nights']()
-				}}
-				locale={getLocale()}
-			/>
+			{#if nights === 0}
+				{m['AccommodationsFeature.ReservationRulesGuest.dayUse']()}
+			{:else}
+				<Plural
+					count={nights}
+					forms={{
+						one: m['HostBookingsPage.HostBookingsDetailsDialogGuests.night'](),
+						other: m['HostBookingsPage.HostBookingsDetailsDialogGuests.nights']()
+					}}
+					locale={getLocale()}
+				/>
+			{/if}
 			<span class="mx-0.5" aria-hidden="true">&middot;</span>
 			<Plural
 				count={guests}

@@ -1,4 +1,13 @@
 <script lang="ts">
+	// SVELTEKIT IMPORTS
+	import { page } from '$app/state';
+
+	// LIBRARIES
+	import { useQuery } from 'convex-svelte';
+
+	// CONVEX
+	import { api } from '@convex/_generated/api';
+
 	// COMPONENTS
 	import { Badge } from '@/components/ui/badge/index.js';
 	import { Button } from '@/components/ui/button/index.js';
@@ -11,9 +20,19 @@
 	} from '@/shared/constants/pageEndpoints.js';
 
 	// TYPES
+	import type { Id } from '@convex/_generated/dataModel';
 	import type { MyAccommodationSummary } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	let { accommodation }: { accommodation: MyAccommodationSummary } = $props();
+
+	// SAFETY: Convex validates the untrusted route ID and checks ownership before returning status.
+	const accommodationId = $derived(page.params.id as Id<'accommodations'>);
+	const summary = useQuery(
+		api.tables.accommodations.queries.fetchMyAccommodation.fetchMyAccommodation,
+		() => ({ id: accommodationId })
+	);
+	const status = $derived(summary.data?.status ?? accommodation.status);
+	const isPublished = $derived(status === 'published');
 </script>
 
 <header class="flex flex-col gap-5">
@@ -29,8 +48,10 @@
 		<div class="flex flex-col gap-2">
 			<div class="flex flex-wrap items-center gap-3">
 				<h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">{accommodation.name}</h1>
-				<Badge variant="secondary">
-					{m['MyAccommodationPage.MyAccommodationHeader.published']()}
+				<Badge variant={isPublished ? 'secondary' : 'outline'}>
+					{isPublished
+						? m['MyAccommodationPage.MyAccommodationHeader.published']()
+						: m['MyAccommodationPage.MyAccommodationHeader.unpublished']()}
 				</Badge>
 			</div>
 

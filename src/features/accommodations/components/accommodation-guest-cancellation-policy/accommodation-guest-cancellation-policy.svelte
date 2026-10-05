@@ -12,18 +12,22 @@
 		accommodation,
 		checkInDate = '',
 		compact = false,
+		currentOnly = false,
 		timeline = false
 	}: {
 		accommodation: Pick<PublicAccommodation, 'cancellationPolicy' | 'timeZone' | 'checkInStart'>;
 		checkInDate?: string;
 		compact?: boolean;
+		currentOnly?: boolean;
 		timeline?: boolean;
 	} = $props();
 
 	const checkInAt = $derived.by(() => {
 		if (!checkInDate) return undefined;
 		try {
-			return getZonedTimestamp(checkInDate, accommodation.checkInStart, accommodation.timeZone);
+			const start = accommodation.checkInStart;
+			if (!start) return undefined;
+			return getZonedTimestamp(checkInDate, start, accommodation.timeZone);
 		} catch {
 			return undefined;
 		}
@@ -35,6 +39,7 @@
 	timeZone={accommodation.timeZone}
 	{checkInAt}
 	{compact}
+	{currentOnly}
 	{timeline}
 	invalidDate={Boolean(checkInDate) && checkInAt === undefined}
 />

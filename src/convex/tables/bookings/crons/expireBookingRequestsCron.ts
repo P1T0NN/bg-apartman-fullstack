@@ -44,7 +44,7 @@ export const expireBookingRequestsCron = internalMutation({
 		for (const booking of due) {
 			const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
 
-			const expirationEmailId = await sendBookingExpirationEmail(ctx, {
+			await sendBookingExpirationEmail(ctx, {
 				bookingId: booking._id,
 				booking,
 				accommodationName: accommodation?.name ?? ''
@@ -52,8 +52,7 @@ export const expireBookingRequestsCron = internalMutation({
 
 			await ctx.db.patch('bookings', booking._id, {
 				status: 'expired',
-				expiredAt: now,
-				expirationEmailId
+				expiredAt: now
 			});
 		}
 

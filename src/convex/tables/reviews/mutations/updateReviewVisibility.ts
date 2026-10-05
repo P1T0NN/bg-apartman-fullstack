@@ -30,7 +30,7 @@ export const updateReviewVisibility = adminMutation({
 		const review = await ctx.db.get('reviews', args.id);
 		if (!review) throw new ConvexError<BackendErrorData>({ code: 'REVIEW_NOT_FOUND' });
 		if (review.status === args.status) return null;
-		if (args.status === 'hidden') await reviewAggregate.delete(ctx, review);
+		if (args.status === 'hidden') await reviewAggregate.deleteIfExists(ctx, review);
 		else await reviewAggregate.insert(ctx, review);
 		await ctx.db.patch('reviews', review._id, {
 			status: args.status,

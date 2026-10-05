@@ -84,6 +84,7 @@ const accommodation = {
 	beds: 3,
 	bathrooms: 1,
 	pricePerNightMinor: 8025,
+	sameDayReservation: false,
 	recommendationSortKey: -3,
 	guestRatingAverage: 0,
 	guestReviewCount: 0,
@@ -128,6 +129,8 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 	const id = await t.mutation(createBooking, request);
 	const original = (await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms;
 	expect(original).toEqual({
+		stayType: 'overnight',
+		pricePerDayUseMinor: null,
 		policy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 		timeZone: 'Europe/Belgrade',
 		checkInStart: '14:00',
@@ -160,8 +163,12 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 		api.tables.bookings.queries.fetchBookingConfirmation.fetchBookingConfirmation;
 	expect((await t.query(confirmation, { id }))?.status).toBe('confirmed');
 	expect((await t.query(confirmation, { id }))?.cancellationTerms).toEqual(original);
+	// Reuse the dates after releasing the confirmed inventory.
+	await host.mutation(updateBookingStatus, { id, status: 'cancelled' });
 	const nextId = await t.mutation(createBooking, request);
 	expect((await t.run((ctx) => ctx.db.get('bookings', nextId)))?.cancellationTerms).toEqual({
+		stayType: 'overnight',
+		pricePerDayUseMinor: null,
 		policy: custom,
 		timeZone: 'America/New_York',
 		checkInStart: '16:00',
@@ -185,7 +192,7 @@ test('requests reject unknown property timezones, elapsed check-in, and DST gaps
 			[{ checkInStart: '02:30' }, '2027-10-31', 'BOOKING_CHECK_IN_TIME_UNAVAILABLE'],
 			[{ checkOut: '02:30' }, '2027-03-25', 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE'],
 			[{ checkOut: '02:30' }, '2027-10-28', 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE'],
-			[{ checkInStart: '13:00' }, '2027-01-01', 'INVALID_BOOKING']
+			[{ checkInStart: '13:00', sameDayReservation: true }, '2027-01-01', 'BOOKING_START_PASSED']
 		] as const) {
 			const { t, hostId } = await setup();
 			const accommodationId = await t.run((ctx) =>
@@ -220,6 +227,7 @@ test('request dates use the property calendar even when its date differs from UT
 				...accommodation,
 				ownerId: hostId,
 				timeZone: 'America/Los_Angeles',
+				sameDayReservation: true,
 				checkInStart: '17:00'
 			})
 		);
@@ -281,6 +289,13 @@ test('host bookings prioritize the oldest pending requests and the newest other 
 			filters: { status: 'pending' }
 		});
 		expect(pending.items.map((item) => item._id)).toEqual([oldest, newest]);
+
+		const newestPending = await host.query(fetchHostBookings, {
+			paginationOpts: { cursor: null, numItems: 10 },
+			filters: { status: 'pending' },
+			sort: 'newest'
+		});
+		expect(newestPending.items.map((item) => item._id)).toEqual([newest, oldest]);
 		const ids: string[] = [];
 		let cursor: string | null = null;
 		for (let pageNumber = 0; pageNumber < 6; pageNumber++) {
@@ -384,7 +399,6 @@ test('signed-in guests own their booking and see it in my-bookings with the owne
 	const page = await signedInGuest.query(fetchMyBookings, {
 		paginationOpts: { cursor: null, numItems: 10 }
 	});
-	expect(page.total).toBe(1);
 	expect(page.items).toHaveLength(1);
 	expect(page.items[0]).toMatchObject({ _id: bookingId, ownerId: 'guest-1', status: 'pending' });
 	expect(page.items[0].accommodation).toEqual({
@@ -416,7 +430,6 @@ test('signed-in guests own their booking and see it in my-bookings with the owne
 	});
 	expect(withoutListing.items).toHaveLength(1);
 	expect(withoutListing.items[0]).toMatchObject({ _id: bookingId, accommodation: null });
-	expect(withoutListing.total).toBe(1);
 
 	await expect(
 		t.query(fetchMyBookings, { paginationOpts: { cursor: null, numItems: 10 } })
@@ -496,4 +509,127 @@ test('host manages bookings for their own accommodations', async () => {
 	await expect(t.query(fetchHostBookings, base)).rejects.toMatchObject({
 		data: { code: 'UNAUTHENTICATED' }
 	});
+});
+
+test('arrival today is opt-in, ends exactly at check-in, and still respects minimum nights', async () => {
+	vi.setSystemTime(new Date('2027-01-01T10:00:00Z'));
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
+	const request = {
+		...guest,
+		accommodationId,
+		checkInDate: '2027-01-01',
+		checkOutDate: '2027-01-04',
+		adults: 1,
+		children: 0
+	};
+	await expect(t.mutation(createBooking, request)).rejects.toMatchObject({
+		data: { code: 'SAME_DAY_RESERVATION_DISABLED' }
+	});
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, { sameDayReservation: true })
+	);
+	await expect(
+		t.mutation(createBooking, { ...request, checkOutDate: '2027-01-02' })
+	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING' } });
+	const id = await t.mutation(createBooking, request);
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.requestExpiresAt).toBe(
+		Date.parse('2027-01-01T13:00:00Z')
+	);
+	vi.setSystemTime(new Date('2027-01-01T13:00:00Z'));
+	await expect(t.mutation(createBooking, request)).rejects.toMatchObject({
+		data: { code: 'BOOKING_START_PASSED' }
+	});
+	const host = t.withIdentity({ subject: hostId, tokenIdentifier: 'issuer|' + hostId });
+	await expect(
+		host.mutation(updateBookingStatus, { id, status: 'confirmed' })
+	).rejects.toMatchObject({ data: { code: 'BOOKING_REQUEST_EXPIRED' } });
+});
+
+test.each(['request', 'instant'] as const)(
+	'new bookings require overnight dates even for arrivals today (%s)',
+	async (bookingMode) => {
+		vi.setSystemTime(new Date('2027-01-01T07:00:00Z'));
+		const { t, hostId } = await setup();
+		const accommodationId = await t.run((ctx) =>
+			ctx.db.insert('accommodations', {
+				...accommodation,
+				ownerId: hostId,
+				bookingMode,
+				sameDayReservation: true,
+				minimumStay: 1
+			})
+		);
+		const request = {
+			...guest,
+			accommodationId,
+			expectedBookingMode: bookingMode,
+			checkInDate: '2027-01-01',
+			checkOutDate: '2027-01-01',
+			adults: 1,
+			children: 0
+		};
+		await expect(t.mutation(createBooking, request)).rejects.toMatchObject({
+			data: { code: 'INVALID_BOOKING' }
+		});
+		await expect(
+			t.mutation(createBooking, {
+				...request,
+				checkInDate: '2027-01-10',
+				checkOutDate: '2027-01-10'
+			})
+		).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING' } });
+		const id = await t.mutation(createBooking, { ...request, checkOutDate: '2027-01-02' });
+		expect(await t.run((ctx) => ctx.db.get('bookings', id))).toMatchObject({
+			status: bookingMode === 'instant' ? 'confirmed' : 'pending',
+			cancellationTerms: { stayType: 'overnight', pricePerDayUseMinor: null }
+		});
+	}
+);
+
+test('historical daytime bookings retain frozen terms and block overlapping new overnight bookings', async () => {
+	vi.setSystemTime(new Date('2027-01-01T07:00:00Z'));
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+	);
+	const terms = {
+		...bookingCancellationTerms('2027-01-10', '2027-01-10'),
+		stayType: 'day_use' as const,
+		pricePerDayUseMinor: 3525,
+		checkInStart: '10:00',
+		checkOut: '18:00',
+		checkInAt: Date.parse('2027-01-10T09:00:00Z'),
+		checkOutAt: Date.parse('2027-01-10T17:00:00Z')
+	};
+	const id = await t.run((ctx) =>
+		ctx.db.insert('bookings', {
+			...guest,
+			accommodationId,
+			hostId,
+			firstName: 'Alex',
+			status: 'pending',
+			checkInDate: '2027-01-10',
+			checkOutDate: '2027-01-10',
+			adults: 1,
+			children: 0,
+			requestExpiresAt: Date.parse('2027-01-02T07:00:00Z'),
+			cancellationTerms: terms
+		})
+	);
+	const host = t.withIdentity({ subject: hostId, tokenIdentifier: 'issuer|' + hostId });
+	await host.mutation(updateBookingStatus, { id, status: 'confirmed' });
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toEqual(terms);
+	await expect(
+		t.mutation(createBooking, {
+			...guest,
+			accommodationId,
+			checkInDate: '2027-01-10',
+			checkOutDate: '2027-01-13',
+			adults: 1,
+			children: 0
+		})
+	).rejects.toMatchObject({ data: { code: 'BOOKING_DATES_UNAVAILABLE' } });
 });

@@ -1,11 +1,14 @@
 <script lang="ts">
 	// SVELTEKIT IMPORTS
-	import { goto, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { m } from '@/lib/paraglide/messages';
 
 	// CONFIG
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints';
+
+	// UTILS
+	import { gotoParaglide } from '@/utils/gotoParaglide.js';
 
 	// COMPONENTS
 	import { Button } from '@/components/ui/button';
@@ -16,7 +19,7 @@
 	<h1 class="text-lg font-medium">{m['ErrorMessages.unexpected']()}</h1>
 	<div class="flex items-center gap-2">
 		<Button onclick={invalidateAll}>{m['ErrorPage.tryAgain']()}</Button>
-		<Button variant="outline" onclick={() => goto(UNPROTECTED_PAGE_ENDPOINTS.ROOT)}>
+		<Button variant="outline" onclick={() => gotoParaglide(UNPROTECTED_PAGE_ENDPOINTS.ROOT)}>
 			{m['ErrorPage.goHome']()}
 		</Button>
 	</div>

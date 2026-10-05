@@ -2,7 +2,7 @@
 import type { FilterDef } from '@/shared/features/filters/types/filterTypes.js';
 
 /** Symbolic booking filters; the server maps each value to an index or search filter. */
-export const HOST_BOOKING_FILTER_DEFS = [
+export const BOOKING_FILTER_DEFS = [
 	{
 		key: 'status',
 		label: 'Status',

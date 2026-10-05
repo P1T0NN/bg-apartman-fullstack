@@ -79,6 +79,8 @@ locations:
 - Loading UI always lives in
   `src/components/pages/<page>/loading/<component-name>-loading.svelte` and is
   imported by the page or component that displays it.
+  Loading files contain no translation imports or translated copy; the caller
+  owns any localized loading announcement or accessible label.
 - Markup rendered for each keyed list/table item always lives in
   `src/components/pages/<page>/<component-name>-item.svelte`; the owning
   `{#each}`/`DataList`/`DataTable` renders that item component.

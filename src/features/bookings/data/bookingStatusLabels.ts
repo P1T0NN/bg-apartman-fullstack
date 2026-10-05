@@ -2,7 +2,7 @@
 import { m } from '@/lib/paraglide/messages';
 
 // TYPES
-import type { BookingStatus } from '@/shared/features/bookings/schemas/bookingSchemas.js';
+import type { BookingStatus } from '@/shared/features/bookings/types/bookingTypes.js';
 
 /** Translated booking status labels; functions keep them live across locale changes. */
 export const BOOKING_STATUS_LABELS = {

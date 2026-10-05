@@ -50,6 +50,7 @@ async function setup() {
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,

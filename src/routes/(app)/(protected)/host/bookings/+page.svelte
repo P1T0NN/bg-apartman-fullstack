@@ -20,31 +20,35 @@
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
 	import { TableHead } from '@/components/ui/table';
+	import BookingSortSelect from '@/features/bookings/components/booking-sort-select/booking-sort-select.svelte';
 	import SearchInput from '@/features/search/components/search-input.svelte';
 
 	// HOOKS
 	import { useConvexPagination } from '@/features/pagination/hooks/useConvexPagination.svelte.js';
 	import { useSearch } from '@/features/search/hooks/useSearch.svelte';
 	import { useFilters } from '@/features/filters/hooks/useFilters.svelte';
+	import { useBookingSort } from '@/features/bookings/hooks/useBookingSort.svelte';
 
 	// DATA
 	import { BOOKING_STATUS_LABELS } from '@/features/bookings/data/bookingStatusLabels.js';
-	import { BOOKING_STATUSES } from '@/shared/features/bookings/schemas/bookingSchemas.js';
-	import { HOST_BOOKING_FILTER_DEFS } from '@/features/bookings/data/bookingFilterDefs.js';
+	import { BOOKING_STATUSES } from '@/shared/features/bookings/data/bookingsData.js';
+	import { BOOKING_FILTER_DEFS } from '@/features/bookings/data/bookingFilterDefs.js';
 
 	const wideScreen = new MediaQuery('(min-width: 1280px)', false);
 	const search = useSearch({ mode: 'state' });
-	const filters = useFilters({ mode: 'url', defs: HOST_BOOKING_FILTER_DEFS });
+	const filters = useFilters({ mode: 'url', defs: BOOKING_FILTER_DEFS });
+	const sort = useBookingSort(() => (filters.value('status') === 'pending' ? 'oldest' : 'newest'));
 
 	const bookings = useConvexPagination(
 		api.tables.bookings.queries.fetchHostBookings.fetchHostBookings,
 		() => ({
 			search: search.term || undefined,
-			filters: filters.active
+			filters: filters.active,
+			sort: sort.sort
 		}),
 		{
 			pageSize: PAGINATION_CONFIG.DEFAULT_PAGE_SIZE,
-			resetKey: () => [search.term, filters.identity]
+			resetKey: () => [search.term, filters.identity, sort.sort]
 		}
 	);
 
@@ -83,11 +87,14 @@
 <div class="flex min-h-full min-w-0 flex-1 flex-col gap-6">
 	<HostBookingsHeader />
 
-	<SearchInput
-		bind:value={search.value}
-		placeholder={m['HostBookingsPage.searchPlaceholder']()}
-		class="w-full sm:max-w-sm"
-	/>
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<SearchInput
+			bind:value={search.value}
+			placeholder={m['HostBookingsPage.searchPlaceholder']()}
+			class="w-full sm:max-w-sm"
+		/>
+		<BookingSortSelect value={sort.sort} onSortChange={sort.setSort} disabled={search.isActive} />
+	</div>
 
 	<TabsUrl param="status" onValueChange={(status) => filters.set('status', status)} class="min-w-0">
 		{#snippet children(activeStatus)}
@@ -101,14 +108,6 @@
 			</div>
 
 			<Tabs.Content value={activeStatus} class="min-w-0">
-				<p class="mb-4 text-xs text-muted-foreground" aria-live="polite">
-					{search.isActive
-						? m['HostBookingsPage.searchOrder']()
-						: filters.value('status') === 'pending'
-							? m['HostBookingsPage.pendingOrder']()
-							: m['HostBookingsPage.defaultOrder']()}
-				</p>
-
 				{#if wideScreen.current}
 					<DataTable pagination={bookings} key={(booking) => booking._id} placement="above">
 						{#snippet head()}

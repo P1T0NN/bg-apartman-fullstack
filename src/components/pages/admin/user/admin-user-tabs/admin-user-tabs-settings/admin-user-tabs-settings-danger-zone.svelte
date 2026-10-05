@@ -1,7 +1,4 @@
 <script lang="ts">
-	// SVELTEKIT
-	import { goto } from '$app/navigation';
-
 	// LIBRARIES
 	import type { FunctionReturnType } from 'convex/server';
 
@@ -23,6 +20,9 @@
 
 	// CONFIG
 	import { ADMIN_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+
+	// UTILS
+	import { gotoParaglide } from '@/utils/gotoParaglide.js';
 
 	type User = NonNullable<
 		FunctionReturnType<
@@ -49,7 +49,7 @@
 
 		if (didDelete) {
 			close();
-			await goto(ADMIN_PAGE_ENDPOINTS.USERS);
+			await gotoParaglide(ADMIN_PAGE_ENDPOINTS.USERS);
 		}
 	}
 </script>

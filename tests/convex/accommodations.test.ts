@@ -11,7 +11,13 @@ import schema, { tables } from '../../src/convex/schema';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { accommodations } from '../../src/convex/tables/accommodations/schema';
+import {
+	bookings,
+	bookingCancellationTerms as termsValidator
+} from '../../src/convex/tables/bookings/schema';
+import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms';
 import { accommodationOwnerAggregate } from '../../src/convex/tables/accommodations/aggregates/accommodationOwnerAggregate';
+import { reviewAggregate } from '../../src/convex/tables/reviews/aggregates/reviewAggregate';
 import {
 	accommodationSectionSchemas,
 	saveAccommodationSchema
@@ -77,6 +83,8 @@ test('cancellation policies allow only fixed percentages and every decreasing or
 });
 
 const emptyListing: AccommodationDetails = {
+	bookingMode: 'request',
+	sameDayReservation: false,
 	imageKeys: [],
 	name: '',
 	description: '',
@@ -114,6 +122,223 @@ const listing = {
 	imageKeys
 };
 
+test('single-day cleanup preserves arrival-today choices and frozen fees across pages and reruns', async () => {
+	const legacySchema = defineSchema({
+		...tables,
+		accommodations: defineTable(
+			accommodations.validator.omit('sameDayReservation').extend({
+				singleDayReservation: v.optional(v.boolean()),
+				sameDayReservation: v.optional(v.boolean()),
+				dayUseStart: v.optional(v.union(v.string(), v.null())),
+				dayUseEnd: v.optional(v.union(v.string(), v.null())),
+				pricePerDayUseMinor: v.optional(v.union(v.number(), v.null()))
+			})
+		),
+		bookings: defineTable(
+			bookings.validator.omit('cancellationTerms').extend({
+				cancellationTerms: termsValidator.omit('stayType', 'pricePerDayUseMinor').extend({
+					stayType: v.optional(termsValidator.fields.stayType),
+					pricePerDayUseMinor: v.optional(termsValidator.fields.pricePerDayUseMinor)
+				})
+			})
+		)
+	});
+	const t = convexTest(legacySchema, modules);
+	const { nightlyPrice, sameDayReservation: _same, ...details } = listing;
+	const base = {
+		...details,
+		ownerId: 'host',
+		recommendationSortKey: -3,
+		guestRatingAverage: 0,
+		guestReviewCount: 0,
+		pricePerNightMinor: nightlyPrice * 100,
+		status: 'published' as const,
+		updatedAt: 1
+	};
+	const enabled = {
+		singleDayReservation: true,
+		sameDayReservation: true,
+		dayUseStart: '10:00',
+		dayUseEnd: '18:00',
+		pricePerDayUseMinor: 4500
+	};
+	const ids = await t.run(async (ctx) => [
+		await ctx.db.insert('accommodations', base),
+		await ctx.db.insert('accommodations', { ...base, ...enabled }),
+		await ctx.db.insert('accommodations', { ...base, sameDayReservation: true })
+	]);
+	const frozen = bookingCancellationTerms('2027-07-16', '2027-07-17');
+	const { stayType: _stay, pricePerDayUseMinor: _fee, ...legacyTerms } = frozen;
+	const dayUseTerms = { ...frozen, stayType: 'day_use' as const, pricePerDayUseMinor: 4500 };
+	const bookingIds = await t.run(async (ctx) => {
+		const booking = {
+			accommodationId: ids[0],
+			status: 'pending' as const,
+			firstName: 'Guest',
+			lastName: 'Test',
+			email: 'guest@example.com',
+			phone: '123',
+			checkInDate: '2027-07-16',
+			checkOutDate: '2027-07-17',
+			adults: 1,
+			children: 0
+		};
+		return [
+			await ctx.db.insert('bookings', { ...booking, cancellationTerms: legacyTerms }),
+			await ctx.db.insert('bookings', {
+				...booking,
+				checkOutDate: booking.checkInDate,
+				cancellationTerms: dayUseTerms
+			})
+		];
+	});
+	const args = { cursor: null, batchSize: 1, dryRun: false, oneBatchOnly: true };
+	for (const migration of [
+		internal.migrations.backfillReservationRules.backfillAccommodationReservationRules,
+		internal.migrations.backfillReservationRules.backfillBookingReservationTerms,
+		internal.migrations.removeSingleDayReservations.removeSingleDayReservations
+	]) {
+		for (let run = 0; run < 2; run++) {
+			let page = await t.mutation(migration, args);
+			while (!page.isDone) {
+				page = await t.mutation(migration, { ...args, cursor: page.continueCursor });
+				expect(page.processed).toBeLessThanOrEqual(1);
+			}
+		}
+	}
+	const saved = await t.run(async (ctx) =>
+		Promise.all(ids.map((id) => ctx.db.get('accommodations', id)))
+	);
+	expect(saved[0]).toMatchObject({ sameDayReservation: false, updatedAt: 1 });
+	expect(saved[1]).toMatchObject({ sameDayReservation: true, updatedAt: 1 });
+	expect(saved[2]).toMatchObject({ sameDayReservation: true });
+	for (const listing of saved) {
+		for (const key of ['singleDayReservation', 'dayUseStart', 'dayUseEnd', 'pricePerDayUseMinor'])
+			expect(listing).not.toHaveProperty(key);
+	}
+	const savedBookings = await t.run(async (ctx) =>
+		Promise.all(bookingIds.map((id) => ctx.db.get('bookings', id)))
+	);
+	expect(savedBookings[0]?.cancellationTerms).toEqual(frozen);
+	expect(savedBookings[1]?.cancellationTerms).toEqual(dayUseTerms);
+	const invalidId = await t.run((ctx) =>
+		ctx.db
+			.patch('bookings', bookingIds[1], { cancellationTerms: legacyTerms })
+			.then(() => bookingIds[1])
+	);
+	await expect(
+		t.mutation(internal.migrations.backfillReservationRules.backfillBookingReservationTerms, {
+			...args,
+			batchSize: 100
+		})
+	).rejects.toThrow(`Resolve missing frozen day-use fee for booking ${invalidId}`);
+});
+
+test('hosts create and update arrival-today settings without single-day options', async () => {
+	const t = setup();
+	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const create = api.tables.accommodations.mutations.createAccommodation.createAccommodation;
+	const update = api.tables.accommodations.mutations.updateAccommodation.updateAccommodation;
+	await t.run(async (ctx) => {
+		for (const key of imageKeys)
+			await ctx.db.insert('storageUploads', {
+				ownerId: 'host',
+				key,
+				status: 'uploaded',
+				createdAt: Date.now()
+			});
+	});
+	const id = await owner.mutation(create, {
+		...listing,
+		uploadedFiles: imageKeys,
+		sameDayReservation: true
+	});
+	await owner.mutation(update, { id, sameDayReservation: false });
+	expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toMatchObject({
+		sameDayReservation: false
+	});
+	const retiredSetting = { id, singleDayReservation: true };
+	await expect(owner.mutation(update, retiredSetting)).rejects.toThrow();
+});
+
+test('backfilled listings can update unrelated fields', async () => {
+	const t = setup();
+	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const { nightlyPrice, sameDayReservation: _sameDayReservation, ...details } = listing;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...details,
+			ownerId: 'host',
+			sameDayReservation: false,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			status: 'published',
+			updatedAt: 1
+		})
+	);
+	const legacy = await t.run((ctx) => ctx.db.get('accommodations', id));
+	expect(legacy?.sameDayReservation).toBe(false);
+	await t.run(async (ctx) => {
+		const doc = await ctx.db.get('accommodations', id);
+		if (doc) await accommodationOwnerAggregate.insert(ctx, doc);
+	});
+	await owner.mutation(
+		api.tables.accommodations.mutations.updateAccommodation.updateAccommodation,
+		{
+			id,
+			name: 'Updated legacy apartment'
+		}
+	);
+	expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toMatchObject({
+		name: 'Updated legacy apartment',
+		sameDayReservation: false
+	});
+});
+
+test.each(['request', 'instant', undefined] as const)(
+	'hosts save and change booking mode while legacy creation defaults safely (%s)',
+	async (bookingMode) => {
+		const t = setup();
+		const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+		const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
+		const create = api.tables.accommodations.mutations.createAccommodation.createAccommodation;
+		const update = api.tables.accommodations.mutations.updateAccommodation.updateAccommodation;
+		await t.run(async (ctx) => {
+			for (const key of imageKeys)
+				await ctx.db.insert('storageUploads', {
+					ownerId: 'host',
+					key,
+					status: 'uploaded',
+					createdAt: Date.now()
+				});
+		});
+		const id = await owner.mutation(create, { ...listing, bookingMode, uploadedFiles: imageKeys });
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.bookingMode).toBe(
+			bookingMode ?? 'request'
+		);
+		await expect(stranger.mutation(update, { id, bookingMode: 'instant' })).rejects.toMatchObject({
+			data: { code: 'FORBIDDEN' }
+		});
+		const nextMode = bookingMode === 'instant' ? 'request' : 'instant';
+		await owner.mutation(update, { id, bookingMode: nextMode });
+		await owner.mutation(update, { id, name: 'Updated listing name' });
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.bookingMode).toBe(nextMode);
+		expect(
+			(
+				await t.query(
+					api.tables.accommodations.queries.fetchPublicAccommodation.fetchPublicAccommodation,
+					{ id }
+				)
+			)?.bookingMode
+		).toBe(nextMode);
+		expect(saveAccommodationSchema.safeParse({ ...listing, bookingMode: 'unknown' }).success).toBe(
+			false
+		);
+	}
+);
+
 test('policy migration fills missing policies in bounded pages and preserves existing terms on reruns', async () => {
 	const legacySchema = defineSchema({
 		...tables,
@@ -129,6 +354,7 @@ test('policy migration fills missing policies in bounded pages and preserves exi
 		...details,
 		cancellationPolicy: undefined,
 		ownerId: 'host',
+		sameDayReservation: false,
 		recommendationSortKey: -3,
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
@@ -195,6 +421,7 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 		...details,
 		cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 		ownerId: 'filter-test',
+		sameDayReservation: false,
 		recommendationSortKey: -3,
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
@@ -321,6 +548,7 @@ test('recommendation, price and guest rating order filtered results before curso
 		imageKeys: [],
 		ownerId: 'sorting-test',
 		pricePerNightMinor: 9000,
+		sameDayReservation: false,
 		recommendationSortKey: -4.5,
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
@@ -451,6 +679,7 @@ test('recommendation backfill refreshes existing scores and can be safely rerun'
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			imageKeys: [],
 			ownerId: 'backfill-test',
+			sameDayReservation: false,
 			recommendationSortKey: -1,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -548,6 +777,7 @@ test('public details resolve ordered photos without exposing owner or storage ke
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'private-owner',
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -589,6 +819,7 @@ test('owner listing resolves ordered photos and rejects other identities', async
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -613,6 +844,8 @@ test('owner listing resolves ordered photos and rejects other identities', async
 	expect(await owner.query(fetchHeader, { id })).toEqual({
 		_id: id,
 		name: listing.name,
+		timeZone: listing.timeZone,
+		status: 'published',
 		address: { city: 'Belgrade', country: 'Serbia' }
 	});
 	expect(await stranger.query(fetchHeader, { id })).toBeNull();
@@ -635,6 +868,7 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -726,6 +960,7 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
+			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
@@ -1196,6 +1431,7 @@ test('map search scopes coordinates before pagination and validates bounds', asy
 				longitude,
 				maxGuests,
 				ownerId: 'host',
+				sameDayReservation: false,
 				recommendationSortKey: -3,
 				guestRatingAverage: 0,
 				guestReviewCount: 0,
@@ -1303,4 +1539,154 @@ test('public listing mutations validate client timezone and preserve it on non-l
 		longitude: -74.006,
 		timeZone: 'America/New_York'
 	});
+});
+
+test('owner deletion soft-deletes the listing, cleans references, and active bookings block it', async () => {
+	const t = setup();
+	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
+	const remove = api.tables.accommodations.mutations.deleteAccommodation.deleteAccommodation;
+	const fetchHeader = api.tables.accommodations.queries.fetchMyAccommodation.fetchMyAccommodation;
+	const fetchListing =
+		api.tables.accommodations.queries.fetchMyAccommodationListing.fetchMyAccommodationListing;
+	const update = api.tables.accommodations.mutations.updateAccommodation.updateAccommodation;
+	const updateStatus =
+		api.tables.accommodations.mutations.updateAccommodationPublishStatus
+			.updateAccommodationPublishStatus;
+	const { nightlyPrice, ...details } = listing;
+	const { id, completedBookingId, pendingBookingId, reviewId } = await t.run(async (ctx) => {
+		const docId = await ctx.db.insert('accommodations', {
+			...details,
+			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
+			ownerId: 'host',
+			sameDayReservation: false,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			status: 'published',
+			updatedAt: 1
+		});
+		const doc = await ctx.db.get(docId);
+		if (doc) await accommodationOwnerAggregate.insert(ctx, doc);
+		await ctx.db.insert('favorites', { ownerId: 'guest-one', accommodationId: docId });
+		await ctx.db.insert('favorites', { ownerId: 'guest-two', accommodationId: docId });
+		await ctx.db.insert('accommodationBlockedDates', {
+			accommodationId: docId,
+			date: '2027-07-20'
+		});
+		const insertBooking = (status: 'completed' | 'pending' | 'cancelled') =>
+			ctx.db.insert('bookings', {
+				accommodationId: docId,
+				status,
+				firstName: 'Guest',
+				lastName: 'Test',
+				email: 'guest@example.com',
+				phone: '123',
+				checkInDate: '2027-07-16',
+				checkOutDate: '2027-07-17',
+				adults: 1,
+				children: 0,
+				cancellationTerms: bookingCancellationTerms('2027-07-16', '2027-07-17')
+			});
+		const completedBookingId = await insertBooking('completed');
+		const pendingBookingId = await insertBooking('pending');
+		const reviewId = await ctx.db.insert('reviews', {
+			bookingId: completedBookingId,
+			accommodationId: docId,
+			ownerId: 'guest-one',
+			authorName: 'Guest',
+			stayMonth: '2027-07',
+			rating: 5,
+			comment: 'Great stay',
+			status: 'published'
+		});
+		const review = await ctx.db.get('reviews', reviewId);
+		if (review) await reviewAggregate.insert(ctx, review);
+		return { id: docId, completedBookingId, pendingBookingId, reviewId };
+	});
+
+	await expect(stranger.mutation(remove, { id })).rejects.toMatchObject({
+		data: { code: 'FORBIDDEN' }
+	});
+	await expect(owner.mutation(remove, { id })).rejects.toMatchObject({
+		data: { code: 'ACCOMMODATION_HAS_ACTIVE_BOOKINGS' }
+	});
+
+	await t.run((ctx) => ctx.db.patch('bookings', pendingBookingId, { status: 'confirmed' }));
+	await expect(owner.mutation(remove, { id })).rejects.toMatchObject({
+		data: { code: 'ACCOMMODATION_HAS_ACTIVE_BOOKINGS' }
+	});
+
+	await t.run((ctx) => ctx.db.patch('bookings', pendingBookingId, { status: 'cancelled' }));
+	await owner.mutation(remove, { id });
+	// Repeat deletes are idempotent against the tombstone.
+	await owner.mutation(remove, { id });
+
+	await t.run(async (ctx) => {
+		const accommodation = await ctx.db.get('accommodations', id);
+		expect(accommodation).toMatchObject({
+			status: 'deleted',
+			deletedBy: 'host',
+			imageKeys: []
+		});
+		expect(accommodation?.deletedAt).toEqual(expect.any(Number));
+		expect(await ctx.db.query('favorites').collect()).toEqual([]);
+		expect(await ctx.db.query('accommodationBlockedDates').collect()).toEqual([]);
+		expect(await accommodationOwnerAggregate.count(ctx, { namespace: 'host' })).toBe(0);
+		expect(await reviewAggregate.count(ctx, { namespace: id })).toBe(0);
+	});
+	expect(await owner.query(fetchHeader, { id })).toBeNull();
+	expect(await owner.query(fetchListing, { id })).toBeNull();
+	await expect(owner.mutation(update, { id, houseRules: 'No parties' })).rejects.toMatchObject({
+		data: { code: 'ACCOMMODATION_NOT_FOUND' }
+	});
+	await expect(owner.mutation(updateStatus, { id, status: 'published' })).rejects.toMatchObject({
+		data: { code: 'ACCOMMODATION_NOT_FOUND' }
+	});
+	expect(await t.run((ctx) => ctx.db.get('bookings', completedBookingId))).not.toBeNull();
+	expect(await t.run((ctx) => ctx.db.get('bookings', pendingBookingId))).not.toBeNull();
+	expect(await t.run((ctx) => ctx.db.get('reviews', reviewId))).not.toBeNull();
+});
+
+test('search returns only published listings while the owner list hides deleted listings', async () => {
+	const t = setup();
+	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const { nightlyPrice, ...details } = listing;
+	const base = {
+		...details,
+		cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
+		ownerId: 'host',
+		sameDayReservation: false,
+		recommendationSortKey: -3,
+		guestRatingAverage: 0,
+		guestReviewCount: 0,
+		pricePerNightMinor: Math.round(nightlyPrice * 100),
+		updatedAt: 1
+	};
+	const ids = await t.run(async (ctx) => [
+		await ctx.db.insert('accommodations', { ...base, name: 'Visible stay', status: 'published' }),
+		await ctx.db.insert('accommodations', { ...base, name: 'Hidden stay', status: 'unpublished' }),
+		await ctx.db.insert('accommodations', {
+			...base,
+			name: 'Gone stay',
+			status: 'deleted',
+			deletedAt: 1,
+			deletedBy: 'host'
+		})
+	]);
+
+	const search =
+		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
+	const page = await t.query(search, {
+		location: { country: 'Serbia' },
+		paginationOpts: { cursor: null, numItems: 10 }
+	});
+	expect(page.items.map((item) => item._id)).toEqual([ids[0]]);
+
+	const list = await owner.query(
+		api.tables.accommodations.queries.fetchMyAccommodations.fetchMyAccommodations,
+		{ paginationOpts: { cursor: null, numItems: 10 } }
+	);
+	expect(list.items.map((item) => item._id).sort()).toEqual([ids[0], ids[1]].sort());
 });

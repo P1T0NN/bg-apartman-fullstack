@@ -1,6 +1,6 @@
 // TYPES
 import type { Doc } from '@convex/_generated/dataModel';
-import type { BookingStatus } from '../schemas/bookingSchemas.js';
+import type { BookingStatus } from './bookingTypes.js';
 
 /** Accommodation summary enriched onto each host booking row. */
 export type BookingAccommodation = {

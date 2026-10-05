@@ -1,7 +1,4 @@
 <script lang="ts">
-	// SVELTEKIT IMPORTS
-	import { goto } from '$app/navigation';
-
 	// COMPONENTS
 	import * as Card from '@/components/ui/card/index.js';
 	import Form from '@/components/ui/custom-components/form/form.svelte';
@@ -21,6 +18,9 @@
 	import { saveAccommodationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 	import { PROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 	import { m } from '@/lib/paraglide/messages';
+
+	// UTILS
+	import { gotoParaglide } from '@/utils/gotoParaglide.js';
 
 	// CONTEXT
 	import { getAccommodationFormContext } from '@/features/accommodations/context/accommodationFormContext.js';
@@ -56,8 +56,7 @@
 					imageKeys: state.files.map((file, index) => uploadedFiles[index] ?? file.id)
 				})}
 				onSuccess={() => {
-					// eslint-disable-next-line svelte/no-navigation-without-resolve -- Shared endpoints already call resolve().
-					return goto(PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS);
+					return gotoParaglide(PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS);
 				}}
 				resetOnSuccess={false}
 				successMessage={m['AddAccommodationPage.AddAccommodationForm.published']()}

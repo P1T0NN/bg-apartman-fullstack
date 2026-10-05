@@ -256,8 +256,10 @@ export function createMyAccommodationTabListingForm(
 			description: m['MyAccommodationPage.MyAccommodationTabListingSections.rulesHint'](),
 			icon: 'icon-[lucide--clipboard-list]',
 			group: 'booking',
-			schema: accommodationRulesSchema.extend({ id: z.string() }),
+			schema: accommodationRulesSchema.and(z.object({ id: z.string() })),
 			values: {
+				bookingMode: accommodation.bookingMode ?? 'request',
+				sameDayReservation: accommodation.sameDayReservation,
 				timeZone: accommodation.timeZone,
 				checkInStart: accommodation.checkInStart,
 				checkInEnd: accommodation.checkInEnd,

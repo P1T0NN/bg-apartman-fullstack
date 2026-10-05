@@ -6,17 +6,7 @@ import { ACCOMMODATION_CONFIG } from '../../accommodations/config.js';
 
 // UTILS
 import { DAY_IN_MS, parseIsoDate } from '../../../utils/date.js';
-
-export const BOOKING_STATUSES = [
-	'pending',
-	'confirmed',
-	'declined',
-	'cancelled',
-	'expired',
-	'completed'
-] as const;
-
-export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+import { getZonedTimestamp } from '../../timezone/utils/getZonedTimestamp.js';
 
 /** Booking and recovery lookup share this normalization; preserve dots and plus tags. */
 export const bookingEmailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
@@ -39,22 +29,16 @@ export const completeBookingAdminSchema = z.object({
 	reason: z.string().trim().min(1).max(500)
 });
 
-/** Allowed host-driven status changes; every other status is terminal. */
-export const BOOKING_STATUS_TRANSITIONS = {
-	pending: ['confirmed', 'declined', 'cancelled'],
-	confirmed: ['completed', 'cancelled'],
-	declined: [],
-	cancelled: [],
-	expired: [],
-	completed: []
-} satisfies Record<BookingStatus, readonly BookingStatus[]>;
-
 /** Listing facts the stay checks need; the client passes the loaded listing, Convex the stored one. */
-export type BookingStayLimits = {
+type BookingStayLimits = {
 	today: string;
 	minimumStay: number;
 	maximumStay?: number;
 	maxGuests: number;
+	sameDayReservation?: boolean;
+	checkInStart?: string;
+	timeZone?: string;
+	now?: number;
 };
 
 export function createBookingSchema(limits: BookingStayLimits) {
@@ -62,6 +46,7 @@ export function createBookingSchema(limits: BookingStayLimits) {
 		z
 			.object({
 				accommodationId: z.string().min(1),
+				expectedBookingMode: z.enum(['request', 'instant']).optional(),
 				checkInDate: z.iso.date(),
 				checkOutDate: z.iso.date(),
 				adults: z.coerce.number().int().min(1).max(100),
@@ -98,6 +83,24 @@ export function createBookingSchema(limits: BookingStayLimits) {
 					else if (nights < limits.minimumStay) stayIssue('STAY_BELOW_MINIMUM', limits.minimumStay);
 					else if (limits.maximumStay && nights > limits.maximumStay)
 						stayIssue('STAY_ABOVE_MAXIMUM', limits.maximumStay);
+					if (booking.checkInDate === limits.today && !limits.sameDayReservation)
+						stayIssue('SAME_DAY_RESERVATION_DISABLED');
+					const arrivalTime = limits.checkInStart;
+					const { timeZone, now } = limits;
+					const canCheckCutoff =
+						booking.checkInDate === limits.today &&
+						limits.sameDayReservation &&
+						arrivalTime &&
+						timeZone &&
+						now !== undefined;
+					if (canCheckCutoff) {
+						try {
+							if (getZonedTimestamp(booking.checkInDate, arrivalTime, timeZone) <= now)
+								stayIssue('BOOKING_START_PASSED');
+						} catch {
+							stayIssue('BOOKING_CHECK_IN_TIME_UNAVAILABLE');
+						}
+					}
 				}
 
 				if (booking.adults + booking.children > limits.maxGuests) {

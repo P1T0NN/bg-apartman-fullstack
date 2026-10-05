@@ -9,6 +9,8 @@ export function bookingCancellationTerms(
 	checkOut = '11:00'
 ) {
 	return {
+		stayType: 'overnight' as const,
+		pricePerDayUseMinor: null,
 		policy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 		timeZone,
 		checkInStart: '14:00',

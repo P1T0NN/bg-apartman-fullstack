@@ -16,6 +16,8 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // EMAILS
 import { sendBookingRequestEmail } from '../emails/sendBookingRequestEmail.js';
+import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationEmail.js';
+import { checkBookingAvailability } from '../helpers/checkBookingAvailability.js';
 
 // SCHEMAS
 import { createBookingSchema } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
@@ -33,7 +35,7 @@ import { getZonedTimestamp } from '../../../../shared/features/timezone/utils/ge
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
-/** Public booking request: guests submit their stay and contact details; no payment is taken. */
+/** Public reservation: the stored listing chooses approval or instant confirmation; no payment is taken. */
 export const createBooking = mutation({
 	rateLimit: {
 		name: 'bookings:create',
@@ -41,6 +43,7 @@ export const createBooking = mutation({
 	},
 	args: {
 		accommodationId: v.id('accommodations'),
+		expectedBookingMode: v.optional(v.union(v.literal('request'), v.literal('instant'))),
 		checkInDate: v.string(),
 		checkOutDate: v.string(),
 		adults: v.number(),
@@ -54,12 +57,22 @@ export const createBooking = mutation({
 	returns: v.id('bookings'),
 	handler: async (ctx, args) => {
 		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
-		if (!accommodation) {
+		if (!accommodation || accommodation.status !== 'published') {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
 
 		const timeZone = timeZoneSchema.safeParse(accommodation.timeZone);
+		const bookingMode = accommodation.bookingMode ?? 'request';
+		const modeChanged =
+			args.expectedBookingMode !== bookingMode &&
+			(bookingMode === 'instant' || args.expectedBookingMode !== undefined);
+
+		if (modeChanged) throw new ConvexError<BackendErrorData>({ code: 'BOOKING_MODE_CHANGED' });
+
+		const instant = bookingMode === 'instant';
+
 		const policy = cancellationPolicySchema.safeParse(accommodation.cancellationPolicy);
+
 		if (!timeZone.success || !policy.success) {
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_TERMS_UNAVAILABLE' });
 		}
@@ -71,63 +84,74 @@ export const createBooking = mutation({
 			today: getIsoDateInTimeZone(now, timeZone.data),
 			minimumStay: accommodation.minimumStay,
 			maximumStay: accommodation.maximumStay,
-			maxGuests: accommodation.maxGuests
+			maxGuests: accommodation.maxGuests,
+			sameDayReservation: accommodation.sameDayReservation
 		}).safeParse(args);
 
-		if (!parsed.success) throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING' });
+		if (!parsed.success) {
+			const arrivalTodayDisabled = parsed.error.issues.some(
+				(issue) => issue.code === 'custom' && issue.params?.code === 'SAME_DAY_RESERVATION_DISABLED'
+			);
+			throw new ConvexError<BackendErrorData>({
+				code: arrivalTodayDisabled ? 'SAME_DAY_RESERVATION_DISABLED' : 'INVALID_BOOKING'
+			});
+		}
+
+		const { checkInStart, checkOut } = accommodation;
 
 		let checkInAt: number;
 		let checkOutAt: number;
 
 		try {
-			checkInAt = getZonedTimestamp(
-				parsed.data.checkInDate,
-				accommodation.checkInStart,
-				timeZone.data
-			);
+			checkInAt = getZonedTimestamp(parsed.data.checkInDate, checkInStart, timeZone.data);
 		} catch {
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_CHECK_IN_TIME_UNAVAILABLE' });
 		}
 
-		if (checkInAt <= now) throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING' });
+		if (checkInAt <= now) throw new ConvexError<BackendErrorData>({ code: 'BOOKING_START_PASSED' });
 
 		try {
-			checkOutAt = getZonedTimestamp(
-				parsed.data.checkOutDate,
-				accommodation.checkOut,
-				timeZone.data
-			);
+			checkOutAt = getZonedTimestamp(parsed.data.checkOutDate, checkOut, timeZone.data);
 		} catch {
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_CHECK_OUT_TIME_UNAVAILABLE' });
 		}
+		if (checkOutAt <= checkInAt)
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_TERMS_UNAVAILABLE' });
 
 		// Signed-in guests own their booking immediately; anonymous requests stay claimable later.
 		const identity = await ctx.auth.getUserIdentity();
 		const ownerId = identity ? getOwnerId(identity) : undefined;
 
+		const { expectedBookingMode: _expectedBookingMode, ...bookingDetails } = parsed.data;
+
 		const booking = {
-			...parsed.data,
+			...bookingDetails,
 			// Keep the validator-typed id: the shared schema only knows it as a string.
 			accommodationId: args.accommodationId,
 			ownerId,
 			// The host owns everything booked on their listing; copied now so host pages need no join scan.
 			hostId: accommodation.ownerId,
-			status: 'pending' as const,
-			requestExpiresAt: Math.min(now + BOOKINGS_CONFIG.REQUEST_RESPONSE_WINDOW_MS, checkInAt),
-			requestEmailIds: {},
+			bookingMode,
+			status: instant ? ('confirmed' as const) : ('pending' as const),
+			requestExpiresAt: instant
+				? undefined
+				: Math.min(now + BOOKINGS_CONFIG.REQUEST_RESPONSE_WINDOW_MS, checkInAt),
 			cancellationTerms: {
 				policy: policy.data,
 				timeZone: timeZone.data,
-				checkInStart: accommodation.checkInStart,
+				checkInStart,
 				checkInAt,
-				checkOut: accommodation.checkOut,
+				checkOut,
 				checkOutAt,
 				pricePerNightMinor: accommodation.pricePerNightMinor,
+				stayType: 'overnight' as const,
+				pricePerDayUseMinor: null,
 				currency: COMPANY_DATA.CURRENCY
 			},
 			searchText: `${parsed.data.lastName} ${parsed.data.email}`.toLowerCase()
 		};
 
+		await checkBookingAvailability(ctx, booking);
 		const bookingId = await ctx.db.insert('bookings', booking);
 
 		if (ownerId) {
@@ -142,21 +166,26 @@ export const createBooking = mutation({
 
 		// Queue both receipts with the booking; the component delivers them asynchronously.
 		const emailData = { bookingId, booking, accommodationName: accommodation.name };
+		if (instant) {
+			const sameEmailRecipient = booking.email === host.email.trim().toLowerCase();
+			if (!sameEmailRecipient) await sendBookingConfirmationEmail(ctx, emailData);
+			await sendBookingConfirmationEmail(ctx, {
+				...emailData,
+				hostEmail: host.email
+			});
+			return bookingId;
+		}
 
-		const guestEmailId = await sendBookingRequestEmail(ctx, {
+		await sendBookingRequestEmail(ctx, {
 			...emailData,
 			recipient: 'guest',
 			email: booking.email
 		});
 
-		const hostEmailId = await sendBookingRequestEmail(ctx, {
+		await sendBookingRequestEmail(ctx, {
 			...emailData,
 			recipient: 'host',
 			email: host.email
-		});
-
-		await ctx.db.patch('bookings', bookingId, {
-			requestEmailIds: { guest: guestEmailId, host: hostEmailId }
 		});
 
 		return bookingId;

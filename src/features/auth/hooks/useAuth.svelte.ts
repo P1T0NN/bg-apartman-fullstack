@@ -1,5 +1,4 @@
 // SVELTEKIT IMPORTS
-import { goto } from '$app/navigation';
 import { page } from '$app/state';
 
 // LIBRARIES
@@ -15,6 +14,7 @@ import { toast } from 'svelte-sonner';
 import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints';
 
 // UTILS
+import { gotoParaglide } from '@/utils/gotoParaglide.js';
 import { toErrorCode } from '@/shared/utils/toErrorCode';
 
 // DATA
@@ -71,8 +71,7 @@ export function useAuth() {
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity
 					const params = new URLSearchParams({ error: 'BANNED_USER' });
 					if (result.error.message) params.set('error_description', result.error.message);
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					await goto(`${UNPROTECTED_PAGE_ENDPOINTS.AUTH_ERROR}?${params}`);
+					await gotoParaglide(`${UNPROTECTED_PAGE_ENDPOINTS.AUTH_ERROR}?${params}`);
 					return;
 				}
 
@@ -130,8 +129,7 @@ export function useAuth() {
 					const params = new URLSearchParams({ email });
 					const target = redirectTarget();
 					if (target) params.set(AUTH_REDIRECT_PARAM, target);
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto(`${UNPROTECTED_PAGE_ENDPOINTS.VERIFY_EMAIL}?${params}`);
+					gotoParaglide(`${UNPROTECTED_PAGE_ENDPOINTS.VERIFY_EMAIL}?${params}`);
 				}
 			);
 		},
@@ -147,7 +145,7 @@ export function useAuth() {
 		verifyEmail(email: string, otp: string, captchaToken: string) {
 			return run(
 				() => authClient.emailOtp.verifyEmail({ ...captchaFetchOptions(captchaToken), email, otp }),
-				() => goto(redirectTarget() ?? UNPROTECTED_PAGE_ENDPOINTS.ROOT)
+				() => gotoParaglide(redirectTarget() ?? UNPROTECTED_PAGE_ENDPOINTS.ROOT)
 			);
 		},
 		requestPasswordReset(email: string, captchaToken: string) {
@@ -164,7 +162,7 @@ export function useAuth() {
 						otp,
 						password
 					}),
-				() => goto(UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN)
+				() => gotoParaglide(UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN)
 			);
 		},
 		signInWithGoogle(captchaToken: string) {
