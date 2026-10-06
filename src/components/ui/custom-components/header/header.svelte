@@ -11,6 +11,7 @@
 	import { COMPANY_DATA } from '@/shared/config';
 
 	// COMPONENTS
+	import Link from '@/components/ui/custom-components/link/link.svelte';
 	import AuthDialog from '@/features/auth/components/auth-dialog/auth-dialog.svelte';
 	import LogoutButton from '@/features/auth/components/logout-button/logout-button.svelte';
 	import NativeAvatar from '@/components/ui/native-components/native-avatar/native-avatar.svelte';
@@ -35,9 +36,17 @@
 	<NativeAvatar name={user?.name ?? ''} image={user?.image} />
 {/snippet}
 
+{#snippet mobileMenuTrigger()}
+	<span class="icon-[lucide--menu] size-5" aria-hidden="true"></span>
+{/snippet}
+
 {#snippet menuLink(href: string, icon: string, label: string)}
 	<!-- eslint-disable svelte/no-navigation-without-resolve -->
-	<a {href} class={menuItemClass}>
+	<a
+		{href}
+		class={menuItemClass}
+		onclick={(event) => event.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover()}
+	>
 		<span class={icon} aria-hidden="true"></span>
 		<span>{label}</span>
 	</a>
@@ -46,18 +55,18 @@
 
 <header class="sticky top-0 z-40 border-b bg-background">
 	<div
-		class="mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-6"
+		class="mx-auto grid h-16 w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
 	>
-		<a
+		<Link
 			href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}
-			class="justify-self-start text-lg font-semibold tracking-tight"
+			class="max-w-full min-w-0 justify-self-start truncate text-lg font-semibold tracking-tight"
 		>
 			{COMPANY_DATA.NAME}
-		</a>
+		</Link>
 
 		<nav
 			aria-label={m['Components.Header.navigation']()}
-			class="flex items-center justify-center gap-1"
+			class="hidden items-center justify-center gap-1 lg:flex"
 		>
 			<Button variant="ghost" href={UNPROTECTED_PAGE_ENDPOINTS.CONTACT}>
 				{m['Components.Header.contact']()}
@@ -67,11 +76,11 @@
 			</Button>
 		</nav>
 
-		<div class="flex items-center gap-2 justify-self-end">
+		<div class="flex min-w-0 items-center gap-2 justify-self-end">
 			{#if $session.isPending}
 				<Spinner />
 			{:else if user}
-				<Button href={PROTECTED_PAGE_ENDPOINTS.HOST_DASHBOARD}>
+				<Button href={PROTECTED_PAGE_ENDPOINTS.HOST_DASHBOARD} class="hidden lg:inline-flex">
 					{m['Components.Header.switchToHosting']()}
 				</Button>
 
@@ -149,6 +158,7 @@
 				</Button>
 				<Button
 					href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_UP}
+					class="hidden lg:inline-flex"
 					onclick={(event) => {
 						event.preventDefault();
 						authDialog.open('sign-up');
@@ -157,6 +167,48 @@
 					{m['Components.Header.listYourProperty']()}
 				</Button>
 			{/if}
+			<NativePopover
+				id="header-mobile-menu"
+				trigger={mobileMenuTrigger}
+				triggerLabel={m['Components.Header.navigation']()}
+				triggerClass="size-10 justify-center lg:hidden"
+				class="w-56 max-w-[calc(100vw-2rem)] lg:hidden"
+			>
+				<nav aria-label={m['Components.Header.navigation']()}>
+					{@render menuLink(
+						UNPROTECTED_PAGE_ENDPOINTS.CONTACT,
+						'icon-[lucide--mail] size-4',
+						m['Components.Header.contact']()
+					)}
+					{@render menuLink(
+						UNPROTECTED_PAGE_ENDPOINTS.FEEDBACK,
+						'icon-[lucide--message-square] size-4',
+						m['Components.Header.feedback']()
+					)}
+					<Separator class="my-1" />
+					{#if user}
+						{@render menuLink(
+							PROTECTED_PAGE_ENDPOINTS.HOST_DASHBOARD,
+							'icon-[lucide--house] size-4',
+							m['Components.Header.switchToHosting']()
+						)}
+					{:else}
+						<Button
+							variant="ghost"
+							class={menuItemClass}
+							href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_UP}
+							onclick={(event) => {
+								event.preventDefault();
+								document.getElementById('header-mobile-menu')?.hidePopover();
+								authDialog.open('sign-up');
+							}}
+						>
+							<span class="icon-[lucide--house-plus] size-4" aria-hidden="true"></span>
+							{m['Components.Header.listYourProperty']()}
+						</Button>
+					{/if}
+				</nav>
+			</NativePopover>
 		</div>
 	</div>
 </header>

@@ -1,13 +1,9 @@
 <script lang="ts">
 	// COMPONENTS
-	import AccommodationReservationRulesGuest from '@/features/accommodations/components/accommodation-reservation-rules-guest/accommodation-reservation-rules-guest.svelte';
 	import BookingStayDatesCalendar from './booking-stay-dates-calendar.svelte';
 	import BookingStayDatesHeader from './booking-stay-dates-header.svelte';
 	import BookingStayDatesLegend from './booking-stay-dates-legend.svelte';
 	import * as Field from '@/components/ui/field/index.js';
-
-	// UTILS
-	import { m } from '@/lib/paraglide/messages';
 
 	// TYPES
 	import type { DateRange } from 'bits-ui';
@@ -42,29 +38,23 @@
 	aria-invalid={Boolean(error)}
 	aria-describedby={error ? `${id}-stay-error` : undefined}
 >
-	<BookingStayDatesHeader {value} />
+	<BookingStayDatesHeader {value} checkOutTime={accommodation.checkOut} />
 
 	<BookingStayDatesCalendar
+		pricing={accommodation}
 		{availability}
 		{availabilityLoading}
 		{value}
 		{minValue}
 		{disabled}
 		{error}
+		errorId={`${id}-stay-error`}
 		{onValueChange}
 	/>
 
-	<BookingStayDatesLegend />
-
 	{#if error}
-		<Field.Error id={`${id}-stay-error`}>{error}</Field.Error>
+		<Field.Error id={`${id}-stay-error`} class="mt-2">{error}</Field.Error>
 	{/if}
-	
-	<Field.Description class="mt-2">
-		{m['BookingPage.BookCheckoutForm.checkOutTime']({ time: accommodation.checkOut })}
-	</Field.Description>
 
-	<div class="mt-4">
-		<AccommodationReservationRulesGuest {accommodation} />
-	</div>
+	<BookingStayDatesLegend {accommodation} />
 </div>

@@ -1,3 +1,4 @@
+import { calculateStayPricing } from '../../src/shared/features/bookings/utils/calculateStayPricing.js';
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config.js';
 import { COMPANY_DATA } from '../../src/shared/config.js';
 import { getZonedTimestamp } from '../../src/shared/features/timezone/utils/getZonedTimestamp.js';
@@ -18,6 +19,33 @@ export function bookingCancellationTerms(
 		checkOut,
 		checkOutAt: getZonedTimestamp(checkOutDate, checkOut, timeZone),
 		pricePerNightMinor: 8025,
+		basePricePerNightMinor: 8025,
+		discountBps: 0,
+		stayPricing: calculateStayPricing(
+			{ pricePerNightMinor: 8025, discountBps: 0 },
+			checkInDate,
+			checkOutDate
+		),
 		currency: COMPANY_DATA.CURRENCY
+	};
+}
+
+export function withExpectedTotal<
+	T extends {
+		checkInDate: string;
+		checkOutDate: string;
+		expectedPricePerNightMinor: number;
+		expectedTotalMinor?: number;
+	}
+>(args: T) {
+	return {
+		...args,
+		expectedTotalMinor:
+			args.expectedTotalMinor ??
+			Math.max(
+				1,
+				((Date.parse(args.checkOutDate) - Date.parse(args.checkInDate)) / 86400000) *
+					args.expectedPricePerNightMinor
+			)
 	};
 }

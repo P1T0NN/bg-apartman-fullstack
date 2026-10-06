@@ -66,6 +66,7 @@
 	<div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_19rem]">
 		<div class="min-w-0 overflow-hidden rounded-xl border" aria-busy={calendar.isLoading}>
 			<MyAccommodationCalendar
+				pricing={calendar.data?.pricing}
 				bind:value
 				bind:placeholder
 				{minValue}

@@ -1,7 +1,10 @@
 /// <reference types="vite/client" />
 
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
-import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
+import {
+	bookingCancellationTerms,
+	withExpectedTotal
+} from '../fixtures/bookingCancellationTerms.js';
 
 import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
@@ -84,6 +87,9 @@ const accommodation = {
 	beds: 3,
 	bathrooms: 1,
 	pricePerNightMinor: 8025,
+	discountBps: 0,
+	weekendPricePerNightMinor: null,
+	effectivePricePerNightMinor: 8025,
 	sameDayReservation: false,
 	recommendationSortKey: -3,
 	guestRatingAverage: 0,
@@ -106,6 +112,7 @@ const accommodation = {
 };
 
 const guest = {
+	paymentMethod: 'cash' as const,
 	firstName: ' Alex ',
 	lastName: 'Guest',
 	email: 'alex@example.com',
@@ -116,7 +123,11 @@ const guest = {
 test('requests freeze server-owned terms and confirmation preserves them after listing edits', async () => {
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 	const request = {
 		accommodationId,
@@ -126,7 +137,10 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 		children: 0,
 		...guest
 	};
-	const id = await t.mutation(createBooking, request);
+	const id = await t.mutation(
+		createBooking,
+		withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 })
+	);
 	const original = (await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms;
 	expect(original).toEqual({
 		stayType: 'overnight',
@@ -138,6 +152,15 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 		checkOut: '11:00',
 		checkOutAt: Date.parse('2999-07-23T09:00:00Z'),
 		pricePerNightMinor: 8025,
+		discountBps: 0,
+		basePricePerNightMinor: 8025,
+		stayPricing: {
+			regularNights: 3,
+			weekendNights: 0,
+			weekendBasePricePerNightMinor: null,
+			weekendPricePerNightMinor: null,
+			totalMinor: 24075
+		},
 		currency: 'EUR'
 	});
 	const custom = {
@@ -153,6 +176,9 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 			timeZone: 'America/New_York',
 			checkInStart: '16:00',
 			pricePerNightMinor: 9999,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 9999,
 			cancellationPolicy: custom
 		})
 	);
@@ -165,7 +191,10 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 	expect((await t.query(confirmation, { id }))?.cancellationTerms).toEqual(original);
 	// Reuse the dates after releasing the confirmed inventory.
 	await host.mutation(updateBookingStatus, { id, status: 'cancelled' });
-	const nextId = await t.mutation(createBooking, request);
+	const nextId = await t.mutation(
+		createBooking,
+		withExpectedTotal({ ...request, expectedPricePerNightMinor: 9999 })
+	);
 	expect((await t.run((ctx) => ctx.db.get('bookings', nextId)))?.cancellationTerms).toEqual({
 		stayType: 'overnight',
 		pricePerDayUseMinor: null,
@@ -176,10 +205,21 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 		checkOut: '11:00',
 		checkOutAt: Date.parse('2999-07-23T15:00:00Z'),
 		pricePerNightMinor: 9999,
+		discountBps: 0,
+		basePricePerNightMinor: 9999,
+		stayPricing: {
+			regularNights: 3,
+			weekendNights: 0,
+			weekendBasePricePerNightMinor: null,
+			weekendPricePerNightMinor: null,
+			totalMinor: 29997
+		},
 		currency: 'EUR'
 	});
 	const forged = { ...request, cancellationTerms: original };
-	await expect(t.mutation(createBooking, forged)).rejects.toThrow();
+	await expect(
+		t.mutation(createBooking, withExpectedTotal({ ...forged, expectedPricePerNightMinor: 9999 }))
+	).rejects.toThrow();
 });
 
 test('requests reject unknown property timezones, elapsed check-in, and DST gaps or folds', async () => {
@@ -196,19 +236,28 @@ test('requests reject unknown property timezones, elapsed check-in, and DST gaps
 		] as const) {
 			const { t, hostId } = await setup();
 			const accommodationId = await t.run((ctx) =>
-				ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId, ...changes })
+				ctx.db.insert('accommodations', {
+					supportedPaymentMethods: 'cash',
+					...accommodation,
+					ownerId: hostId,
+					...changes
+				})
 			);
 			await expect(
-				t.mutation(createBooking, {
-					...guest,
-					accommodationId,
-					checkInDate,
-					checkOutDate: new Date(Date.parse(checkInDate) + 3 * 86_400_000)
-						.toISOString()
-						.slice(0, 10),
-					adults: 1,
-					children: 0
-				})
+				t.mutation(
+					createBooking,
+					withExpectedTotal({
+						expectedPricePerNightMinor: 8025,
+						...guest,
+						accommodationId,
+						checkInDate,
+						checkOutDate: new Date(Date.parse(checkInDate) + 3 * 86_400_000)
+							.toISOString()
+							.slice(0, 10),
+						adults: 1,
+						children: 0
+					})
+				)
 			).rejects.toMatchObject({ data: { code } });
 			expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
 		}
@@ -224,6 +273,7 @@ test('request dates use the property calendar even when its date differs from UT
 		const { t, hostId } = await setup();
 		const accommodationId = await t.run((ctx) =>
 			ctx.db.insert('accommodations', {
+				supportedPaymentMethods: 'cash',
 				...accommodation,
 				ownerId: hostId,
 				timeZone: 'America/Los_Angeles',
@@ -231,14 +281,18 @@ test('request dates use the property calendar even when its date differs from UT
 				checkInStart: '17:00'
 			})
 		);
-		const id = await t.mutation(createBooking, {
-			...guest,
-			accommodationId,
-			checkInDate: '2027-01-01',
-			checkOutDate: '2027-01-04',
-			adults: 1,
-			children: 0
-		});
+		const id = await t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				...guest,
+				accommodationId,
+				checkInDate: '2027-01-01',
+				checkOutDate: '2027-01-04',
+				adults: 1,
+				children: 0
+			})
+		);
 		expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms?.checkInAt).toBe(
 			Date.parse('2027-01-02T01:00:00Z')
 		);
@@ -250,7 +304,11 @@ test('request dates use the property calendar even when its date differs from UT
 test('host bookings prioritize the oldest pending requests and the newest other statuses', async () => {
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	vi.useFakeTimers();
@@ -320,29 +378,41 @@ test('host bookings prioritize the oldest pending requests and the newest other 
 test('createBooking stores a guest request and rejects invalid stays and missing accommodations', async () => {
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 
 	await expect(
-		t.mutation(createBooking, {
-			accommodationId,
-			checkInDate: '2999-10-24',
-			checkOutDate: '2999-10-25',
-			adults: 2,
-			children: 0,
-			...guest
-		})
+		t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				accommodationId,
+				checkInDate: '2999-10-24',
+				checkOutDate: '2999-10-25',
+				adults: 2,
+				children: 0,
+				...guest
+			})
+		)
 	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING' } });
 
-	await t.mutation(createBooking, {
-		accommodationId,
-		checkInDate: '2999-10-24',
-		checkOutDate: '2999-10-27',
-		adults: 2,
-		children: 1,
-		...guest,
-		email: ' Alex@Example.COM '
-	});
+	await t.mutation(
+		createBooking,
+		withExpectedTotal({
+			expectedPricePerNightMinor: 8025,
+			accommodationId,
+			checkInDate: '2999-10-24',
+			checkOutDate: '2999-10-27',
+			adults: 2,
+			children: 1,
+			...guest,
+			email: ' Alex@Example.COM '
+		})
+	);
 
 	const stored = await t.run((ctx) => ctx.db.query('bookings').take(10));
 	expect(stored).toHaveLength(1);
@@ -363,37 +433,53 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 	expect(stored[0].specialRequests).toBeUndefined();
 
 	const missingId = await t.run(async (ctx) => {
-		const id = await ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId });
+		const id = await ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		});
 		await ctx.db.delete(id);
 		return id;
 	});
 	await expect(
-		t.mutation(createBooking, {
-			accommodationId: missingId,
-			checkInDate: '2999-10-24',
-			checkOutDate: '2999-10-27',
-			adults: 2,
-			children: 0,
-			...guest
-		})
+		t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				accommodationId: missingId,
+				checkInDate: '2999-10-24',
+				checkOutDate: '2999-10-27',
+				adults: 2,
+				children: 0,
+				...guest
+			})
+		)
 	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_NOT_FOUND' } });
 });
 
 test('signed-in guests own their booking and see it in my-bookings with the owner total', async () => {
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 	const signedInGuest = t.withIdentity({ subject: 'guest-1', tokenIdentifier: 'issuer|guest-1' });
 
-	const bookingId = await signedInGuest.mutation(createBooking, {
-		accommodationId,
-		checkInDate: '2999-10-24',
-		checkOutDate: '2999-10-27',
-		adults: 2,
-		children: 0,
-		...guest
-	});
+	const bookingId = await signedInGuest.mutation(
+		createBooking,
+		withExpectedTotal({
+			expectedPricePerNightMinor: 8025,
+			accommodationId,
+			checkInDate: '2999-10-24',
+			checkOutDate: '2999-10-27',
+			adults: 2,
+			children: 0,
+			...guest
+		})
+	);
 
 	const fetchMyBookings = api.tables.bookings.queries.fetchMyBookings.fetchMyBookings;
 	const page = await signedInGuest.query(fetchMyBookings, {
@@ -439,7 +525,11 @@ test('signed-in guests own their booking and see it in my-bookings with the owne
 test('host manages bookings for their own accommodations', async () => {
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	const stranger = t.withIdentity({ subject: 'host-2', tokenIdentifier: 'issuer|host-2' });
@@ -448,14 +538,18 @@ test('host manages bookings for their own accommodations', async () => {
 		data: { code: 'UNAUTHENTICATED' }
 	});
 
-	const bookingId = await t.mutation(createBooking, {
-		accommodationId,
-		checkInDate: '2999-10-24',
-		checkOutDate: '2999-10-27',
-		adults: 2,
-		children: 0,
-		...guest
-	});
+	const bookingId = await t.mutation(
+		createBooking,
+		withExpectedTotal({
+			expectedPricePerNightMinor: 8025,
+			accommodationId,
+			checkInDate: '2999-10-24',
+			checkOutDate: '2999-10-27',
+			adults: 2,
+			children: 0,
+			...guest
+		})
+	);
 
 	const base = { paginationOpts: { cursor: null, numItems: 10 } };
 	expect(await host.query(hasPendingHostBookings, {})).toBe(true);
@@ -515,7 +609,11 @@ test('arrival today is opt-in, ends exactly at check-in, and still respects mini
 	vi.setSystemTime(new Date('2027-01-01T10:00:00Z'));
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 	const request = {
 		...guest,
@@ -525,21 +623,35 @@ test('arrival today is opt-in, ends exactly at check-in, and still respects mini
 		adults: 1,
 		children: 0
 	};
-	await expect(t.mutation(createBooking, request)).rejects.toMatchObject({
+	await expect(
+		t.mutation(createBooking, withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 }))
+	).rejects.toMatchObject({
 		data: { code: 'SAME_DAY_RESERVATION_DISABLED' }
 	});
 	await t.run((ctx) =>
 		ctx.db.patch('accommodations', accommodationId, { sameDayReservation: true })
 	);
 	await expect(
-		t.mutation(createBooking, { ...request, checkOutDate: '2027-01-02' })
+		t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				...request,
+				checkOutDate: '2027-01-02'
+			})
+		)
 	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING' } });
-	const id = await t.mutation(createBooking, request);
+	const id = await t.mutation(
+		createBooking,
+		withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 })
+	);
 	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.requestExpiresAt).toBe(
 		Date.parse('2027-01-01T13:00:00Z')
 	);
 	vi.setSystemTime(new Date('2027-01-01T13:00:00Z'));
-	await expect(t.mutation(createBooking, request)).rejects.toMatchObject({
+	await expect(
+		t.mutation(createBooking, withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 }))
+	).rejects.toMatchObject({
 		data: { code: 'BOOKING_START_PASSED' }
 	});
 	const host = t.withIdentity({ subject: hostId, tokenIdentifier: 'issuer|' + hostId });
@@ -555,6 +667,7 @@ test.each(['request', 'instant'] as const)(
 		const { t, hostId } = await setup();
 		const accommodationId = await t.run((ctx) =>
 			ctx.db.insert('accommodations', {
+				supportedPaymentMethods: 'cash',
 				...accommodation,
 				ownerId: hostId,
 				bookingMode,
@@ -571,17 +684,30 @@ test.each(['request', 'instant'] as const)(
 			adults: 1,
 			children: 0
 		};
-		await expect(t.mutation(createBooking, request)).rejects.toMatchObject({
+		await expect(
+			t.mutation(createBooking, withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 }))
+		).rejects.toMatchObject({
 			data: { code: 'INVALID_BOOKING' }
 		});
 		await expect(
-			t.mutation(createBooking, {
-				...request,
-				checkInDate: '2027-01-10',
-				checkOutDate: '2027-01-10'
-			})
+			t.mutation(
+				createBooking,
+				withExpectedTotal({
+					expectedPricePerNightMinor: 8025,
+					...request,
+					checkInDate: '2027-01-10',
+					checkOutDate: '2027-01-10'
+				})
+			)
 		).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING' } });
-		const id = await t.mutation(createBooking, { ...request, checkOutDate: '2027-01-02' });
+		const id = await t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				...request,
+				checkOutDate: '2027-01-02'
+			})
+		);
 		expect(await t.run((ctx) => ctx.db.get('bookings', id))).toMatchObject({
 			status: bookingMode === 'instant' ? 'confirmed' : 'pending',
 			cancellationTerms: { stayType: 'overnight', pricePerDayUseMinor: null }
@@ -593,7 +719,11 @@ test('historical daytime bookings retain frozen terms and block overlapping new 
 	vi.setSystemTime(new Date('2027-01-01T07:00:00Z'));
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: hostId })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: hostId
+		})
 	);
 	const terms = {
 		...bookingCancellationTerms('2027-01-10', '2027-01-10'),
@@ -623,13 +753,164 @@ test('historical daytime bookings retain frozen terms and block overlapping new 
 	await host.mutation(updateBookingStatus, { id, status: 'confirmed' });
 	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toEqual(terms);
 	await expect(
-		t.mutation(createBooking, {
-			...guest,
-			accommodationId,
-			checkInDate: '2027-01-10',
-			checkOutDate: '2027-01-13',
-			adults: 1,
-			children: 0
-		})
+		t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				...guest,
+				accommodationId,
+				checkInDate: '2027-01-10',
+				checkOutDate: '2027-01-13',
+				adults: 1,
+				children: 0
+			})
+		)
 	).rejects.toMatchObject({ data: { code: 'BOOKING_DATES_UNAVAILABLE' } });
+});
+
+test.each([
+	['cash', 'cash'],
+	['online', 'online'],
+	['both', 'cash'],
+	['both', 'online']
+] as const)(
+	'records %s listing payment choice %s and preserves it after listing changes',
+	async (supportedPaymentMethods, paymentMethod) => {
+		const { t, hostId } = await setup();
+		const accommodationId = await t.run((ctx) =>
+			ctx.db.insert('accommodations', {
+				...accommodation,
+				ownerId: hostId,
+				supportedPaymentMethods
+			})
+		);
+		const request = {
+			accommodationId,
+			checkInDate: '2999-07-20',
+			checkOutDate: '2999-07-23',
+			adults: 2,
+			children: 0,
+			...guest
+		};
+		if (supportedPaymentMethods !== 'both') {
+			await expect(
+				t.mutation(
+					createBooking,
+					withExpectedTotal({
+						expectedPricePerNightMinor: 8025,
+						...request,
+						paymentMethod: paymentMethod === 'cash' ? 'online' : 'cash'
+					})
+				)
+			).rejects.toThrow('PAYMENT_METHOD_UNSUPPORTED');
+		}
+		const bookingId = await t.mutation(
+			createBooking,
+			withExpectedTotal({
+				expectedPricePerNightMinor: 8025,
+				...request,
+				paymentMethod
+			})
+		);
+		await t.run((ctx) =>
+			ctx.db.patch('accommodations', accommodationId, {
+				supportedPaymentMethods: paymentMethod === 'cash' ? 'online' : 'cash'
+			})
+		);
+		expect((await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.paymentMethod).toBe(
+			paymentMethod
+		);
+		expect(
+			(
+				await t.query(
+					api.tables.bookings.queries.fetchBookingConfirmation.fetchBookingConfirmation,
+					{ id: bookingId }
+				)
+			)?.paymentMethod
+		).toBe(paymentMethod);
+	}
+);
+
+test('discounted bookings reject stale prices and preserve the accepted nightly rate', async () => {
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...accommodation,
+			ownerId: hostId,
+			supportedPaymentMethods: 'cash',
+			discountBps: 1500,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 6821
+		})
+	);
+	const request = {
+		...guest,
+		accommodationId,
+		checkInDate: '2999-07-20',
+		checkOutDate: '2999-07-23',
+		adults: 1,
+		children: 0
+	};
+	await expect(
+		t.mutation(createBooking, withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 }))
+	).rejects.toThrow('BOOKING_PRICE_CHANGED');
+	const id = await t.mutation(
+		createBooking,
+		withExpectedTotal({ ...request, expectedPricePerNightMinor: 6821 })
+	);
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, {
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8025
+		})
+	);
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toMatchObject({
+		basePricePerNightMinor: 8025,
+		discountBps: 1500,
+		pricePerNightMinor: 6821
+	});
+});
+
+test('weekend bookings reject stale totals and freeze the discounted mixed-night quote', async () => {
+	const { t, hostId } = await setup();
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...accommodation,
+			ownerId: hostId,
+			supportedPaymentMethods: 'cash',
+			discountBps: 1500,
+			effectivePricePerNightMinor: 6821,
+			weekendPricePerNightMinor: 10025
+		})
+	);
+	const request = {
+		...guest,
+		accommodationId,
+		checkInDate: '2999-07-19',
+		checkOutDate: '2999-07-22',
+		adults: 1,
+		children: 0,
+		expectedPricePerNightMinor: 6821
+	};
+	// 2999-07-19 is Friday: two weekend nights and one regular night.
+	await expect(
+		t.mutation(createBooking, { ...request, expectedTotalMinor: 20463 })
+	).rejects.toThrow('BOOKING_PRICE_CHANGED');
+	const id = await t.mutation(createBooking, { ...request, expectedTotalMinor: 23863 });
+	const original = (await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms;
+	expect(original?.stayPricing).toEqual({
+		regularNights: 1,
+		weekendNights: 2,
+		weekendBasePricePerNightMinor: 10025,
+		weekendPricePerNightMinor: 8521,
+		totalMinor: 23863
+	});
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, { weekendPricePerNightMinor: 20000 })
+	);
+	await expect(
+		t.mutation(createBooking, { ...request, expectedTotalMinor: 23863 })
+	).rejects.toThrow('BOOKING_PRICE_CHANGED');
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toEqual(original);
 });

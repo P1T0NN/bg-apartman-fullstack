@@ -7,6 +7,7 @@
 	import MyAccommodationTabListingSectionItem from './my-accommodation-tab-listing-section-item.svelte';
 
 	// UTILS
+	import { calculateAccommodationPricing } from '@/shared/features/accommodations/utils/calculateAccommodationPricing.js';
 	import { formatCurrency } from '@/shared/utils/currency.js';
 	import { getFormValue } from '@/components/ui/custom-components/form/formValues.js';
 
@@ -50,7 +51,13 @@
 				});
 			case 'pricing':
 				return m['MyAccommodationPage.MyAccommodationTabListingSection.pricingSummary']({
-					price: formatCurrency(Number(values.nightlyPrice) * 100, getLocale()),
+					price: formatCurrency(
+						calculateAccommodationPricing(
+							Number(values.nightlyPrice),
+							Number(values.discountPercent)
+						).effectivePricePerNightMinor,
+						getLocale()
+					),
 					nights: Number(values.minimumStay)
 				});
 			case 'cancellation-policy':

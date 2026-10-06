@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 
 	// COMPONENTS
+	import AccommodationDetailsPricing from './accommodation-details-pricing.svelte';
 	import AccommodationDetailsOverview from './accommodation-details-overview.svelte';
 	import AccommodationDetailsAmenities from './accommodation-details-amenities.svelte';
 	import AccommodationDetailsLocation from './accommodation-details-location.svelte';
@@ -20,6 +21,7 @@
 
 <div class="min-w-0 divide-y divide-border wrap-anywhere">
 	<AccommodationDetailsOverview {accommodation} />
+	<AccommodationDetailsPricing {accommodation} />
 	<AccommodationDetailsAmenities {accommodation} />
 
 	<Reviews reviewSummary={accommodation.reviews}>

@@ -712,11 +712,10 @@
 		"BookingHeader": {
 			"back": "Back to accommodation",
 			"title": "Make it your next stay.",
-			"preview": "Request to book",
 			"description": "Choose your dates, add your details and review your stay before sending your booking request."
 		},
 		"BookSummary": {
-			"title": "Your stay, at a glance",
+			"title": "Your stay",
 			"nightlyRate": "Nightly rate",
 			"nights": "Nights",
 			"guests": "Guests",
@@ -725,13 +724,19 @@
 			"estimate": "Accommodation estimate",
 			"breakdown": "Nightly rate × {nights} nights",
 			"chooseDates": "Choose valid dates and guest counts to see your estimate.",
-			"disclaimer": "This estimate covers the accommodation only. Additional fees and payment arrangements must be confirmed with the host. No payment is collected here.",
+			"disclaimer": "Taxes, additional fees and payment arrangements must be confirmed with the host. No payment is collected here.",
 			"previewNotice": "Your details are sent only when you submit the booking request. No payment is taken now."
 		},
 		"BookCheckoutConfirmButton": {
 			"confirm": "Send booking request"
 		},
 		"BookCheckoutForm": {
+			"sameDayUnavailable": "Booking for arrival today is unavailable for this accommodation.",
+			"sameDayAvailable": "Booking for arrival today is available before {time}, local property time.",
+			"guestLimit": "Guest limit: {count}",
+			"minimumStay": "Minimum stay: {count} night(s)",
+			"maximumStay": "Maximum stay: {count} night(s)",
+			"timeZone": "Timezone: Dates and booking deadlines use {timeZone}.",
 			"trip": "Your trip",
 			"tripHint": "Check your dates and who's coming. All fields in this section are required.",
 			"checkOutTime": "Before {time}, local property time",
@@ -848,9 +853,15 @@
 			"partiesAllowed": "Parties and events allowed",
 			"noParties": "No parties or events"
 		},
+		"AccommodationDetailsPricing": {
+			"title": "Nightly rates & booking",
+			"weekendNights": "Friday and Saturday nights",
+			"hint": "Rates are per night and include the displayed discount. Choose your dates to see your accommodation estimate."
+		},
 		"AccommodationSummary": {
 			"title": "Plan your stay",
-			"listedRate": "Listed nightly rate",
+			"listedRate": "Starting nightly rate",
+			"weekendDays": "Friday & Saturday",
 			"minimum": "Minimum stay",
 			"maximum": "Maximum stay",
 			"night": "night",
@@ -858,10 +869,20 @@
 			"capacity": "Maximum guests",
 			"reviewRules": "Review stay requirements",
 			"planBooking": "Plan your booking",
-			"priceHint": "This is the listed nightly rate. Review your stay estimate and booking method on the next step."
+			"priceHint": "Choose your dates to see your accommodation estimate."
 		},
 		"AccommodationReviewBookingItem": {
 			"leaveReview": "Leave a review"
+		},
+		"CancellationPolicy": {
+			"fullTitle": "Full refund before check-in",
+			"fullHint": "Cancel any time before your scheduled check-in for a 100% refund under this policy.",
+			"customTitle": "Refunds depend on when you cancel",
+			"customHint": "Find your cancellation window below. The closer you are to check-in, the lower the refund.",
+			"cancelWhen": "When you cancel",
+			"refund": "Refund under this policy",
+			"beforeArrival": "You can cancel before scheduled check-in, even when no refund applies. Cancellations during your stay are outside this policy.",
+			"noPayment": "Booking does not collect a payment. Refund percentages describe the cancellation terms."
 		}
 	},
 	"AuthFeature": {
@@ -1114,6 +1135,7 @@
 			"hint": "Detected from your property map pin. Check-in, checkout and cancellation deadlines use this local timezone."
 		},
 		"BookingMode": {
+			"preferences": "Booking preferences",
 			"label": "Booking method",
 			"instant": "Instant Booking",
 			"request": "Request booking",
@@ -1135,14 +1157,40 @@
 			"sameDayLimitations": "Today and the cutoff use the accommodation’s timezone. Booking must be completed strictly before check-in starts. Enabling this cannot reopen a stay whose check-in time has passed. Availability, guest limits, house rules and minimum/maximum nights still apply; request bookings still need approval before the stay starts."
 		},
 		"ReservationRulesGuest": {
-			"title": "Booking date rules",
-			"sameDayOn": "Arrival today is allowed only when booking before check-in starts at {time}. Once that time passes, choose a later arrival date.",
-			"sameDayOff": "Arrival today is unavailable. Choose tomorrow or a later arrival date.",
+			"title": "Stay requirements",
+			"sameDayOn": "Book before {time}, local property time. After that, choose a later arrival date.",
+			"sameDayOff": "Bookings for arrival today are unavailable. Choose tomorrow or later.",
 			"conditions": "Dates must be available and the stay must meet the accommodation’s minimum and maximum nights, guest limit ({guests}) and house rules. Minimum stay: {minimum} nights. Dates and booking deadlines use {timeZone}.",
-			"approval": "This accommodation requires host approval. A request does not hold the dates; the host must accept before the response deadline and before your scheduled arrival, whichever comes first.",
+			"approval": "Your request does not hold the dates. The host must accept before the response deadline or scheduled check-in, whichever comes first.",
 			"dayUse": "Day-use stay",
 			"duration": "Stay duration",
-			"overnightRequired": "Every booking requires an overnight stay. Departure must be on a later date than arrival."
+			"overnightRequired": "Overnight stays only. Check out on a later date than arrival.",
+			"minimumStay": "Minimum stay",
+			"maximumStay": "Maximum stay",
+			"guestLimit": "Guest limit",
+			"timeZone": "Timezone",
+			"night": "night",
+			"nights": "nights",
+			"arrivalToday": "Arriving today?",
+			"conditionsHint": "Dates must be available and house rules apply. All booking deadlines use the property timezone.",
+			"approvalTitle": "Host approval required"
+		},
+		"Pricing": {
+			"discount": "Discount (%)",
+			"discountHint": "0 means no discount. Supports up to two decimal places.",
+			"original": "Original nightly price",
+			"current": "Discounted nightly price",
+			"discountLabel": "{percent}% off",
+			"preview": "Guest nightly price",
+			"weekend": "Weekend nightly price",
+			"weekendHint": "Friday and Saturday nights, in local property time. Leave empty to use the normal rate. Discounts apply to both rates.",
+			"weekendTooLow": "Weekend price must be at least the normal nightly price.",
+			"from": "From",
+			"regularNights": "Regular nights",
+			"weekendNights": "Weekend nights",
+			"total": "Stay total",
+			"savingsIncluded": "You save {amount}",
+			"discountIncluded": "Discount included in the estimate."
 		}
 	},
 	"BookingsFeature": {
@@ -1157,12 +1205,13 @@
 		},
 		"BookingStayDatesLegend": {
 			"legend": "Calendar legend",
+			"weekendRate": "Friday and Saturday nights: {price} per night. Your stay total includes this rate.",
 			"selectable": "Selectable date",
 			"arrivalDeparture": "Arrival / departure",
 			"selectedNights": "Selected nights",
 			"today": "Today (outlined)",
 			"tooEarly": "Too early to book",
-			"availabilityHint": "Red, crossed-out squares mark booked or blocked nights. You cannot arrive or stay on those nights. You may select one as your checkout date if every preceding night is available. Availability is checked again when you submit; selecting dates does not reserve them.",
+			"availabilityHint": "Availability is checked again when you submit; selecting dates does not reserve them.",
 			"unavailable": "Booked or blocked night"
 		},
 		"status": {
@@ -1724,7 +1773,8 @@
 		"minimumStay": "Choose at least {count} nights for this property.",
 		"maximumStay": "This property allows stays of up to {count} nights.",
 		"guestLimit": "Enter at least one adult and no more than {count} guests in total, using whole numbers.",
-		"invalidTimeZone": "Choose a valid property timezone."
+		"invalidTimeZone": "Choose a valid property timezone.",
+		"discountPriceTooLow": "The discounted nightly price must be at least 0.01."
 	},
 	"BackendMessages": {
 		"bookingRequestExpired": "The response deadline has passed. This request can no longer be changed. You can submit a new request.",
@@ -1765,7 +1815,9 @@
 		"sameDayReservationDisabled": "This accommodation does not accept bookings for arrival today. Choose tomorrow or a later date in the accommodation's timezone.",
 		"bookingStartPassed": "The scheduled arrival time has already started or passed in the accommodation's timezone. Choose a later arrival date, even if bookings for arrival today are enabled.",
 		"invalidBlockedDateRange": "Select 1-30 consecutive dates, starting today or later in the accommodation's timezone.",
-		"blockedDatesBookingConflict": "These dates overlap a confirmed booking. No dates were blocked."
+		"blockedDatesBookingConflict": "These dates overlap a confirmed booking. No dates were blocked.",
+		"paymentMethodUnsupported": "The accommodation's accepted payment methods have changed. Refresh and choose an available payment method.",
+		"bookingPriceChanged": "The nightly price has changed. Review the updated price before submitting again."
 	},
 	"AddAccommodationPage": {
 		"title": "Add an accommodation",
@@ -1781,8 +1833,8 @@
 			"amenitiesHint": "Select what is available to guests. You can add more later.",
 			"photosTitle": "Help guests picture their stay",
 			"photosHint": "Add 5?10 photos. The first photo is your cover. Use the arrows to reorder.",
-			"pricingTitle": "Set your nightly price and dates",
-			"pricingHint": "Guests can arrive from the first date and must leave by the last date.",
+			"pricingTitle": "Set your price and accepted payments",
+			"pricingHint": "Set your nightly rate, stay limits and accepted payment methods.",
 			"rulesTitle": "Choose how guests book and set their stay rules",
 			"rulesHint": "Choose host approval or immediate confirmation, then set arrival times and house rules.",
 			"reviewTitle": "Take a final look",
@@ -1797,7 +1849,7 @@
 			"location": "Location",
 			"amenities": "Amenities",
 			"photos": "Photos & description",
-			"pricing": "Pricing & availability",
+			"pricing": "Pricing & payment",
 			"rules": "Booking & house rules",
 			"review": "Review & publish",
 			"cancellationPolicy": "Cancellation Policy"
@@ -2009,8 +2061,8 @@
 			"amenitiesHint": "Choose the amenities guests can expect during their stay.",
 			"photos": "Photos & description",
 			"photosHint": "Give guests a clear picture of your space. Add at least 5 photos.",
-			"pricing": "Pricing & length of stay",
-			"pricingHint": "Set your standard nightly rate and the length of stay you accept.",
+			"pricing": "Pricing & payment",
+			"pricingHint": "Set your nightly rate, stay limits and accepted payment methods.",
 			"rules": "Booking & house rules",
 			"rulesHint": "Choose how bookings are confirmed, then set arrival and departure times and house rules."
 		},
@@ -2423,5 +2475,22 @@
 	"BookingsFeature.BookingCancellationDialogHeader.cancel": "Cancel booking",
 	"BackendMessages.accountHasActiveBookings": "You cannot delete this account while it has pending requests or confirmed stays. Resolve these bookings first; confirmed stays must be cancelled or marked completed after checkout.",
 	"BackendMessages.accountHasAccommodations": "Remove this account's accommodation listings before deleting it. Booking history will be retained.",
-	"BackendMessages.accommodationHasActiveBookings": "This accommodation still has pending requests or confirmed stays. Resolve these bookings before deleting it; booking history is retained."
+	"BackendMessages.accommodationHasActiveBookings": "This accommodation still has pending requests or confirmed stays. Resolve these bookings before deleting it; booking history is retained.",
+	"PaymentsFeature": {
+		"supported": "Accepted payment methods",
+		"supportedOptions": {
+			"cash": "Cash Only",
+			"online": "Online Only",
+			"both": "Cash and Online"
+		},
+		"method": "Payment method",
+		"methods": {
+			"cash": "Cash",
+			"online": "Online with card"
+		},
+		"hint": "Choose how you would like to pay. No payment is collected when you book.",
+		"cashHint": "Pay the accommodation in cash.",
+		"onlineHint": "Arrange online card payment with the accommodation.",
+		"selectedHint": "This accommodation accepts this payment method. No payment is collected when you book."
+	}
 }

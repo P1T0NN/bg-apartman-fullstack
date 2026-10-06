@@ -23,13 +23,14 @@
 	const id = $props.id();
 </script>
 
-<Field.Field data-invalid={Boolean(errors.firstName)}>
+<Field.Field class="min-w-0 gap-2 sm:gap-3" data-invalid={Boolean(errors.firstName)}>
 	<Field.Label for={`${id}-firstName`}>
 		{m['BookingPage.BookingCheckout.firstName']()}
 		<span class="text-destructive">*</span>
 	</Field.Label>
 
 	<Input
+		class="px-2.5 sm:px-3"
 		id={`${id}-firstName`}
 		name="firstName"
 		type="text"
@@ -52,13 +53,14 @@
 	{/if}
 </Field.Field>
 
-<Field.Field data-invalid={Boolean(errors.lastName)}>
+<Field.Field class="min-w-0 gap-2 sm:gap-3" data-invalid={Boolean(errors.lastName)}>
 	<Field.Label for={`${id}-lastName`}>
 		{m['BookingPage.BookingCheckout.lastName']()}
 		<span class="text-destructive">*</span>
 	</Field.Label>
 
 	<Input
+		class="px-2.5 sm:px-3"
 		id={`${id}-lastName`}
 		name="lastName"
 		type="text"
@@ -81,7 +83,7 @@
 	{/if}
 </Field.Field>
 
-<Field.Field data-invalid={Boolean(errors.email)}>
+<Field.Field class="min-w-0 gap-2 sm:gap-3" data-invalid={Boolean(errors.email)}>
 	<Field.Label for={`${id}-email`}>
 		{m['BookingPage.BookingCheckout.email']()}
 		<span class="text-destructive">*</span>
@@ -90,6 +92,7 @@
 		{m['BookingPage.BookingCheckout.emailHint']()}
 	</Field.Description>
 	<Input
+		class="px-2.5 sm:px-3"
 		id={`${id}-email`}
 		name="email"
 		type="email"
@@ -110,7 +113,7 @@
 	{/if}
 </Field.Field>
 
-<Field.Field data-invalid={Boolean(errors.phone)}>
+<Field.Field class="min-w-0 gap-2 sm:gap-3" data-invalid={Boolean(errors.phone)}>
 	<Field.Label for={`${id}-phone`}>
 		{m['BookingPage.BookingCheckout.phone']()}
 		<span class="text-destructive">*</span>
@@ -119,6 +122,7 @@
 		{m['BookingPage.BookingCheckout.phoneHint']()}
 	</Field.Description>
 	<Input
+		class="px-2.5 sm:px-3"
 		id={`${id}-phone`}
 		name="phone"
 		type="tel"
@@ -139,7 +143,10 @@
 	{/if}
 </Field.Field>
 
-<Field.Field data-invalid={Boolean(errors.specialRequests)}>
+<Field.Field
+	class="min-w-0 gap-2 sm:col-span-2 sm:gap-3"
+	data-invalid={Boolean(errors.specialRequests)}
+>
 	<Field.Label for={`${id}-specialRequests`}>
 		{m['BookingPage.BookingCheckout.requestsLabel']()}
 	</Field.Label>
@@ -147,10 +154,11 @@
 		{m['BookingPage.BookingCheckout.requestsHint']()}
 	</Field.Description>
 	<Textarea
+		class="min-w-0 px-2.5 py-2 sm:px-3 sm:py-3"
 		id={`${id}-specialRequests`}
 		name="specialRequests"
 		bind:value={values.specialRequests}
-		rows={3}
+		rows={2}
 		maxlength={1000}
 		placeholder={m['BookingPage.BookingCheckout.requestsPlaceholder']()}
 		disabled={submitting}

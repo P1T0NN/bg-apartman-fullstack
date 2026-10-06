@@ -2,7 +2,7 @@
 	// COMPONENTS
 	import { Button } from '@/components/ui/button/index.js';
 	import * as Card from '@/components/ui/card/index.js';
-	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import AccommodationPrice from '@/features/accommodations/components/accommodation-price/accommodation-price.svelte';
 	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
 	import { m } from '@/lib/paraglide/messages';
 
@@ -84,7 +84,7 @@
 			class="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"
 		>
 			<p class="flex flex-wrap items-baseline gap-x-1.5 text-lg font-semibold tabular-nums">
-				<Price value={accommodation.pricePerNightMinor} />
+				<AccommodationPrice pricing={accommodation} />
 				<span class="text-sm font-normal text-muted-foreground">
 					{m['MyAccommodationsPage.MyAccommodationCard.perNight']()}
 				</span>

@@ -2,11 +2,11 @@
 
 ## Recommended layout
 
-A single page: trip details, lead guest details, then review. Keep the property photo small. On desktop, put the price summary to the right and keep it visible while scrolling. On mobile, show the estimate before the form. Labels remain above controls; optional special requests expand on demand.
+A single page: trip details, lead guest details, then review. Keep the property photo small. On desktop, put the price summary to the right and keep it visible while scrolling. On mobile, show a compact fixed bottom bar with the accommodation estimate and the booking action; place the itemized quote after dates and guests. The desktop summary card is hidden on mobile. Labels remain above controls; optional special requests expand on demand.
 
 Search dates and guest counts carry into the form. Guests can correct every field in place. The review action validates the form, retains input and focuses either the first invalid field or the review heading. Registration does not interrupt the flow.
 
-The booking action is available in the estimate summary and below the guest details. Both buttons call the same `handleBookAccommodation` function and share its loading state and instant/request wording. Checkout uses directly bound values without a generic Form component or an HTML form. The handler validates the shared booking schema with the property-local time at click time, shows inline errors, focuses the first invalid control and preserves guest browser identity. It retains a successful booking ID so a failed confirmation-page navigation can be retried without creating another booking. Special requests have an example placeholder and remain subject to host confirmation.
+On desktop, the booking action is available in the estimate summary and below the guest details. On mobile, the fixed bottom bar owns the action and its Price details link jumps to the inline quote. Both buttons call the same `handleBookAccommodation` function and share its loading state and instant/request wording. Checkout uses directly bound values without a generic Form component or an HTML form. The handler validates the shared booking schema with the property-local time at click time, shows inline errors, focuses the first invalid control and preserves guest browser identity. It retains a successful booking ID so a failed confirmation-page navigation can be retried without creating another booking. Special requests have an example placeholder and remain subject to host confirmation.
 
 ## Why these choices
 
@@ -59,3 +59,36 @@ This project's host note **strongly recommends Request booking** so hosts can ve
 ## Evaluation
 
 Measure successful reservations alongside form errors, abandonment, cancellations and price-related support requests. Compare actual completion rates with an A/B test after the reservation flow works. Conversion alone cannot establish that guests understood what they booked.
+
+## Mobile accommodation and checkout layout
+
+Below the desktop sidebar breakpoint (1024px), the accommodation page hides its
+Plan your stay card. Nightly rates and the booking method appear after the overview,
+without another card; minimum/maximum stay and capacity remain in Booking date rules,
+and cancellation terms remain in their own section. The bottom bar shows the starting
+rate and links directly to Plan your booking. Original rates and discount badges stay
+in the inline rates section to keep the bar short.
+
+Checkout hides its sidebar on mobile, identifies the property above the trip controls,
+and shows the regular/weekend breakdown and fee disclaimer after dates and guests.
+The fixed bottom bar shows the accommodation estimate once dates exist, a starting
+nightly rate otherwise, Price details, and the existing instant/request booking action.
+It calls the same handler with unchanged validation and pending state. Both pages
+reserve space for the bar and the device safe area. Desktop keeps its summary card.
+This placement is the project's design choice, informed by NN/g's small persistent
+controls guidance and Airbnb's upfront pricing approach, not a measured conversion claim.
+
+
+### Checkout summary hierarchy
+
+Desktop and the mobile inline Price details section share `BookSummaryPricing`: selected
+calendar dates, nights and guests, an itemized breakdown, then the prominent accommodation
+estimate and host-confirmed fees/payment notice. The desktop card retains the compact
+property header and booking button; mobile retains its fixed estimate/action bar.
+
+`BookingPriceBreakdown` shows quantity times discounted nightly rate beneath each category
+and the category total aligned right. One green savings message states that the discount
+is already included. Savings compare original night totals with the accepted stay total,
+preserving per-night cent rounding. Receipt callers continue to supply frozen prices,
+counts and totals. Repeated crossed-out rates, discount badges, and the generic nightly
+rate times nights explanation are removed from checkout.

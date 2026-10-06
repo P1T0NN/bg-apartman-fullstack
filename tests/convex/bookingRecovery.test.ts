@@ -63,6 +63,7 @@ async function setup(email = 'alex+stay@example.com') {
 	rateLimiterTest.register(t);
 	const bookingId = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
 			ownerId: 'host-1',
 			name: 'Apartment',
 			description: 'Stay',
@@ -76,6 +77,9 @@ async function setup(email = 'alex+stay@example.com') {
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8000,
 			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
@@ -96,6 +100,7 @@ async function setup(email = 'alex+stay@example.com') {
 			updatedAt: Date.now()
 		});
 		return ctx.db.insert('bookings', {
+			paymentMethod: 'cash',
 			cancellationTerms: bookingCancellationTerms('2026-09-01', '2026-09-05'),
 			accommodationId,
 			ownerId: 'guest-1',
@@ -311,6 +316,8 @@ test('booking validation and recovery lookup normalize case/whitespace without r
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	expect(
 		createBookingSchema({ today: '2026-08-01', minimumStay: 1, maxGuests: 4 }).parse({
+			expectedPricePerNightMinor: 8025,
+			expectedTotalMinor: 24075,
 			...booking,
 			email
 		}).email
@@ -459,8 +466,15 @@ test('reusable token reads are scoped, bounded and read-only, including concurre
 	const before = (await t.run((ctx) => ctx.db.get('bookings', bookingId)))!;
 	await t.run(async (ctx) => {
 		const { _id, _creationTime, ...fields } = before;
-		await ctx.db.insert('bookings', { ...fields, email: 'other@example.com' });
-		await ctx.db.insert('bookings', { ...fields, checkOutDate: '2026-09-06', status: 'cancelled' });
+		await ctx.db.insert('bookings', {
+			...fields,
+			email: 'other@example.com'
+		});
+		await ctx.db.insert('bookings', {
+			...fields,
+			checkOutDate: '2026-09-06',
+			status: 'cancelled'
+		});
 	});
 	const token = (await t.action(issueBookingRecoveryToken, { email: before.email }))!;
 	const args = { token: token.token, paginationOpts: { cursor: null, numItems: 1 } };
@@ -566,7 +580,10 @@ test('bounded backfill resumes and can rerun without changing booking ownership 
 	const before = (await t.run((ctx) => ctx.db.get('bookings', bookingId)))!;
 	await t.run(async (ctx) => {
 		const { _id, _creationTime, ...fields } = before;
-		await ctx.db.insert('bookings', { ...fields, email: ' Other@Example.COM ' });
+		await ctx.db.insert('bookings', {
+			...fields,
+			email: ' Other@Example.COM '
+		});
 	});
 	await expect(
 		t.mutation(backfill, {

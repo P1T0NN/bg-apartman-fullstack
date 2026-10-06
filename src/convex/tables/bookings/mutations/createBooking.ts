@@ -29,6 +29,7 @@ import { COMPANY_DATA } from '../../../../shared/config.js';
 import { BOOKINGS_CONFIG } from '../../../../shared/features/bookings/config.js';
 
 // UTILS
+import { calculateStayPricing } from '../../../../shared/features/bookings/utils/calculateStayPricing.js';
 import { getIsoDateInTimeZone } from '../../../../shared/features/timezone/utils/getIsoDateInTimeZone.js';
 import { getZonedTimestamp } from '../../../../shared/features/timezone/utils/getZonedTimestamp.js';
 
@@ -42,8 +43,11 @@ export const createBooking = mutation({
 		config: { kind: 'token bucket', rate: 10, period: MINUTE, capacity: 5 }
 	},
 	args: {
+		paymentMethod: v.union(v.literal('cash'), v.literal('online')),
 		accommodationId: v.id('accommodations'),
 		expectedBookingMode: v.optional(v.union(v.literal('request'), v.literal('instant'))),
+		expectedPricePerNightMinor: v.number(),
+		expectedTotalMinor: v.number(),
 		checkInDate: v.string(),
 		checkOutDate: v.string(),
 		adults: v.number(),
@@ -59,6 +63,17 @@ export const createBooking = mutation({
 		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
 		if (!accommodation || accommodation.status !== 'published') {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
+		}
+
+		const effectivePrice = accommodation.effectivePricePerNightMinor;
+		if (args.expectedPricePerNightMinor !== effectivePrice) {
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_PRICE_CHANGED' });
+		}
+		const supported = accommodation.supportedPaymentMethods;
+		const paymentMethod = args.paymentMethod;
+		const paymentUnsupported = supported !== 'both' && paymentMethod !== supported;
+		if (paymentUnsupported) {
+			throw new ConvexError<BackendErrorData>({ code: 'PAYMENT_METHOD_UNSUPPORTED' });
 		}
 
 		const timeZone = timeZoneSchema.safeParse(accommodation.timeZone);
@@ -86,7 +101,7 @@ export const createBooking = mutation({
 			maximumStay: accommodation.maximumStay,
 			maxGuests: accommodation.maxGuests,
 			sameDayReservation: accommodation.sameDayReservation
-		}).safeParse(args);
+		}).safeParse({ ...args, paymentMethod });
 
 		if (!parsed.success) {
 			const arrivalTodayDisabled = parsed.error.issues.some(
@@ -97,6 +112,13 @@ export const createBooking = mutation({
 			});
 		}
 
+		const stayPricing = calculateStayPricing(
+			accommodation,
+			parsed.data.checkInDate,
+			parsed.data.checkOutDate
+		);
+		if (args.expectedTotalMinor !== stayPricing.totalMinor)
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_PRICE_CHANGED' });
 		const { checkInStart, checkOut } = accommodation;
 
 		let checkInAt: number;
@@ -122,7 +144,12 @@ export const createBooking = mutation({
 		const identity = await ctx.auth.getUserIdentity();
 		const ownerId = identity ? getOwnerId(identity) : undefined;
 
-		const { expectedBookingMode: _expectedBookingMode, ...bookingDetails } = parsed.data;
+		const {
+			expectedBookingMode: _expectedBookingMode,
+			expectedPricePerNightMinor: _expectedPrice,
+			expectedTotalMinor: _expectedTotal,
+			...bookingDetails
+		} = parsed.data;
 
 		const booking = {
 			...bookingDetails,
@@ -143,7 +170,10 @@ export const createBooking = mutation({
 				checkInAt,
 				checkOut,
 				checkOutAt,
-				pricePerNightMinor: accommodation.pricePerNightMinor,
+				pricePerNightMinor: effectivePrice,
+				basePricePerNightMinor: accommodation.pricePerNightMinor,
+				discountBps: accommodation.discountBps,
+				stayPricing,
 				stayType: 'overnight' as const,
 				pricePerDayUseMinor: null,
 				currency: COMPANY_DATA.CURRENCY

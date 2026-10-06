@@ -1,3 +1,4 @@
+import { bookingCancellationTerms } from './fixtures/bookingCancellationTerms.js';
 // LIBRARIES
 import { expect, test } from 'vitest';
 
@@ -31,6 +32,9 @@ const terms: BookingCancellationTerms = {
 	checkOut: '11:00',
 	checkOutAt: getZonedTimestamp('2027-03-31', '11:00', 'Europe/Belgrade'),
 	pricePerNightMinor: 8025,
+	basePricePerNightMinor: 8025,
+	discountBps: 0,
+	stayPricing: bookingCancellationTerms('2027-03-29', '2027-03-31').stayPricing,
 	currency: 'EUR'
 };
 

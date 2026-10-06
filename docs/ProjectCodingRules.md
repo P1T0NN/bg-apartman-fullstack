@@ -230,9 +230,10 @@ in `COMPANY_DATA.CURRENCY` (EUR); accommodation photos are ordered R2 keys.
   Accommodations store `bookingMode` (`request` or `instant`); absence on a legacy
   listing means `request`. New saves write an explicit mode. Add/edit select it
   in Booking & house rules, using the shared `AccommodationBookingModeField` and
-  its professional recommendation to use host approval. Guest cards, the detail
-  sidebar and checkout use `AccommodationBookingMode` with text alongside the
-  icon; checkout labels its final action according to confirmation timing.
+  its professional recommendation to use host approval. The detail sidebar and
+  checkout use `AccommodationBookingMode` with text alongside the icon, while
+  guest cards show it only for instant listings; checkout labels its final action
+  according to confirmation timing.
   `createBooking` reads the authoritative listing mode and snapshots it on the
   booking. `expectedBookingMode` prevents a stale checkout from silently accepting
   a different method; instant booking requires explicit instant consent. Legacy
@@ -624,3 +625,49 @@ Current app-facing functions are:
   `utils/getAmenities.ts` resolves their labels. The browser map reads
   `PUBLIC_GOOGLE_MAPS_API_KEY`/`PUBLIC_GOOGLE_MAPS_MAP_ID`; the geocode proxy
   reads `GOOGLE_GEOCODING_API_KEY` privately.
+
+- Accommodation payment support is a scalar `supportedPaymentMethods`:
+  `cash`, `online`, or `both`, required on every listing.
+  Shared payment schemas live in `src/shared/features/payments`, while host
+  field definitions and the guest choice UI live in `src/features/payments`.
+  New bookings store the selected `paymentMethod` (`cash` or `online`),
+  validated against the stored accommodation and required on every booking.
+  `migrations/backfillPaymentMethods` filled missing legacy values with cash
+  (a migration default, not evidence of historical payment) before tightening
+  both fields. It preserves existing choices. Development migration processed
+  101 listings and 394 bookings. Listing edits do not change booked methods.
+  Selecting online does not collect payment.
+
+- Accommodation discounts use required integer fields: original nightly cents in
+  `pricePerNightMinor`, basis points in `discountBps` (1500 = 15%), and
+  server-calculated `effectivePricePerNightMinor`. Host forms collect
+  `discountPercent` from 0 to 99.99 with two decimals. Shared
+  `calculateAccommodationPricing` rounds half up once per night; the result
+  must remain at least one cent. Create/update validators exclude stored pricing
+  fields, and mutations recompute all three together.
+  Price indexes, filters, and map pins use the effective starting rate; checkout totals
+  sum discounted rates for the actual nights.
+  The feature `AccommodationPrice` composes the existing Price primitive to
+  show the original crossed out, effective rate, and percentage discount.
+- Booking requests require `expectedPricePerNightMinor`; stale rates fail with
+  `BOOKING_PRICE_CHANGED`. Frozen `cancellationTerms` stores the effective
+  `pricePerNightMinor`, original `basePricePerNightMinor`, and `discountBps`.
+  Listing edits cannot change booking prices or refund calculations.
+  `migrations/backfillAccommodationDiscounts` backfilled 101 listings and
+  394 booking snapshots before these fields became required, preserving frozen
+  historical rates with zero discount. This does not collect payment.
+
+- Weekend pricing uses required nullable `weekendPricePerNightMinor`: null disables it;
+  otherwise it is a fixed Friday/Saturday nightly rate, at least the regular rate.
+  Host forms accept euros with two decimals. Discounts apply to both rates, rounded
+  separately per night in integer cents. Shared `calculateStayPricing` counts local
+  ISO calendar dates (checkout excluded), using complete weeks plus remaining nights.
+  Calendar prices use `getNightlyPricing`; no per-date price records or DB reads.
+  Search/index filters retain the discounted starting rate and prices are labelled From.
+  `createBooking` requires the reviewed `expectedTotalMinor` and rejects stale totals.
+  Required `cancellationTerms.stayPricing` freezes regular/weekend night counts,
+  weekend original/final rates and the total; the existing nightly field stays the
+  regular final rate. Receipts use that snapshot, never current listing rates.
+  `backfillWeekendPricing` disables overrides on existing listings and backfills
+  historical totals from frozen booking rates before making the fields required.
+  Development backfill processed 101 listings and 394 bookings.

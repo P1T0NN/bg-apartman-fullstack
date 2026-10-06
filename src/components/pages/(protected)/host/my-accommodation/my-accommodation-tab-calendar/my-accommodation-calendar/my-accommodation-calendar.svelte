@@ -9,6 +9,7 @@
 	import { RangeCalendar as RangeCalendarPrimitive, type DateRange } from 'bits-ui';
 
 	// TYPES
+	import type { NightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
 	import type { DateValue } from '@internationalized/date';
 
 	let {
@@ -18,6 +19,7 @@
 		bookings,
 		blockedDates,
 		availabilityLoaded,
+		pricing,
 		disabled = false
 	}: {
 		value: DateRange;
@@ -26,6 +28,7 @@
 		bookings: { checkInDate: string; checkOutDate: string }[];
 		blockedDates: string[];
 		availabilityLoaded: boolean;
+		pricing?: NightlyPricing;
 		disabled?: boolean;
 	} = $props();
 
@@ -61,6 +64,7 @@
 				{bookings}
 				{blockedDates}
 				{availabilityLoaded}
+				{pricing}
 			/>
 		{/each}
 	{/snippet}

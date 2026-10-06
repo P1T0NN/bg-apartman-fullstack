@@ -17,6 +17,10 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.sameDayReservationDisabled']();
 		case 'BOOKING_START_PASSED':
 			return m['BackendMessages.bookingStartPassed']();
+		case 'PAYMENT_METHOD_UNSUPPORTED':
+			return m['BackendMessages.paymentMethodUnsupported']();
+		case 'BOOKING_PRICE_CHANGED':
+			return m['BackendMessages.bookingPriceChanged']();
 		case 'BOOKING_MODE_CHANGED':
 			return m['BackendMessages.bookingModeChanged']();
 		case 'BOOKING_DATES_UNAVAILABLE':

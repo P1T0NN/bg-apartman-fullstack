@@ -28,10 +28,11 @@ export type BookingCheckoutValues = Pick<
 	| 'email'
 	| 'phone'
 	| 'specialRequests'
->;
+> & { paymentMethod: 'cash' | 'online' | '' };
 
 export type Booking = Pick<
 	Doc<'bookings'>,
+	| 'paymentMethod'
 	| '_id'
 	| 'accommodationId'
 	| 'status'

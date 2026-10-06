@@ -55,7 +55,8 @@
 				: 'border-border bg-background text-foreground'
 		)}
 	>
-		{formatCompactCurrency(accommodation.pricePerNightMinor, getLocale())}
+		{m['AccommodationsFeature.Pricing.from']()}
+		{formatCompactCurrency(accommodation.effectivePricePerNightMinor, getLocale())}
 	</span>
 	<span
 		class={cn(

@@ -13,7 +13,10 @@ import authSchema from '../../src/convex/betterAuth/component/schema';
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
 import { BOOKINGS_CONFIG } from '../../src/shared/features/bookings/config';
 import { calculateBookingRequestExpiry } from '../../src/shared/features/bookings/utils/calculateBookingRequestExpiry';
-import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
+import {
+	bookingCancellationTerms,
+	withExpectedTotal
+} from '../fixtures/bookingCancellationTerms.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 const create = api.tables.bookings.mutations.createBooking.createBooking;
@@ -41,6 +44,9 @@ const accommodation = {
 	beds: 3,
 	bathrooms: 1,
 	pricePerNightMinor: 8025,
+	discountBps: 0,
+	weekendPricePerNightMinor: null,
+	effectivePricePerNightMinor: 8025,
 	sameDayReservation: false,
 	recommendationSortKey: -3,
 	guestRatingAverage: 0,
@@ -108,9 +114,15 @@ async function setup() {
 		}
 	});
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { ...accommodation, ownerId: host._id })
+		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
+			...accommodation,
+			ownerId: host._id
+		})
 	);
 	const args = {
+		expectedPricePerNightMinor: 8025,
+		paymentMethod: 'cash' as const,
 		accommodationId,
 		checkInDate: '2026-11-01',
 		checkOutDate: '2026-11-05',
@@ -210,13 +222,16 @@ test.each(['request', 'instant'] as const)(
 			lastDate: '2026-11-03'
 		});
 		await expect(
-			t.mutation(create, { ...args, expectedBookingMode: bookingMode })
+			t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: bookingMode }))
 		).rejects.toMatchObject({ data: { code: 'BOOKING_DATES_UNAVAILABLE' } });
-		const id = await t.mutation(create, {
-			...args,
-			checkOutDate: '2026-11-03',
-			expectedBookingMode: bookingMode
-		});
+		const id = await t.mutation(
+			create,
+			withExpectedTotal({
+				...args,
+				checkOutDate: '2026-11-03',
+				expectedBookingMode: bookingMode
+			})
+		);
 		expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.checkOutDate).toBe('2026-11-03');
 		await drain();
 	}
@@ -225,7 +240,10 @@ test.each(['request', 'instant'] as const)(
 test('blocking confirmed nights fails atomically and unblocking cannot remove the booking', async () => {
 	const { t, host, accommodationId, args, drain } = await setup();
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
-	const id = await t.mutation(create, { ...args, expectedBookingMode: 'instant' });
+	const id = await t.mutation(
+		create,
+		withExpectedTotal({ ...args, expectedBookingMode: 'instant' })
+	);
 	const owner = t.withIdentity({ subject: host._id });
 	await expect(
 		owner.mutation(blockDates, { accommodationId, startDate: '2026-10-31', lastDate: '2026-11-02' })
@@ -247,7 +265,7 @@ test('blocking confirmed nights fails atomically and unblocking cannot remove th
 
 test('blocking warns about pending requests and prevents confirmation until unblocked', async () => {
 	const { t, host, accommodationId, args, drain } = await setup();
-	const id = await t.mutation(create, args);
+	const id = await t.mutation(create, withExpectedTotal(args));
 	const owner = t.withIdentity({ subject: host._id });
 	const range = { accommodationId, startDate: '2026-11-02', lastDate: '2026-11-02' };
 	expect(await owner.mutation(blockDates, range)).toEqual({ pendingRequests: 1 });
@@ -270,7 +288,7 @@ test('calendar returns real occupancy without guest details and rejects incomple
 		lastDate: '2026-11-11'
 	});
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
-	await t.mutation(create, { ...args, expectedBookingMode: 'instant' });
+	await t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' }));
 	const expected = {
 		blockedDates: ['2026-11-10', '2026-11-11'],
 		bookings: [{ checkInDate: args.checkInDate, checkOutDate: args.checkOutDate }]
@@ -278,7 +296,10 @@ test('calendar returns real occupancy without guest details and rejects incomple
 	const publicResult = await t.query(publicCalendar, { id: accommodationId });
 	expect(publicResult?.availability).toEqual(expected);
 	expect(publicResult).not.toHaveProperty('ownerId');
-	expect(await owner.query(hostCalendar, { accommodationId })).toEqual(expected);
+	expect(await owner.query(hostCalendar, { accommodationId })).toEqual({
+		...expected,
+		pricing: { pricePerNightMinor: 8025, discountBps: 0, weekendPricePerNightMinor: null }
+	});
 	await t.run(async (ctx) => {
 		// Duplicate corruption must never be silently truncated into apparently available dates.
 		for (let index = 0; index <= BOOKINGS_CONFIG.AVAILABILITY_CHECK_LIMIT; index++)
@@ -297,7 +318,8 @@ test('checkout availability rejects unpublished listings while the owner calenda
 	expect(await t.query(publicCalendar, { id: accommodationId })).toBeNull();
 	expect(await owner.query(hostCalendar, { accommodationId })).toEqual({
 		blockedDates: [],
-		bookings: []
+		bookings: [],
+		pricing: { pricePerNightMinor: 8025, discountBps: 0, weekendPricePerNightMinor: null }
 	});
 });
 
@@ -343,7 +365,7 @@ test('concurrent host blocking and instant booking cannot both take the same nig
 			startDate: '2026-11-02',
 			lastDate: '2026-11-02'
 		}),
-		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+		t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' }))
 	]);
 	expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1);
 	await drain();
@@ -351,7 +373,7 @@ test('concurrent host blocking and instant booking cannot both take the same nig
 
 test('email-reference cleanup is bounded, repeatable, and preserves booking and cancellation history', async () => {
 	const { t, args, drain } = await setup();
-	const id = await t.mutation(create, args);
+	const id = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	const original = await t.run((ctx) => ctx.db.get('bookings', id));
 	if (!original) throw new Error('Test booking not found');
@@ -398,7 +420,7 @@ test('email-reference cleanup is bounded, repeatable, and preserves booking and 
 			hostConfirmationEmailId: 'confirmation-host',
 			expirationEmailId: 'expiration-guest'
 		}),
-		await ctx.db.insert('bookings', data)
+		await ctx.db.insert('bookings', { ...data })
 	]);
 	const before = await legacy.run(async (ctx) =>
 		Promise.all(ids.map((bookingId) => ctx.db.get('bookings', bookingId)))
@@ -454,7 +476,10 @@ test.each([false, true])(
 		const guest = signedIn
 			? t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' })
 			: t;
-		const id = await guest.mutation(create, { ...args, expectedBookingMode: 'instant' });
+		const id = await guest.mutation(
+			create,
+			withExpectedTotal({ ...args, expectedBookingMode: 'instant' })
+		);
 		const booking = await t.run((ctx) => ctx.db.get('bookings', id));
 		expect(booking).toMatchObject({
 			status: 'confirmed',
@@ -493,11 +518,14 @@ test.each([false, true])(
 test('instant booking sends only the host notice when guest and host share an email address', async () => {
 	const { t, args, accommodationId, drain } = await setup();
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
-	await t.mutation(create, {
-		...args,
-		email: ' HOST@EXAMPLE.COM ',
-		expectedBookingMode: 'instant'
-	});
+	await t.mutation(
+		create,
+		withExpectedTotal({
+			...args,
+			email: ' HOST@EXAMPLE.COM ',
+			expectedBookingMode: 'instant'
+		})
+	);
 	await drain();
 	expect(emails()).toHaveLength(1);
 	expect(emails()[0]).toMatchObject({
@@ -511,13 +539,15 @@ test('mode changes and missing instant consent cannot silently confirm a request
 	const { t, args, accommodationId } = await setup();
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
 	for (const expectedBookingMode of ['request', undefined] as const) {
-		await expect(t.mutation(create, { ...args, expectedBookingMode })).rejects.toMatchObject({
+		await expect(
+			t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode }))
+		).rejects.toMatchObject({
 			data: { code: 'BOOKING_MODE_CHANGED' }
 		});
 	}
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'request' }));
 	await expect(
-		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+		t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' }))
 	).rejects.toMatchObject({ data: { code: 'BOOKING_MODE_CHANGED' } });
 	expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
 	expect(fetch).not.toHaveBeenCalled();
@@ -525,7 +555,7 @@ test('mode changes and missing instant consent cannot silently confirm a request
 
 test('changing the listing mode leaves existing pending requests under host approval', async () => {
 	const { t, args, accommodationId, host, drain } = await setup();
-	const id = await t.mutation(create, args);
+	const id = await t.mutation(create, withExpectedTotal(args));
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
 	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.status).toBe('pending');
 	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
@@ -540,26 +570,29 @@ test('confirmed dates block instant booking, allow same-day turnover, and reopen
 	const { t, args, accommodationId, host, drain } = await setup();
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
 	const instantArgs = { ...args, expectedBookingMode: 'instant' as const };
-	const id = await t.mutation(create, instantArgs);
-	await expect(t.mutation(create, instantArgs)).rejects.toMatchObject({
+	const id = await t.mutation(create, withExpectedTotal(instantArgs));
+	await expect(t.mutation(create, withExpectedTotal(instantArgs))).rejects.toMatchObject({
 		data: { code: 'BOOKING_DATES_UNAVAILABLE' }
 	});
-	await t.mutation(create, {
-		...instantArgs,
-		checkInDate: '2026-11-05',
-		checkOutDate: '2026-11-08'
-	});
+	await t.mutation(
+		create,
+		withExpectedTotal({
+			...instantArgs,
+			checkInDate: '2026-11-05',
+			checkOutDate: '2026-11-08'
+		})
+	);
 	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
 	await account.mutation(updateStatus, { id, status: 'cancelled' });
-	const replacement = await t.mutation(create, instantArgs);
+	const replacement = await t.mutation(create, withExpectedTotal(instantArgs));
 	expect((await t.run((ctx) => ctx.db.get('bookings', replacement)))?.status).toBe('confirmed');
 	await drain();
 });
 
 test('overlapping pending requests cannot both be confirmed', async () => {
 	const { t, args, host, drain } = await setup();
-	const first = await t.mutation(create, args);
-	const second = await t.mutation(create, args);
+	const first = await t.mutation(create, withExpectedTotal(args));
+	const second = await t.mutation(create, withExpectedTotal(args));
 	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
 	await account.mutation(updateStatus, { id: first, status: 'confirmed' });
 	await expect(
@@ -573,8 +606,8 @@ test('concurrent instant submissions cannot reserve the same dates twice', async
 	const { t, args, accommodationId, drain } = await setup();
 	await t.run((ctx) => ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' }));
 	const attempts = await Promise.allSettled([
-		t.mutation(create, { ...args, expectedBookingMode: 'instant' }),
-		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+		t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' })),
+		t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' }))
 	]);
 	expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1);
 	const failure = attempts.find((attempt) => attempt.status === 'rejected');
@@ -586,7 +619,7 @@ test('concurrent instant submissions cannot reserve the same dates twice', async
 
 test('availability fails closed if the bounded index read is incomplete', async () => {
 	const { t, args, accommodationId, drain } = await setup();
-	const request = await t.mutation(create, args);
+	const request = await t.mutation(create, withExpectedTotal(args));
 	await t.run(async (ctx) => {
 		const booking = await ctx.db.get('bookings', request);
 		if (!booking) throw new Error('Test booking not found');
@@ -603,7 +636,7 @@ test('availability fails closed if the bounded index read is incomplete', async 
 		await ctx.db.patch('accommodations', accommodationId, { bookingMode: 'instant' });
 	});
 	await expect(
-		t.mutation(create, { ...args, expectedBookingMode: 'instant' })
+		t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' }))
 	).rejects.toMatchObject({ data: { code: 'BOOKING_AVAILABILITY_UNAVAILABLE' } });
 	await expect(t.query(publicCalendar, { id: accommodationId })).rejects.toMatchObject({
 		data: { code: 'BOOKING_AVAILABILITY_UNAVAILABLE' }
@@ -622,9 +655,9 @@ test('instant host notification enqueue failure rolls back the reservation and g
 		if (data.hostEmail) throw new Error('Host enqueue failed');
 		return original(ctx, data);
 	});
-	await expect(t.mutation(create, { ...args, expectedBookingMode: 'instant' })).rejects.toThrow(
-		'Host enqueue failed'
-	);
+	await expect(
+		t.mutation(create, withExpectedTotal({ ...args, expectedBookingMode: 'instant' }))
+	).rejects.toThrow('Host enqueue failed');
 	expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
 	expect(await t.run((ctx) => ctx.db.system.query('_scheduled_functions').take(1))).toEqual([]);
 	expect(fetch).not.toHaveBeenCalled();
@@ -632,7 +665,7 @@ test('instant host notification enqueue failure rolls back the reservation and g
 
 test('creating an anonymous request atomically queues separate guest and host emails', async () => {
 	const { t, args, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	const queued = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	expect(queued?.status).toBe('pending');
 	for (const field of [
@@ -671,7 +704,7 @@ test('creating an anonymous request atomically queues separate guest and host em
 test('signed-in requests notify the booking contact and actual property host', async () => {
 	const { t, args, drain } = await setup();
 	const guest = t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' });
-	const bookingId = await guest.mutation(create, args);
+	const bookingId = await guest.mutation(create, withExpectedTotal(args));
 	await drain();
 	expect((await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.ownerId).toBe('guest-user');
 	expect(
@@ -683,7 +716,7 @@ test('signed-in requests notify the booking contact and actual property host', a
 
 test('emails preserve requested property name and frozen times after listing edits', async () => {
 	const { t, args, accommodationId, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await t.run((ctx) =>
 		ctx.db.patch('accommodations', accommodationId, {
 			name: 'Changed name',
@@ -709,11 +742,14 @@ test('guest names, property names and special requests are escaped in HTML', asy
 	await t.run((ctx) =>
 		ctx.db.patch('accommodations', accommodationId, { name: '<img src=x onerror=bad()>' })
 	);
-	await t.mutation(create, {
-		...args,
-		firstName: '<script>guest</script>',
-		specialRequests: '<script>request</script>'
-	});
+	await t.mutation(
+		create,
+		withExpectedTotal({
+			...args,
+			firstName: '<script>guest</script>',
+			specialRequests: '<script>request</script>'
+		})
+	);
 	await drain();
 	for (const message of emails()) {
 		expect(message.html).not.toContain('<script>');
@@ -725,11 +761,11 @@ test('guest names, property names and special requests are escaped in HTML', asy
 
 test('invalid and forged requests neither persist bookings nor queue email', async () => {
 	const { t, args } = await setup();
-	await expect(t.mutation(create, { ...args, email: 'invalid' })).rejects.toThrow(
-		'INVALID_BOOKING'
-	);
+	await expect(
+		t.mutation(create, withExpectedTotal({ ...args, email: 'invalid' }))
+	).rejects.toThrow('INVALID_BOOKING');
 	const forged = { ...args, hostEmail: 'attacker@example.com' };
-	await expect(t.mutation(create, forged)).rejects.toThrow();
+	await expect(t.mutation(create, withExpectedTotal(forged))).rejects.toThrow();
 	expect(await t.run((ctx) => ctx.db.query('bookings').collect())).toHaveLength(0);
 	expect(await t.run((ctx) => ctx.db.system.query('_scheduled_functions').collect())).toHaveLength(
 		0
@@ -739,7 +775,7 @@ test('invalid and forged requests neither persist bookings nor queue email', asy
 test('transient failure retries the same payload and key, while successful delivery is not repeated', async () => {
 	const { t, args, drain } = await setup();
 	vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 503 }));
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	expect(fetch).toHaveBeenCalledTimes(2);
 	const calls = vi.mocked(fetch).mock.calls;
@@ -777,7 +813,9 @@ test('a host enqueue failure rolls back the booking, guest enqueue and owner agg
 		return original(ctx, data);
 	});
 	const guest = t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' });
-	await expect(guest.mutation(create, args)).rejects.toThrow('Host enqueue failed');
+	await expect(guest.mutation(create, withExpectedTotal(args))).rejects.toThrow(
+		'Host enqueue failed'
+	);
 	expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
 	expect(await t.run((ctx) => ctx.db.system.query('_scheduled_functions').collect())).toEqual([]);
 	const page = await guest.query(api.tables.bookings.queries.fetchMyBookings.fetchMyBookings, {
@@ -790,7 +828,7 @@ test('a host enqueue failure rolls back the booking, guest enqueue and owner agg
 test('missing email configuration rolls back booking creation', async () => {
 	const { t, args } = await setup();
 	vi.stubEnv('EMAIL_FROM', '');
-	await expect(t.mutation(create, args)).rejects.toThrow('Missing EMAIL_FROM');
+	await expect(t.mutation(create, withExpectedTotal(args))).rejects.toThrow('Missing EMAIL_FROM');
 	expect(await t.run((ctx) => ctx.db.query('bookings').take(1))).toEqual([]);
 	expect(fetch).not.toHaveBeenCalled();
 });
@@ -802,7 +840,10 @@ test.each([false, true])(
 		const guest = signedIn
 			? t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' })
 			: t;
-		const bookingId = await guest.mutation(create, { ...args, firstName: '<script>Alex</script>' });
+		const bookingId = await guest.mutation(
+			create,
+			withExpectedTotal({ ...args, firstName: '<script>Alex</script>' })
+		);
 		await drain();
 		vi.mocked(fetch).mockClear();
 		await t.run((ctx) =>
@@ -845,7 +886,7 @@ test.each([false, true])(
 
 test('failed confirmation enqueue leaves the request pending and allows a later retry', async () => {
 	const { t, args, host, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	vi.mocked(fetch).mockClear();
 	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
@@ -864,7 +905,7 @@ test('failed confirmation enqueue leaves the request pending and allows a later 
 
 test('unauthorized confirmation and declining a request do not queue a confirmation email', async () => {
 	const { t, args, host, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	vi.mocked(fetch).mockClear();
 	const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
@@ -885,7 +926,7 @@ test('unauthorized confirmation and declining a request do not queue a confirmat
 
 test('confirmation delivery retries asynchronously without undoing the confirmed booking', async () => {
 	const { t, args, host, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	vi.mocked(fetch).mockClear();
 	vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 503 }));
@@ -909,7 +950,7 @@ test.each([false, true])(
 		const guest = signedIn
 			? t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' })
 			: t;
-		const bookingId = await guest.mutation(create, args);
+		const bookingId = await guest.mutation(create, withExpectedTotal(args));
 		await drain();
 		vi.mocked(fetch).mockClear();
 		const original = await t.run((ctx) => ctx.db.get('bookings', bookingId));
@@ -958,7 +999,7 @@ test.each([false, true])(
 test('the exact deadline blocks host actions and guest withdrawal before the cron runs, including legacy requests', async () => {
 	const { t, args, host, drain } = await setup();
 	const guest = t.withIdentity({ subject: 'guest-user', tokenIdentifier: 'issuer|guest-user' });
-	const bookingId = await guest.mutation(create, args);
+	const bookingId = await guest.mutation(create, withExpectedTotal(args));
 	await drain();
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	if (!booking) throw new Error('Missing booking');
@@ -992,11 +1033,14 @@ test('near-term requests expire at frozen check-in and initialize legacy deadlin
 	await t.run((ctx) =>
 		ctx.db.patch('accommodations', accommodationId, { sameDayReservation: true })
 	);
-	const bookingId = await t.mutation(create, {
-		...args,
-		checkInDate: '2026-10-01',
-		checkOutDate: '2026-10-04'
-	});
+	const bookingId = await t.mutation(
+		create,
+		withExpectedTotal({
+			...args,
+			checkInDate: '2026-10-01',
+			checkOutDate: '2026-10-04'
+		})
+	);
 	await drain();
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
 	if (!booking) throw new Error('Missing booking');
@@ -1019,7 +1063,7 @@ test('near-term requests expire at frozen check-in and initialize legacy deadlin
 
 test('confirmed and terminal bookings are untouched by expiration', async () => {
 	const { t, args, host, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
 	await account.mutation(updateStatus, { id: bookingId, status: 'confirmed' });
@@ -1038,7 +1082,10 @@ test('confirmed and terminal bookings are untouched by expiration', async () => 
 
 test('expiration enqueue failure rolls back the status and can recover on the next cron', async () => {
 	const { t, args, accommodationId, drain } = await setup();
-	const bookingId = await t.mutation(create, { ...args, firstName: '<script>Guest</script>' });
+	const bookingId = await t.mutation(
+		create,
+		withExpectedTotal({ ...args, firstName: '<script>Guest</script>' })
+	);
 	await drain();
 	vi.mocked(fetch).mockClear();
 	const booking = await t.run((ctx) => ctx.db.get('bookings', bookingId));
@@ -1063,7 +1110,7 @@ test('expiration enqueue failure rolls back the status and can recover on the ne
 
 test('expiration batches and continuations process legacy requests once without scanning all bookings', async () => {
 	const { t, args, drain } = await setup();
-	const bookingId = await t.mutation(create, args);
+	const bookingId = await t.mutation(create, withExpectedTotal(args));
 	await drain();
 	vi.mocked(fetch).mockClear();
 	const original = await t.run((ctx) => ctx.db.get('bookings', bookingId));
@@ -1073,7 +1120,10 @@ test('expiration batches and continuations process legacy requests once without 
 	await t.run(async (ctx) => {
 		await ctx.db.patch('bookings', _id, { requestExpiresAt: undefined });
 		for (let i = 1; i < count; i++)
-			await ctx.db.insert('bookings', { ...data, requestExpiresAt: undefined });
+			await ctx.db.insert('bookings', {
+				...data,
+				requestExpiresAt: undefined
+			});
 	});
 	vi.setSystemTime(original.requestExpiresAt + BOOKINGS_CONFIG.REQUEST_RESPONSE_WINDOW_MS);
 	expect(await t.mutation(expire, {})).toBe(BOOKINGS_CONFIG.REQUEST_EXPIRATION_BATCH_SIZE);

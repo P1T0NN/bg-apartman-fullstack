@@ -13,6 +13,9 @@ import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations
 import { saveAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
 import { createAccommodationValidator } from '../validators/accommodationValidators.js';
 
+// UTILS
+import { calculateAccommodationPricing } from '../../../../shared/features/accommodations/utils/calculateAccommodationPricing.js';
+
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
@@ -24,7 +27,8 @@ export const createAccommodation = authenticatedUploadMutation({
 		const parsed = saveAccommodationSchema.safeParse(args);
 		if (!parsed.success) throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
 
-		const { nightlyPrice, ...data } = parsed.data;
+		const { nightlyPrice, discountPercent, weekendPrice, ...data } = parsed.data;
+		const pricing = calculateAccommodationPricing(nightlyPrice, discountPercent, weekendPrice);
 
 		const uploaded = new Set(args.uploadedFiles ?? []);
 
@@ -41,7 +45,7 @@ export const createAccommodation = authenticatedUploadMutation({
 
 		const id = await ctx.db.insert('accommodations', {
 			...data,
-			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			...pricing,
 			recommendationSortKey: -ACCOMMODATION_CONFIG.recommendationBaselineAverage,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,

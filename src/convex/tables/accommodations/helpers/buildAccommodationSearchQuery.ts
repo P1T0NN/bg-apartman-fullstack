@@ -104,12 +104,12 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 
 	if (minPrice)
 		accommodationsQuery = accommodationsQuery.filter((q) =>
-			q.gte(q.field('pricePerNightMinor'), Math.round(minPrice * 100))
+			q.gte(q.field('effectivePricePerNightMinor'), Math.round(minPrice * 100))
 		);
 
 	if (maxPrice)
 		accommodationsQuery = accommodationsQuery.filter((q) =>
-			q.lte(q.field('pricePerNightMinor'), Math.round(maxPrice * 100))
+			q.lte(q.field('effectivePricePerNightMinor'), Math.round(maxPrice * 100))
 		);
 
 	if (beds) accommodationsQuery = accommodationsQuery.filter((q) => q.gte(q.field('beds'), beds));

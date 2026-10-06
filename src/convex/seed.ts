@@ -24,6 +24,9 @@ import {
 	AMENITY_KEYS
 } from '../shared/features/accommodations/data/accommodationsData.js';
 
+// UTILS
+import { calculateStayPricing } from '../shared/features/bookings/utils/calculateStayPricing.js';
+
 // TYPES
 import type { Doc } from './_generated/dataModel.js';
 import type { WithoutSystemFields } from 'convex/server';
@@ -274,6 +277,7 @@ export const seedAccommodations = internalMutation({
 			const adjective = pick(ADJECTIVES, random);
 			const noun = pick(NOUNS, random);
 
+			const seededNightlyPrice = Math.round(30 + random() * 220) * 100;
 			const listing: WithoutSystemFields<Doc<'accommodations'>> = {
 				sameDayReservation: false,
 				ownerId,
@@ -295,7 +299,10 @@ export const seedAccommodations = internalMutation({
 				bedrooms,
 				beds,
 				bathrooms,
-				pricePerNightMinor: Math.round(30 + random() * 220) * 100,
+				pricePerNightMinor: seededNightlyPrice,
+				discountBps: 0,
+				weekendPricePerNightMinor: null,
+				effectivePricePerNightMinor: seededNightlyPrice,
 				recommendationSortKey: -ACCOMMODATION_CONFIG.recommendationBaselineAverage,
 				guestRatingAverage: 0,
 				guestReviewCount: 0,
@@ -306,6 +313,7 @@ export const seedAccommodations = internalMutation({
 				checkInEnd: pick(CHECK_IN_ENDS, random),
 				checkOut: pick(CHECK_OUTS, random),
 				minimumStay,
+				supportedPaymentMethods: 'cash',
 				smokingAllowed: random() < 0.15,
 				petsAllowed: random() < 0.4,
 				partiesAllowed: random() < 0.2,
@@ -387,6 +395,7 @@ export const seedReviews = internalMutation({
 				const checkInDate = parseDate(checkOutDate).subtract({ days: nights }).toString();
 
 				const bookingId = await ctx.db.insert('bookings', {
+					paymentMethod: accommodation.supportedPaymentMethods === 'online' ? 'online' : 'cash',
 					cancellationTerms: {
 						stayType: 'overnight',
 						pricePerDayUseMinor: null,
@@ -404,7 +413,10 @@ export const seedReviews = internalMutation({
 							accommodation.checkOut,
 							accommodation.timeZone
 						),
-						pricePerNightMinor: accommodation.pricePerNightMinor,
+						pricePerNightMinor: accommodation.effectivePricePerNightMinor,
+						basePricePerNightMinor: accommodation.pricePerNightMinor,
+						discountBps: accommodation.discountBps,
+						stayPricing: calculateStayPricing(accommodation, checkInDate, checkOutDate),
 						currency: COMPANY_DATA.CURRENCY
 					},
 					ownerId: guestOwnerId,

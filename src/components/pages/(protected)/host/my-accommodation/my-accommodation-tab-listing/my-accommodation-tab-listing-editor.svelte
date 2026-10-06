@@ -10,14 +10,16 @@
 	import AccommodationReservationRulesField from '@/features/accommodations/components/accommodation-reservation-rules/accommodation-reservation-rules-field.svelte';
 	import AccommodationBookingModeField from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode-field.svelte';
 	import Form from '@/components/ui/custom-components/form/form.svelte';
+	import FormSelect from '@/components/ui/custom-components/form/form-select.svelte';
 	import FormTextarea from '@/components/ui/custom-components/form/form-textarea.svelte';
 	import AccommodationAmenities from '@/features/accommodations/components/accommodation-amenities/accommodation-amenities.svelte';
-	import AccommodationRuleCard from '@/features/accommodations/components/accommodation-rule-card/accommodation-rule-card.svelte';
+	import CardSwitch from '@/components/ui/custom-components/card-switch/card-switch.svelte';
 	import AccommodationTimeZone from '@/features/accommodations/components/accommodation-time-zone/accommodation-time-zone.svelte';
 	import AccommodationCancellationPolicy from '@/features/accommodations/components/accommodation-cancellation-policy/accommodation-cancellation-policy.svelte';
 	import MyAccommodationTabListingLocation from './my-accommodation-tab-listing-location.svelte';
 	import * as Field from '@/components/ui/field/index.js';
 	import { Button } from '@/components/ui/button/index.js';
+	import { Separator } from '@/components/ui/separator/index.js';
 	import MyAccommodationTabListingSaveButton from './my-accommodation-tab-listing-save-button.svelte';
 
 	// HOOKS
@@ -117,7 +119,7 @@
 	<Form
 		function={api.tables.accommodations.mutations.updateAccommodation.updateAccommodation}
 		schema={section.schema}
-		fields={section.fields}
+		fields={section.id === 'rules' ? [] : section.fields}
 		bind:values={form.values}
 		bind:uploadFiles={files}
 		bind:submitting
@@ -139,35 +141,55 @@
 
 			{#if section.id === 'rules'}
 				<Field.Group>
-					<AccommodationBookingModeField {context} />
+					<Field.Set class="rounded-xl border p-5">
+						<Field.Legend class="px-1">
+							{m['AccommodationsFeature.BookingMode.preferences']()}
+						</Field.Legend>
+						<AccommodationBookingModeField {context} />
+						<AccommodationReservationRulesField {context} />
+					</Field.Set>
 					<AccommodationTimeZone {context} />
-					<AccommodationReservationRulesField {context} />
-
-					{#each ruleToggles as rule (rule.name)}
-						<AccommodationRuleCard
-							icon={rule.icon}
-							label={rule.label}
-							description={rule.description}
-							checked={context.checkboxValue(rule.name)}
+					{#each section.fields.filter((field) => field.kind === 'select') as field (field.name)}
+						<FormSelect
+							{field}
+							value={context.inputValue(field.name)}
+							error={context.errors[field.name]}
 							disabled={context.disabled}
-							onCheckedChange={(checked) => context.setValue(rule.name, checked)}
+							onValueChange={(value) => context.setValue(field.name, value)}
 						/>
 					{/each}
 
-					<FormTextarea
-						field={{
-							kind: 'textarea',
-							name: 'houseRules',
-							label: m['AddAccommodationPage.AddAccommodationFormRules.houseRules'](),
-							placeholder:
-								m['AddAccommodationPage.AddAccommodationFormRules.houseRulesPlaceholder'](),
-							rows: 4
-						}}
-						value={context.inputValue('houseRules')}
-						error={context.errors['houseRules']}
-						disabled={context.disabled}
-						onValueChange={(value) => context.setValue('houseRules', value)}
-					/>
+					<Separator />
+					<Field.Set>
+						<Field.Legend>
+							{m['AccommodationPage.AccommodationDetailsRules.houseRules']()}
+						</Field.Legend>
+						{#each ruleToggles as rule (rule.name)}
+							<CardSwitch
+								icon={rule.icon}
+								label={rule.label}
+								description={rule.description}
+								checked={context.checkboxValue(rule.name)}
+								disabled={context.disabled}
+								onCheckedChange={(checked) => context.setValue(rule.name, checked)}
+							/>
+						{/each}
+
+						<FormTextarea
+							field={{
+								kind: 'textarea',
+								name: 'houseRules',
+								label: m['AddAccommodationPage.AddAccommodationFormRules.houseRules'](),
+								placeholder:
+									m['AddAccommodationPage.AddAccommodationFormRules.houseRulesPlaceholder'](),
+								rows: 4
+							}}
+							value={context.inputValue('houseRules')}
+							error={context.errors['houseRules']}
+							disabled={context.disabled}
+							onValueChange={(value) => context.setValue('houseRules', value)}
+						/>
+					</Field.Set>
 				</Field.Group>
 			{/if}
 			{#if section.id === 'location'}

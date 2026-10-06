@@ -78,6 +78,7 @@ async function setup(
 	};
 	const { bookingId, accommodationId } = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
 			ownerId: host._id,
 			name: 'Sunny apartment',
 			description: 'Stay',
@@ -91,6 +92,9 @@ async function setup(
 			beds: 2,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8000,
 			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
@@ -111,6 +115,7 @@ async function setup(
 			updatedAt: now
 		});
 		const bookingId = await ctx.db.insert('bookings', {
+			paymentMethod: 'cash',
 			ownerId: 'guest-1',
 			hostId: host._id,
 			status,

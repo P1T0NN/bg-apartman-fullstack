@@ -43,7 +43,9 @@
 	noindex={!accommodation}
 />
 
-<main class="mx-auto w-full max-w-7xl px-4 pb-28 sm:px-6 lg:px-8 lg:pb-16">
+<main
+	class="mx-auto w-full max-w-6xl px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-16"
+>
 	{#if result.error}
 		<ErrorComponent message={m['AccommodationPage.error']()} />
 	{:else if result.isLoading}
@@ -63,25 +65,34 @@
 					<AccommodationDetails {accommodation} />
 				</div>
 
-				<div class="min-w-0 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+				<div class="hidden min-w-0 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
 					<AccommodationSummary {accommodation} />
 				</div>
 			</div>
 
 			<div
-				class="fixed inset-x-0 bottom-0 flex items-center justify-between gap-3 border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+				class="fixed inset-x-0 bottom-0 isolate border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
 			>
-				<p class="flex flex-col">
-					<span class="text-lg font-semibold">
-						<Price value={accommodation.pricePerNightMinor} />
-					</span>
-
-					<span class="text-xs text-muted-foreground">
-						{m['AccommodationsFeature.AccommodationCard.night']()}
-					</span>
-				</p>
-
-				<Button href="#stay-price" class="min-h-11">{m['AccommodationPage.priceDetails']()}</Button>
+				<div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+					<p class="min-w-0 text-sm">
+						<span class="text-xs text-muted-foreground">
+							{m['AccommodationsFeature.Pricing.from']()}
+						</span>
+						<span class="block text-lg font-semibold wrap-anywhere tabular-nums">
+							<Price value={accommodation.effectivePricePerNightMinor} />
+						</span>
+						<span class="text-xs text-muted-foreground">
+							{m['AccommodationsFeature.AccommodationCard.night']()}
+						</span>
+					</p>
+					<Button
+						href={UNPROTECTED_PAGE_ENDPOINTS.BOOK_ACCOMMODATION(accommodation._id) +
+							page.url.search}
+						class="min-h-11 max-w-[60%] text-center whitespace-normal"
+					>
+						{m['AccommodationPage.AccommodationSummary.planBooking']()}
+					</Button>
+				</div>
 			</div>
 		{/key}
 	{:else}

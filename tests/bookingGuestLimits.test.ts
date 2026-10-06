@@ -4,6 +4,9 @@ import { createBookingSchema } from '../src/shared/features/bookings/schemas/boo
 test('booking validation enforces combined guest capacity as listing limits change', () => {
 	const limits = { today: '2026-10-05', minimumStay: 1, maxGuests: 2 };
 	const values = {
+		paymentMethod: 'cash' as const,
+		expectedPricePerNightMinor: 8025,
+		expectedTotalMinor: 24075,
 		accommodationId: 'accommodation-id',
 		checkInDate: '2026-10-16',
 		checkOutDate: '2026-10-17',

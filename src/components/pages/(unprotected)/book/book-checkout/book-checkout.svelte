@@ -6,11 +6,13 @@
 	// LIBRARIES
 	import { api } from '@convex/_generated/api';
 	import { useMutation } from 'convex-svelte';
-	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { m } from '@/lib/paraglide/messages';
 
 	// COMPONENTS
+	import { Button } from '@/components/ui/button/index.js';
+	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import BookCheckoutConfirmButton from './book-checkout-confirm-button.svelte';
 	import BookSummary from '../book-summary/book-summary.svelte';
 	import BookCheckoutForm from './book-checkout-form/book-checkout-form.svelte';
 
@@ -19,6 +21,7 @@
 	import { useGuestLocal } from '@/features/guests/hooks/useGuestLocal.svelte.js';
 
 	// UTILS
+	import { calculateStayPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
 	import { timeZoneSchema } from '@/shared/features/timezone/schemas/timezoneSchemas.js';
 	import { createBookingSchema } from '@/shared/features/bookings/schemas/bookingSchemas.js';
 	import { getIsoDateInTimeZone } from '@/shared/features/timezone/utils/getIsoDateInTimeZone.js';
@@ -56,13 +59,16 @@
 		lastName: '',
 		email: page.data.currentUser?.email ?? '',
 		phone: '',
-		specialRequests: ''
+		specialRequests: '',
+		paymentMethod: ''
 	});
 	let submitting = $state(false);
 	let errors = $state<Record<string, string>>({});
 
 	const checkInDate = $derived(values.checkInDate);
 	const checkOutDate = $derived(values.checkOutDate);
+	const stayPricing = $derived(calculateStayPricing(accommodation, checkInDate, checkOutDate));
+	const nights = $derived(stayPricing.regularNights + stayPricing.weekendNights);
 	const timeZone = $derived(timeZoneSchema.safeParse(accommodation.timeZone));
 
 	async function handleBookAccommodation(): Promise<void> {
@@ -89,7 +95,17 @@
 
 				const parsed = schema.safeParse({
 					...$state.snapshot(values),
+					paymentMethod:
+						accommodation.supportedPaymentMethods === 'both'
+							? values.paymentMethod
+							: (accommodation.supportedPaymentMethods ?? 'cash'),
 					accommodationId: accommodation._id,
+					expectedPricePerNightMinor: accommodation.effectivePricePerNightMinor,
+					expectedTotalMinor: calculateStayPricing(
+						accommodation,
+						values.checkInDate,
+						values.checkOutDate
+					).totalMinor,
 					expectedBookingMode: accommodation.bookingMode ?? 'request'
 				});
 
@@ -114,16 +130,14 @@
 				});
 			}
 
-			await gotoParaglide(resolve('/(app)/(unprotected)/book-confirmation/[id]', { id: createdBookingId }));
+			await gotoParaglide(
+				resolve('/(app)/(unprotected)/book-confirmation/[id]', { id: createdBookingId })
+			);
 		} catch (error) {
 			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
 		} finally {
 			submitting = false;
-
-			if (Object.values(errors).some(Boolean)) {
-				await tick();
-				focusFirstError(checkout);
-			}
+			focusFirstError(checkout, errors);
 		}
 	}
 </script>
@@ -135,7 +149,7 @@
 	class="grid grid-cols-1 items-start gap-9 lg:grid-cols-[minmax(0,1fr)_23rem] lg:gap-16"
 	aria-busy={submitting}
 >
-	<div class="min-w-0 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+	<div class="hidden min-w-0 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
 		<BookSummary
 			{accommodation}
 			{checkInDate}
@@ -155,3 +169,37 @@
 		{availabilityLoading}
 	/>
 </div>
+
+{#if timeZone.success}
+	<div
+		class="fixed inset-x-0 bottom-0 isolate border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+	>
+		<div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+			<div class="min-w-0" aria-live="polite" aria-atomic="true">
+				<p class="text-xs text-muted-foreground">
+					{nights > 0
+						? m['BookingPage.BookSummary.estimate']()
+						: m['BookingPage.BookSummary.nightlyRate']()}
+				</p>
+				<p class="text-lg font-semibold wrap-anywhere tabular-nums">
+					<Price
+						value={nights > 0 ? stayPricing.totalMinor : accommodation.effectivePricePerNightMinor}
+					/>
+				</p>
+				<Button
+					variant="link"
+					href="#booking-price-details"
+					class="h-auto justify-start p-0 text-xs"
+				>
+					{m['AccommodationPage.priceDetails']()}
+				</Button>
+			</div>
+			<BookCheckoutConfirmButton
+				{submitting}
+				mode={accommodation.bookingMode}
+				onclick={handleBookAccommodation}
+				class="mt-0 w-auto max-w-[60%] min-w-0 text-center whitespace-normal"
+			/>
+		</div>
+	</div>
+{/if}

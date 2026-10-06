@@ -10,6 +10,7 @@ const bookingDoc = docValidator('bookings', bookings);
 /** Guest-facing details returned only after verifying recovery access. */
 export const recoveredBooking = bookingDoc
 	.pick(
+		'paymentMethod',
 		'_id',
 		'accommodationId',
 		'status',
@@ -74,6 +75,7 @@ export const hostBookingPage = v.object({
 
 /** Non-identifying booking summary for the public confirmation page. */
 export const bookingConfirmation = v.object({
+	paymentMethod: bookings.validator.fields.paymentMethod,
 	status: bookings.validator.fields.status,
 	accommodationId: v.id('accommodations'),
 	accommodationName: v.string(),

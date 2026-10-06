@@ -58,6 +58,8 @@ test('global messages distinguish empty, invalid, and out-of-range values withou
 
 test('stay bounds are optional and rule times stay on half-hour slots', () => {
 	const pricing = accommodationPricingSchema.safeParse({
+		supportedPaymentMethods: 'cash',
+		discountPercent: 0,
 		nightlyPrice: 80,
 		minimumStay: 2,
 		maximumStay: ''

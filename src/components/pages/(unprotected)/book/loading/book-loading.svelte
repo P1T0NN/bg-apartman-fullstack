@@ -20,6 +20,6 @@
 				class="h-8 w-1/2"
 			/><Skeleton class="h-56 w-full" />
 		</div>
-		<Skeleton class="h-96 w-full rounded-2xl" />
+		<Skeleton class="hidden h-96 w-full rounded-2xl lg:block" />
 	</div>
 </div>

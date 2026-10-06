@@ -7,6 +7,7 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import BookingPriceBreakdown from '@/features/bookings/components/booking-price-breakdown/booking-price-breakdown.svelte';
 	import { Button } from '@/components/ui/button/index.js';
 	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 	import { Separator } from '@/components/ui/separator/index.js';
@@ -110,6 +111,22 @@
 				</div>
 			</dl>
 
+			{#if confirmation.cancellationTerms.stayPricing}<BookingPriceBreakdown
+					pricing={{
+						pricePerNightMinor: confirmation.cancellationTerms.basePricePerNightMinor,
+						effectivePricePerNightMinor: confirmation.cancellationTerms.pricePerNightMinor,
+						discountBps: confirmation.cancellationTerms.discountBps
+					}}
+					stayPricing={confirmation.cancellationTerms.stayPricing}
+				/>{/if}
+			{#if confirmation.paymentMethod}
+				<p class="text-sm">
+					<span class="text-muted-foreground">{m['PaymentsFeature.method']()}:</span>
+					<span class="font-medium">
+						{m[`PaymentsFeature.methods.${confirmation.paymentMethod}`]()}
+					</span>
+				</p>
+			{/if}
 			<div class="mt-8 border-t pt-6">
 				<BookingCancellationPolicy
 					policy={confirmation.cancellationTerms.policy}

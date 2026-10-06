@@ -1,5 +1,6 @@
 <script lang="ts">
 	// COMPONENTS
+	import BookingPriceBreakdown from '@/features/bookings/components/booking-price-breakdown/booking-price-breakdown.svelte';
 	import BookingCancellationDetails from '@/features/bookings/components/booking-cancellation-details/booking-cancellation-details.svelte';
 	import { Button } from '@/components/ui/button/index.js';
 	import NativeDialog from '@/components/ui/native-components/native-dialog/native-dialog.svelte';
@@ -68,6 +69,20 @@
 				<HostBookingsDetailsDialogAccommodationInfo accommodation={booking.accommodation} />
 			</dl>
 
+			{#if booking.cancellationTerms.stayPricing}<BookingPriceBreakdown
+					pricing={{
+						pricePerNightMinor: booking.cancellationTerms.basePricePerNightMinor,
+						effectivePricePerNightMinor: booking.cancellationTerms.pricePerNightMinor,
+						discountBps: booking.cancellationTerms.discountBps
+					}}
+					stayPricing={booking.cancellationTerms.stayPricing}
+				/>{/if}
+			{#if booking.paymentMethod}
+				<p class="text-sm">
+					<span class="text-muted-foreground">{m['PaymentsFeature.method']()}:</span>
+					<span class="font-medium">{m[`PaymentsFeature.methods.${booking.paymentMethod}`]()}</span>
+				</p>
+			{/if}
 			{#if booking.cancellation}
 				<BookingCancellationDetails
 					cancellation={booking.cancellation}

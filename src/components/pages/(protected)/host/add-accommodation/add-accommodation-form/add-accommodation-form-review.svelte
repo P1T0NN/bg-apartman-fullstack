@@ -6,10 +6,11 @@
 	import { Button } from '@/components/ui/button/index.js';
 	import AddAccommodationSaveButton from './add-accommodation-save-button.svelte';
 	import * as Field from '@/components/ui/field/index.js';
-	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import AccommodationPrice from '@/features/accommodations/components/accommodation-price/accommodation-price.svelte';
 	import AccommodationCancellationPolicyPreview from '@/features/accommodations/components/accommodation-cancellation-policy/accommodation-cancellation-policy-preview/accommodation-cancellation-policy-preview.svelte';
 
 	// CONFIG
+	import { calculateAccommodationPricing } from '@/shared/features/accommodations/utils/calculateAccommodationPricing.js';
 	import { accommodationLocationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 	import { saveAccommodationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 	import { m } from '@/lib/paraglide/messages';
@@ -62,6 +63,10 @@
 		{String(context.values.name) || m['AddAccommodationPage.untitled']()}
 	</h3>
 	{#if validation.success}
+		<p class="text-sm">
+			<span class="text-muted-foreground">{m['PaymentsFeature.supported']()}:</span>
+			{m[`PaymentsFeature.supportedOptions.${validation.data.supportedPaymentMethods}`]()}
+		</p>
 		<p>
 			{m[`AddAccommodationPage.AddAccommodationFormReview.${validation.data.type}`]()}:
 			{m[`AddAccommodationPage.AddAccommodationFormReview.${validation.data.spaceType}`]()}
@@ -81,6 +86,7 @@
 					.join(', ')
 			: ''}
 	</p>
+
 	<p>
 		{m['AddAccommodationPage.AddAccommodationFormReview.capacity']({
 			guests: Number(context.values.maxGuests),
@@ -91,11 +97,29 @@
 	</p>
 	<p class="whitespace-pre-wrap">{String(context.values.description)}</p>
 	<p class="text-lg font-semibold">
-		<Price value={Math.round(Number(context.values.nightlyPrice) * 100)} />
+		{#if validation.success}<AccommodationPrice
+				pricing={calculateAccommodationPricing(
+					validation.data.nightlyPrice,
+					validation.data.discountPercent,
+					validation.data.weekendPrice
+				)}
+			/>{/if}
 		<span class="text-sm font-normal text-muted-foreground">
 			{m['AddAccommodationPage.AddAccommodationFormReview.night']()}
 		</span>
 	</p>
+	{#if validation.success && validation.data.weekendPrice !== null}
+		<p class="flex flex-wrap items-center gap-2 text-sm">
+			<span>{m['AccommodationsFeature.Pricing.weekend']()}</span>
+			<AccommodationPrice
+				pricing={calculateAccommodationPricing(
+					validation.data.weekendPrice,
+					validation.data.discountPercent
+				)}
+			/>
+		</p>
+	{/if}
+
 	<p>
 		{m['AddAccommodationPage.AddAccommodationFormReview.smokingAllowed']()}:
 		{context.checkboxValue('smokingAllowed')

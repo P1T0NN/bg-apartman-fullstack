@@ -1,5 +1,6 @@
 // LIBRARIES
 import { z } from 'zod';
+import { paymentMethodSchema } from '../../payments/schemas/paymentSchemas.js';
 
 // CONFIG
 import { ACCOMMODATION_CONFIG } from '../../accommodations/config.js';
@@ -45,8 +46,11 @@ export function createBookingSchema(limits: BookingStayLimits) {
 	return (
 		z
 			.object({
+				paymentMethod: paymentMethodSchema,
 				accommodationId: z.string().min(1),
 				expectedBookingMode: z.enum(['request', 'instant']).optional(),
+				expectedTotalMinor: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+				expectedPricePerNightMinor: z.number().int().min(1).max(10_000_000),
 				checkInDate: z.iso.date(),
 				checkOutDate: z.iso.date(),
 				adults: z.coerce.number().int().min(1).max(100),

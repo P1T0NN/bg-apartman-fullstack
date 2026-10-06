@@ -9,6 +9,6 @@
 	<Skeleton class="h-72 w-full rounded-2xl sm:h-96 lg:h-[30rem]" />
 	<div class="grid gap-8 lg:grid-cols-[1fr_22rem]">
 		<Skeleton class="h-56 w-full" />
-		<Skeleton class="h-64 w-full" />
+		<Skeleton class="hidden h-64 w-full lg:block" />
 	</div>
 </div>

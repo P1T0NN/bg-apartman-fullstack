@@ -37,6 +37,7 @@ async function setup() {
 	rateLimiterTest.register(t);
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
 			ownerId: 'host',
 			name: 'City apartment',
 			description: 'A quiet city stay.',
@@ -50,6 +51,9 @@ async function setup() {
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 8000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8000,
 			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
@@ -85,7 +89,9 @@ async function setup() {
 		adults: 1,
 		children: 0
 	};
-	const bookingId = await t.run((ctx) => ctx.db.insert('bookings', booking));
+	const bookingId = await t.run((ctx) =>
+		ctx.db.insert('bookings', { paymentMethod: 'cash', ...booking })
+	);
 	const guest = t.withIdentity({
 		subject: 'guest',
 		tokenIdentifier: 'issuer|guest',
@@ -108,14 +114,20 @@ test('author review history is paginated, private and retains hidden or removed-
 		comment: 'My first stay.'
 	});
 	vi.setSystemTime(new Date('2026-09-30T12:01:00Z'));
-	const secondBookingId = await t.run((ctx) => ctx.db.insert('bookings', booking));
+	const secondBookingId = await t.run((ctx) =>
+		ctx.db.insert('bookings', { paymentMethod: 'cash', ...booking })
+	);
 	const secondId = await guest.mutation(createReview, {
 		bookingId: secondBookingId,
 		rating: 5,
 		comment: 'My second stay.'
 	});
 	const foreignBookingId = await t.run((ctx) =>
-		ctx.db.insert('bookings', { ...booking, ownerId: 'stranger' })
+		ctx.db.insert('bookings', {
+			paymentMethod: 'cash',
+			...booking,
+			ownerId: 'stranger'
+		})
 	);
 	const foreignId = await stranger.mutation(createReview, {
 		bookingId: foreignBookingId,
@@ -177,7 +189,12 @@ test('one immutable review per booking, and another completed stay earns another
 		guest.mutation(createReview, { bookingId, rating: 1, comment: 'Trying to change it.' })
 	).rejects.toMatchObject({ data: { code: 'REVIEW_ALREADY_EXISTS' } });
 	const secondBookingId = await t.run((ctx) =>
-		ctx.db.insert('bookings', { ...booking, checkInDate: '2026-09-25', checkOutDate: '2026-09-28' })
+		ctx.db.insert('bookings', {
+			paymentMethod: 'cash',
+			...booking,
+			checkInDate: '2026-09-25',
+			checkOutDate: '2026-09-28'
+		})
 	);
 	await guest.mutation(createReview, {
 		bookingId: secondBookingId,
@@ -292,7 +309,9 @@ test('public pagination and star filters expose no booking, account or moderatio
 		comment: 'An honest critical review.'
 	});
 	vi.setSystemTime(new Date('2026-09-30T12:01:00Z'));
-	const second = await t.run((ctx) => ctx.db.insert('bookings', booking));
+	const second = await t.run((ctx) =>
+		ctx.db.insert('bookings', { paymentMethod: 'cash', ...booking })
+	);
 	await guest.mutation(createReview, { bookingId: second, rating: 5, comment: 'A better stay.' });
 	const base = { accommodationId, paginationOpts: { cursor: null, numItems: 1 } };
 	const firstPage = await t.query(fetchReviews, base);
@@ -371,7 +390,9 @@ test('guest rating sort fields follow the public threshold and review moderation
 		comment: 'Great stay.'
 	});
 	for (const rating of [4, 3]) {
-		const id = await t.run((ctx) => ctx.db.insert('bookings', booking));
+		const id = await t.run((ctx) =>
+			ctx.db.insert('bookings', { paymentMethod: 'cash', ...booking })
+		);
 		await guest.mutation(createReview, { bookingId: id, rating, comment: 'A real stay.' });
 	}
 	expect(await t.run((ctx) => ctx.db.get('accommodations', accommodationId))).toMatchObject({
@@ -404,6 +425,7 @@ test('eligible booking pages exclude reviewed, expired, future, foreign and uncl
 	])
 		await t.run((ctx) =>
 			ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
 				...booking,
 				...overrides,
 				cancellationTerms: bookingCancellationTerms(

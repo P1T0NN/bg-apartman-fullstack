@@ -48,6 +48,10 @@ z.config({
 				return m['ValidationMessages.multipleOf']({ step: String(issue.divisor) });
 			case 'custom':
 				switch (issue.params?.code) {
+					case 'WEEKEND_PRICE_TOO_LOW':
+						return m['AccommodationsFeature.Pricing.weekendTooLow']();
+					case 'DISCOUNT_PRICE_TOO_LOW':
+						return m['ValidationMessages.discountPriceTooLow']();
 					case 'INVALID_TIME_ZONE':
 						return m['ValidationMessages.invalidTimeZone']();
 					case 'PAST_STAY_DATE':

@@ -16,6 +16,7 @@ export async function getBookingGuestDetails(ctx: QueryCtx, booking: Doc<'bookin
 		accommodationName: accommodation.name,
 		isClaimable: booking.ownerId === undefined,
 		status: booking.status,
+		paymentMethod: booking.paymentMethod,
 		cancellationTerms: booking.cancellationTerms,
 		firstName: booking.firstName,
 		lastName: booking.lastName,

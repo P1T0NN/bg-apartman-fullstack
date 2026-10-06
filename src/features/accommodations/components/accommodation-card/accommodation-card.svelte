@@ -1,6 +1,4 @@
 <script lang="ts">
-	import AccommodationBookingMode from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode.svelte';
-
 	// SVELTEKIT IMPORTS
 	import { page } from '$app/state';
 
@@ -11,12 +9,13 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import { Badge } from '@/components/ui/badge/index.js';
 	import AccommodationCardRating from './accommodation-card-rating.svelte';
 	import FavoriteButton from '@/features/favorites/components/favorite-button/favorite-button.svelte';
 	import ImageGallerySmall from '@/components/ui/custom-components/image-gallery/image-gallery-small.svelte';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
-	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import AccommodationPrice from '@/features/accommodations/components/accommodation-price/accommodation-price.svelte';
 
 	// TYPES
 	import type { AccommodationCard } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -59,19 +58,21 @@
 			{accommodation.type} &middot; {accommodation.address.city}
 		</p>
 
-		<h2 class="text-base leading-snug font-semibold">
-			<Link
-				class="rounded-sm underline-offset-4 after:absolute after:inset-0 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
-				href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(accommodation._id) + page.url.search}
-				target="_blank"
-				rel="noopener noreferrer"
-			>
-				{accommodation.name}
-			</Link>
-		</h2>
-
-		<AccommodationCardRating reviews={accommodation.reviews} />
-		<AccommodationBookingMode mode={accommodation.bookingMode} compact />
+		<div class="flex items-start justify-between gap-3">
+			<h2 class="min-w-0 flex-1 text-base leading-snug font-semibold wrap-break-word">
+				<Link
+					class="rounded-sm underline-offset-4 after:absolute after:inset-0 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
+					href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(accommodation._id) + page.url.search}
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					{accommodation.name}
+				</Link>
+			</h2>
+			<div class="shrink-0 pt-0.5 whitespace-nowrap">
+				<AccommodationCardRating reviews={accommodation.reviews} />
+			</div>
+		</div>
 
 		<p class="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
 			<Plural
@@ -113,13 +114,20 @@
 			/>
 		</p>
 
-		<div class="mt-auto pt-2">
+		<div class="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2">
 			<p class="text-base font-semibold tabular-nums">
-				<Price value={accommodation.pricePerNightMinor} />
+				<AccommodationPrice pricing={accommodation} from />
 				<span class="text-sm font-normal">
 					{m['AccommodationsFeature.AccommodationCard.night']()}
 				</span>
 			</p>
+
+			{#if accommodation.bookingMode === 'instant'}
+				<Badge variant="default">
+					<span class="icon-[lucide--zap] size-3.5" aria-hidden="true"></span>
+					{m['AccommodationsFeature.BookingMode.instant']()}
+				</Badge>
+			{/if}
 		</div>
 	</div>
 </article>

@@ -36,6 +36,8 @@ test('host rules retain arrival-today and discard retired single-day settings', 
 
 test('listing sections validate independently and strip unrelated fields', () => {
 	const pricing = accommodationPricingSchema.safeParse({
+		supportedPaymentMethods: 'cash',
+		discountPercent: 0,
 		nightlyPrice: '85.50',
 		minimumStay: '2',
 		maximumStay: '',
@@ -44,10 +46,18 @@ test('listing sections validate independently and strip unrelated fields', () =>
 	});
 	expect(pricing.success).toBe(true);
 	if (pricing.success)
-		expect(pricing.data).toEqual({ nightlyPrice: 85.5, minimumStay: 2, maximumStay: undefined });
-	expect(accommodationPricingSchema.safeParse({ nightlyPrice: 0, minimumStay: 2 }).success).toBe(
-		false
-	);
+		expect(pricing.data).toEqual({
+			weekendPrice: null,
+			discountPercent: 0,
+			nightlyPrice: 85.5,
+			minimumStay: 2,
+			maximumStay: undefined,
+			supportedPaymentMethods: 'cash'
+		});
+	expect(
+		accommodationPricingSchema.safeParse({ discountPercent: 0, nightlyPrice: 0, minimumStay: 2 })
+			.success
+	).toBe(false);
 	expect(
 		accommodationBasicInfoSchema.safeParse({
 			type: 'apartment',
@@ -79,4 +89,27 @@ test('listing sections validate independently and strip unrelated fields', () =>
 	expect(
 		accommodationPhotosSchema.safeParse({ ...photos, imageKeys: photos.imageKeys.slice(1) }).success
 	).toBe(false);
+});
+
+test('host payment support is mandatory and stores only cash, online or both', () => {
+	for (const supportedPaymentMethods of [undefined, '', 'card', ['cash', 'online']]) {
+		expect(
+			accommodationPricingSchema.safeParse({
+				discountPercent: 0,
+				nightlyPrice: 80,
+				minimumStay: 1,
+				supportedPaymentMethods
+			}).success
+		).toBe(false);
+	}
+	for (const supportedPaymentMethods of ['cash', 'online', 'both']) {
+		expect(
+			accommodationPricingSchema.safeParse({
+				discountPercent: 0,
+				nightlyPrice: 80,
+				minimumStay: 1,
+				supportedPaymentMethods
+			}).success
+		).toBe(true);
+	}
 });

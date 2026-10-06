@@ -2,7 +2,6 @@
 import { ConvexError } from 'convex/values';
 import { useAction, useMutation } from 'convex-svelte';
 import { api } from '@convex/_generated/api';
-import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';
 import { m } from '@/lib/paraglide/messages';
 
@@ -297,10 +296,7 @@ export function useForm<Mutation extends FunctionReference<'mutation' | 'action'
 
 			if (captchaUsed) captcha.reset();
 
-			if (Object.values(errors).some(Boolean)) {
-				await tick();
-				focusFirstError(form);
-			}
+			focusFirstError(form, errors);
 		}
 
 		if (options.resetOnSuccess) {

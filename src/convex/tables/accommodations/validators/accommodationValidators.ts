@@ -67,6 +67,7 @@ const accommodationListItem = accommodationDoc
 		'houseRules',
 		'cancellationPolicy',
 		'sameDayReservation',
+		'supportedPaymentMethods',
 		'status',
 		'deletedAt',
 		'deletedBy',
@@ -97,12 +98,17 @@ export const createAccommodationValidator = accommodations.validator
 		'deletedBy',
 		'updatedAt',
 		'pricePerNightMinor',
+		'discountBps',
+		'weekendPricePerNightMinor',
+		'effectivePricePerNightMinor',
 		'recommendationSortKey',
 		'guestRatingAverage',
 		'guestReviewCount'
 	)
 	.extend({
-		nightlyPrice: v.number()
+		nightlyPrice: v.number(),
+		weekendPrice: v.optional(v.union(v.number(), v.null())),
+		discountPercent: v.number()
 	});
 
 /** Section-agnostic update payload: any subset of the editable listing fields plus the target id. */
@@ -114,6 +120,9 @@ export const updateAccommodationValidator = accommodations.validator
 		'deletedBy',
 		'updatedAt',
 		'pricePerNightMinor',
+		'discountBps',
+		'weekendPricePerNightMinor',
+		'effectivePricePerNightMinor',
 		'recommendationSortKey',
 		'guestRatingAverage',
 		'guestReviewCount'
@@ -121,7 +130,9 @@ export const updateAccommodationValidator = accommodations.validator
 	.partial()
 	.extend({
 		id: v.id('accommodations'),
-		nightlyPrice: v.optional(v.number())
+		nightlyPrice: v.optional(v.number()),
+		weekendPrice: v.optional(v.union(v.number(), v.null())),
+		discountPercent: v.optional(v.number())
 	});
 
 export const accommodationSearchPage = accommodationPage.extend({
@@ -135,7 +146,7 @@ export const accommodationMapMarker = accommodationDoc.pick(
 	'name',
 	'latitude',
 	'longitude',
-	'pricePerNightMinor'
+	'effectivePricePerNightMinor'
 );
 
 export const accommodationMapPage = v.object({

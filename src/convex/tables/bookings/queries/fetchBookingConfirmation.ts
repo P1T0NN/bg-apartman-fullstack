@@ -23,6 +23,7 @@ export const fetchBookingConfirmation = query({
 
 		return {
 			status: booking.status,
+			paymentMethod: booking.paymentMethod,
 			accommodationId: booking.accommodationId,
 			accommodationName: accommodation.name,
 			cancellationTerms: booking.cancellationTerms,

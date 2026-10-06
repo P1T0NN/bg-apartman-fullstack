@@ -4,6 +4,7 @@
 	import { isEqualMonth } from '@internationalized/date';
 
 	// COMPONENTS
+	import MyAccommodationCalendarFreeDay from './my-accommodation-calendar-free-day.svelte';
 	import * as RangeCalendar from '@/components/ui/range-calendar/index.js';
 	import MyAccommodationCalendarBookedDay from './my-accommodation-calendar-booked-day.svelte';
 	import MyAccommodationCalendarBlockedDay from './my-accommodation-calendar-blocked-day.svelte';
@@ -12,6 +13,7 @@
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
+	import type { NightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
 	import type { DateValue } from '@internationalized/date';
 
 	let {
@@ -19,13 +21,15 @@
 		month,
 		bookings,
 		blockedDates,
-		availabilityLoaded
+		availabilityLoaded,
+		pricing
 	}: {
 		date: DateValue;
 		month: DateValue;
 		bookings: { checkInDate: string; checkOutDate: string }[];
 		blockedDates: string[];
 		availabilityLoaded: boolean;
+		pricing?: NightlyPricing;
 	} = $props();
 
 	const day = $derived(date.day);
@@ -90,6 +94,8 @@
 				<MyAccommodationCalendarBookedDay {booked} />
 			{:else if blocked}
 				<MyAccommodationCalendarBlockedDay />
+			{:else if pricing}
+				<MyAccommodationCalendarFreeDay {date} {pricing} />
 			{/if}
 		</div>
 	</RangeCalendar.Day>

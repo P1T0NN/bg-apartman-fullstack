@@ -1,3 +1,4 @@
+import { calculateStayPricing } from '../../shared/features/bookings/utils/calculateStayPricing.js';
 import { migrations } from './migrations.js';
 import { ACCOMMODATION_CONFIG } from '../../shared/features/accommodations/config.js';
 import { COMPANY_DATA } from '../../shared/config.js';
@@ -19,7 +20,10 @@ export const backfillBookingTiming = migrations.define({
 			timeZone,
 			checkInStart: accommodation.checkInStart,
 			checkInAt: getZonedTimestamp(booking.checkInDate, accommodation.checkInStart, timeZone),
-			pricePerNightMinor: accommodation.pricePerNightMinor,
+			pricePerNightMinor: accommodation.effectivePricePerNightMinor,
+			basePricePerNightMinor: accommodation.pricePerNightMinor,
+			discountBps: accommodation.discountBps,
+			stayPricing: calculateStayPricing(accommodation, booking.checkInDate, booking.checkOutDate),
 			stayType: 'overnight' as const,
 			pricePerDayUseMinor: null,
 			currency: COMPANY_DATA.CURRENCY

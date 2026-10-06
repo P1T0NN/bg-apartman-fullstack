@@ -10,7 +10,7 @@
 	// TYPES
 	import type { DateRange } from 'bits-ui';
 
-	let { value }: { value: DateRange | undefined } = $props();
+	let { value, checkOutTime }: { value: DateRange | undefined; checkOutTime: string } = $props();
 
 	const selected = $derived.by(() => ({
 		checkIn: value?.start ? formatDate(value.start.toDate('UTC').getTime(), getLocale()) : '',
@@ -18,22 +18,35 @@
 	}));
 </script>
 
-<div class="grid gap-3 sm:grid-cols-2">
-	<div class="rounded-lg border px-3 py-2">
-		<p class="text-xs text-muted-foreground">
+<div class="grid grid-cols-2 divide-x rounded-xl border bg-muted/40">
+	<div class="min-w-0 px-4 py-4 sm:px-5">
+		<p class="text-xs font-medium text-muted-foreground">
 			{m['BookingsFeature.BookingStayDatesHeader.checkIn']()}
 		</p>
-		<p class={cn('text-sm font-medium', !selected.checkIn && 'font-normal text-muted-foreground')}>
+		<p
+			class={cn(
+				'mt-2 text-base font-semibold tracking-tight',
+				!selected.checkIn && 'font-normal text-muted-foreground'
+			)}
+		>
 			{selected.checkIn || m['BookingsFeature.BookingStayDatesHeader.selectDates']()}
 		</p>
 	</div>
 
-	<div class="rounded-lg border px-3 py-2">
-		<p class="text-xs text-muted-foreground">
+	<div class="min-w-0 px-4 py-4 sm:px-5">
+		<p class="text-xs font-medium text-muted-foreground">
 			{m['BookingsFeature.BookingStayDatesHeader.checkOut']()}
 		</p>
-		<p class={cn('text-sm font-medium', !selected.checkOut && 'font-normal text-muted-foreground')}>
+		<p
+			class={cn(
+				'mt-2 text-base font-semibold tracking-tight',
+				!selected.checkOut && 'font-normal text-muted-foreground'
+			)}
+		>
 			{selected.checkOut || m['BookingsFeature.BookingStayDatesHeader.selectDates']()}
+		</p>
+		<p class="mt-2 text-xs leading-5 text-muted-foreground">
+			{m['BookingPage.BookCheckoutForm.checkOutTime']({ time: checkOutTime })}
 		</p>
 	</div>
 </div>

@@ -18,6 +18,9 @@ import { timeZoneSchema } from '../../../../shared/features/timezone/schemas/tim
 // VALIDATORS
 import { updateAccommodationValidator } from '../validators/accommodationValidators.js';
 
+// UTILS
+import { calculateAccommodationPricing } from '../../../../shared/features/accommodations/utils/calculateAccommodationPricing.js';
+
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
@@ -77,15 +80,23 @@ export const updateAccommodation = authenticatedUploadMutation({
 			...args,
 			timeZone: changesPosition ? args.timeZone : existing.timeZone,
 			imageKeys: args.imageKeys ?? existing.imageKeys,
-			nightlyPrice: args.nightlyPrice ?? existing.pricePerNightMinor / 100
+			nightlyPrice: args.nightlyPrice ?? existing.pricePerNightMinor / 100,
+			discountPercent: args.discountPercent ?? existing.discountBps / 100,
+			weekendPrice:
+				args.weekendPrice !== undefined
+					? args.weekendPrice
+					: existing.weekendPricePerNightMinor == null
+						? null
+						: existing.weekendPricePerNightMinor / 100
 		});
 		if (!parsed.success) throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
 
-		const { nightlyPrice: validatedPrice, ...data } = parsed.data;
+		const { nightlyPrice, discountPercent, weekendPrice, ...data } = parsed.data;
+		const pricing = calculateAccommodationPricing(nightlyPrice, discountPercent, weekendPrice);
 		await ctx.db.patch('accommodations', args.id, {
 			...data,
 			cancellationPolicy: args.cancellationPolicy ?? existing.cancellationPolicy,
-			pricePerNightMinor: Math.round(validatedPrice * 100),
+			...pricing,
 			updatedAt: Date.now()
 		});
 

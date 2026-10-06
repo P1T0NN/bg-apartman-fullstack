@@ -28,6 +28,9 @@ export async function resolveImageUrls(
 		beds: item.beds,
 		bathrooms: item.bathrooms,
 		pricePerNightMinor: item.pricePerNightMinor,
+		discountBps: item.discountBps,
+		weekendPricePerNightMinor: item.weekendPricePerNightMinor,
+		effectivePricePerNightMinor: item.effectivePricePerNightMinor,
 		imageUrls: item.imageKeys
 			.slice(0, limit)
 			.map((key) => urlByKey.get(key))

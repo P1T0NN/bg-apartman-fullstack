@@ -9,7 +9,6 @@
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
-	import { Badge } from '@/components/ui/badge/index.js';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
 
 	let { mode = 'request' }: { mode?: 'request' | 'instant' } = $props();
@@ -30,12 +29,6 @@
 				? m['AccommodationsFeature.BookingMode.instantHeader']()
 				: m['BookingPage.BookingHeader.title']()}
 		</h1>
-		
-		<Badge variant="secondary">
-			{mode === 'instant'
-				? m['AccommodationsFeature.BookingMode.instant']()
-				: m['BookingPage.BookingHeader.preview']()}
-		</Badge>
 	</div>
 
 	<p class="max-w-prose text-sm leading-6 text-muted-foreground">

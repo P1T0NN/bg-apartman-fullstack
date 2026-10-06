@@ -20,7 +20,13 @@ export const fetchMyAccommodationCalendar = authenticatedQuery({
 	args: {
 		accommodationId: v.id('accommodations')
 	},
-	returns: calendarResult,
+	returns: calendarResult.extend({
+		pricing: v.object({
+			pricePerNightMinor: v.number(),
+			discountBps: v.number(),
+			weekendPricePerNightMinor: v.union(v.number(), v.null())
+		})
+	}),
 	handler: async (ctx, { accommodationId }) => {
 		const accommodation = await ctx.db.get('accommodations', accommodationId);
 
@@ -30,6 +36,13 @@ export const fetchMyAccommodationCalendar = authenticatedQuery({
 		if (accommodation.status === 'deleted')
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 
-		return getAccommodationCalendar(ctx, accommodation);
+		return {
+			...(await getAccommodationCalendar(ctx, accommodation)),
+			pricing: {
+				pricePerNightMinor: accommodation.pricePerNightMinor,
+				discountBps: accommodation.discountBps,
+				weekendPricePerNightMinor: accommodation.weekendPricePerNightMinor ?? null
+			}
+		};
 	}
 });

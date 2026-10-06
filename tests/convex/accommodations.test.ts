@@ -83,6 +83,9 @@ test('cancellation policies allow only fixed percentages and every decreasing or
 });
 
 const emptyListing: AccommodationDetails = {
+	weekendPrice: null,
+	discountPercent: 0,
+	supportedPaymentMethods: 'cash',
 	bookingMode: 'request',
 	sameDayReservation: false,
 	imageKeys: [],
@@ -144,7 +147,13 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 		)
 	});
 	const t = convexTest(legacySchema, modules);
-	const { nightlyPrice, sameDayReservation: _same, ...details } = listing;
+	const {
+		nightlyPrice,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		sameDayReservation: _same,
+		...details
+	} = listing;
 	const base = {
 		...details,
 		ownerId: 'host',
@@ -152,6 +161,9 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
 		pricePerNightMinor: nightlyPrice * 100,
+		discountBps: 0,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: nightlyPrice * 100,
 		status: 'published' as const,
 		updatedAt: 1
 	};
@@ -163,9 +175,15 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 		pricePerDayUseMinor: 4500
 	};
 	const ids = await t.run(async (ctx) => [
-		await ctx.db.insert('accommodations', base),
-		await ctx.db.insert('accommodations', { ...base, ...enabled }),
-		await ctx.db.insert('accommodations', { ...base, sameDayReservation: true })
+		await ctx.db.insert('accommodations', { ...base }),
+		await ctx.db.insert('accommodations', {
+			...base,
+			...enabled
+		}),
+		await ctx.db.insert('accommodations', {
+			...base,
+			sameDayReservation: true
+		})
 	]);
 	const frozen = bookingCancellationTerms('2027-07-16', '2027-07-17');
 	const { stayType: _stay, pricePerDayUseMinor: _fee, ...legacyTerms } = frozen;
@@ -184,8 +202,13 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 			children: 0
 		};
 		return [
-			await ctx.db.insert('bookings', { ...booking, cancellationTerms: legacyTerms }),
 			await ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
+				...booking,
+				cancellationTerms: legacyTerms
+			}),
+			await ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
 				...booking,
 				checkOutDate: booking.checkInDate,
 				cancellationTerms: dayUseTerms
@@ -264,7 +287,13 @@ test('hosts create and update arrival-today settings without single-day options'
 test('backfilled listings can update unrelated fields', async () => {
 	const t = setup();
 	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
-	const { nightlyPrice, sameDayReservation: _sameDayReservation, ...details } = listing;
+	const {
+		nightlyPrice,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		sameDayReservation: _sameDayReservation,
+		...details
+	} = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
 			...details,
@@ -274,6 +303,9 @@ test('backfilled listings can update unrelated fields', async () => {
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
 		})
@@ -349,7 +381,7 @@ test('policy migration fills missing policies in bounded pages and preserves exi
 		)
 	});
 	const t = convexTest(legacySchema, modules);
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const base = {
 		...details,
 		cancellationPolicy: undefined,
@@ -359,6 +391,9 @@ test('policy migration fills missing policies in bounded pages and preserves exi
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
 		pricePerNightMinor: Math.round(nightlyPrice * 100),
+		discountBps: 0,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 		status: 'published' as const,
 		updatedAt: 1
 	};
@@ -371,9 +406,12 @@ test('policy migration fills missing policies in bounded pages and preserves exi
 		under24Hours: 0
 	} as const;
 	const ids = await t.run(async (ctx) => [
-		await ctx.db.insert('accommodations', base),
-		await ctx.db.insert('accommodations', { ...base, cancellationPolicy: custom }),
-		await ctx.db.insert('accommodations', base)
+		await ctx.db.insert('accommodations', { ...base }),
+		await ctx.db.insert('accommodations', {
+			...base,
+			cancellationPolicy: custom
+		}),
+		await ctx.db.insert('accommodations', { ...base })
 	]);
 	const migration =
 		internal.migrations.backfillAccommodationCancellationPolicies
@@ -410,13 +448,18 @@ function setup() {
 	return t;
 }
 
-test('list rows and map pins apply the same stay filters through paginated geographic searches', async () => {
+test('list rows and map pins apply the same discounted stay filters through paginated geographic searches', async () => {
 	const t = setup();
 	const listQuery =
 		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
 	const mapQuery =
 		api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap;
-	const { nightlyPrice: _nightlyPrice, ...details } = listing;
+	const {
+		nightlyPrice: _nightlyPrice,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
 	const base = {
 		...details,
 		cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
@@ -425,7 +468,10 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 		recommendationSortKey: -3,
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
-		pricePerNightMinor: 8025,
+		pricePerNightMinor: 10000,
+		discountBps: 1975,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: 8025,
 		maxGuests: 6,
 		bedrooms: 2,
 		beds: 3,
@@ -437,9 +483,28 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 	const variants = [
 		{ ...base, amenities: [] },
 		base,
-		{ ...base, pricePerNightMinor: 10050, bedrooms: 4 },
-		{ ...base, pricePerNightMinor: 8024 },
-		{ ...base, pricePerNightMinor: 10051 },
+		{
+			...base,
+			pricePerNightMinor: 10050,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 10050,
+			bedrooms: 4
+		},
+		{
+			...base,
+			pricePerNightMinor: 8024,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8024
+		},
+		{
+			...base,
+			pricePerNightMinor: 10051,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 10051
+		},
 		{ ...base, type: 'studio' as const },
 		{ ...base, bedrooms: 1 },
 		{ ...base, beds: 2 },
@@ -452,7 +517,7 @@ test('list rows and map pins apply the same stay filters through paginated geogr
 	];
 	const ids = await t.run(async (ctx) => {
 		const inserted = [];
-		for (const row of variants) inserted.push(await ctx.db.insert('accommodations', row));
+		for (const row of variants) inserted.push(await ctx.db.insert('accommodations', { ...row }));
 		return inserted;
 	});
 	const stayFilters: AccommodationSearchFilters = {
@@ -541,13 +606,21 @@ test('recommendation, price and guest rating order filtered results before curso
 	const t = setup();
 	const query =
 		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
-	const { nightlyPrice: _price, ...details } = listing;
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
 	const base = {
 		...details,
 		cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 		imageKeys: [],
 		ownerId: 'sorting-test',
 		pricePerNightMinor: 9000,
+		discountBps: 0,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: 9000,
 		sameDayReservation: false,
 		recommendationSortKey: -4.5,
 		guestRatingAverage: 0,
@@ -562,24 +635,67 @@ test('recommendation, price and guest rating order filtered results before curso
 		{
 			...base,
 			pricePerNightMinor: 2000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 2000,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			address: { ...base.address, city: 'Novi Sad' }
 		},
-		{ ...base, pricePerNightMinor: 4000 },
-		{ ...base, pricePerNightMinor: 1000, recommendationSortKey: -5, bedrooms: 2 },
+		{
+			...base,
+			pricePerNightMinor: 8000,
+			discountBps: 5000,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 4000
+		},
+		{
+			...base,
+			pricePerNightMinor: 1000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 1000,
+			recommendationSortKey: -5,
+			bedrooms: 2
+		},
 		{
 			...base,
 			pricePerNightMinor: 3000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 3000,
 			recommendationSortKey: -4,
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			address: { ...base.address, country: 'Croatia', city: 'Zagreb' }
 		},
-		{ ...base, pricePerNightMinor: 30000, recommendationSortKey: -5, latitude: 45 },
-		{ ...base, pricePerNightMinor: 500, recommendationSortKey: -5, amenities: [] },
-		{ ...base, pricePerNightMinor: 5000, recommendationSortKey: -4 }
+		{
+			...base,
+			pricePerNightMinor: 30000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 30000,
+			recommendationSortKey: -5,
+			latitude: 45
+		},
+		{
+			...base,
+			pricePerNightMinor: 500,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 500,
+			recommendationSortKey: -5,
+			amenities: []
+		},
+		{
+			...base,
+			pricePerNightMinor: 5000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 5000,
+			recommendationSortKey: -4
+		}
 	];
 	const ids = await t.run(async (ctx) => {
 		const inserted = [];
@@ -672,7 +788,12 @@ test('recommendation, price and guest rating order filtered results before curso
 
 test('recommendation backfill refreshes existing scores and can be safely rerun', async () => {
 	const t = setup();
-	const { nightlyPrice: _price, ...details } = listing;
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
 			...details,
@@ -684,6 +805,9 @@ test('recommendation backfill refreshes existing scores and can be safely rerun'
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: 8025,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8025,
 			status: 'published',
 			updatedAt: 1
 		})
@@ -771,7 +895,7 @@ test('dense map fixtures use distinct batches and clean only their owner in boun
 
 test('public details resolve ordered photos without exposing owner or storage keys', async () => {
 	const t = setup();
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
 			...details,
@@ -782,6 +906,9 @@ test('public details resolve ordered photos without exposing owner or storage ke
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
 		})
@@ -813,7 +940,7 @@ test('owner listing resolves ordered photos and rejects other identities', async
 	const t = setup();
 	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
 	const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
 			...details,
@@ -824,6 +951,9 @@ test('owner listing resolves ordered photos and rejects other identities', async
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
 		})
@@ -862,7 +992,7 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 	const t = setup();
 	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
 	const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run(async (ctx) => {
 		const docId = await ctx.db.insert('accommodations', {
 			...details,
@@ -873,6 +1003,9 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
 		});
@@ -894,13 +1027,22 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 	});
 
 	await owner.mutation(update, { id, type: 'studio', maxGuests: 3 });
-	await owner.mutation(update, { id, nightlyPrice: 99.5, minimumStay: 3 });
+	await owner.mutation(update, {
+		id,
+		nightlyPrice: 99.5,
+		weekendPrice: 120,
+		discountPercent: 15,
+		minimumStay: 3
+	});
 
 	const updated = await t.run((ctx) => ctx.db.get(id));
 	expect(updated).toMatchObject({
 		type: 'studio',
 		maxGuests: 3,
 		pricePerNightMinor: 9950,
+		discountBps: 1500,
+		weekendPricePerNightMinor: 12000,
+		effectivePricePerNightMinor: 8458,
 		minimumStay: 3,
 		ownerId: 'host'
 	});
@@ -918,6 +1060,17 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.timeZone).toBe(
 		'Europe/Budapest'
 	);
+	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.weekendPricePerNightMinor).toBe(
+		12000
+	);
+	await expect(owner.mutation(update, { id, nightlyPrice: 130 })).rejects.toMatchObject({
+		data: { code: 'INVALID_ACCOMMODATION' }
+	});
+	await owner.mutation(update, { id, weekendPrice: null });
+	expect(
+		(await t.run((ctx) => ctx.db.get('accommodations', id)))?.weekendPricePerNightMinor
+	).toBeNull();
+
 	expect(
 		await t.run((ctx) =>
 			accommodationOwnerAggregate.count(ctx, { namespace: 'host', bounds: { prefix: ['studio'] } })
@@ -954,7 +1107,7 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 	const t = setup();
 	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
 	const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run(async (ctx) => {
 		const id = await ctx.db.insert('accommodations', {
 			...details,
@@ -965,6 +1118,9 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
 		});
@@ -1059,6 +1215,9 @@ test('publishing creates one complete accommodation and claims ordered photos at
 		status: 'published',
 		imageKeys: reordered,
 		pricePerNightMinor: 8025,
+		discountBps: 0,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: 8025,
 		latitude: listing.latitude,
 		longitude: listing.longitude,
 		address: listing.address
@@ -1202,6 +1361,8 @@ test('step validation permits local progression, while publication requires ever
 		{ name: listing.name, description: listing.description, imageKeys },
 		{
 			nightlyPrice: 80.25,
+			discountPercent: 0,
+			supportedPaymentMethods: 'cash',
 			minimumStay: 1
 		},
 		{
@@ -1412,7 +1573,7 @@ test('search filters by location, total guests, and rooms', async () => {
 
 test('map search scopes coordinates before pagination and validates bounds', async () => {
 	const t = setup();
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	await t.run(async (ctx) => {
 		for (const [name, latitude, longitude, maxGuests] of [
 			['outside longitude', 44, 10, 4],
@@ -1436,6 +1597,9 @@ test('map search scopes coordinates before pagination and validates bounds', asy
 				guestRatingAverage: 0,
 				guestReviewCount: 0,
 				pricePerNightMinor: Math.round(nightlyPrice * 100),
+				discountBps: 0,
+				weekendPricePerNightMinor: null,
+				effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 				status: 'published',
 				updatedAt: 1
 			});
@@ -1507,17 +1671,30 @@ test('public listing mutations validate client timezone and preserve it on non-l
 	expect(await t.run((ctx) => ctx.db.query('storageUploads').take(10))).toHaveLength(
 		imageKeys.length
 	);
-	const id = await owner.mutation(create, { ...listing, uploadedFiles: imageKeys });
+	const id = await owner.mutation(create, {
+		...listing,
+		supportedPaymentMethods: 'both',
+		uploadedFiles: imageKeys
+	});
+	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.supportedPaymentMethods).toBe(
+		'both'
+	);
 	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.timeZone).toBe(
 		'Europe/Belgrade'
 	);
 	await expect(
 		stranger.mutation(update, { id, latitude: 40, longitude: -74, timeZone: 'America/New_York' })
 	).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
-	await owner.mutation(update, { id, checkOut: '12:00', timeZone: 'America/New_York' });
+	await owner.mutation(update, {
+		id,
+		checkOut: '12:00',
+		supportedPaymentMethods: 'online',
+		timeZone: 'America/New_York'
+	});
 	expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toMatchObject({
 		timeZone: 'Europe/Belgrade',
-		checkOut: '12:00'
+		checkOut: '12:00',
+		supportedPaymentMethods: 'online'
 	});
 	for (const args of [
 		{ latitude: 40 },
@@ -1537,7 +1714,8 @@ test('public listing mutations validate client timezone and preserve it on non-l
 	expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toMatchObject({
 		latitude: 40.7128,
 		longitude: -74.006,
-		timeZone: 'America/New_York'
+		timeZone: 'America/New_York',
+		supportedPaymentMethods: 'online'
 	});
 });
 
@@ -1553,7 +1731,7 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 	const updateStatus =
 		api.tables.accommodations.mutations.updateAccommodationPublishStatus
 			.updateAccommodationPublishStatus;
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const { id, completedBookingId, pendingBookingId, reviewId } = await t.run(async (ctx) => {
 		const docId = await ctx.db.insert('accommodations', {
 			...details,
@@ -1564,6 +1742,9 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			pricePerNightMinor: Math.round(nightlyPrice * 100),
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 			status: 'published',
 			updatedAt: 1
 		});
@@ -1577,6 +1758,7 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 		});
 		const insertBooking = (status: 'completed' | 'pending' | 'cancelled') =>
 			ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
 				accommodationId: docId,
 				status,
 				firstName: 'Guest',
@@ -1652,7 +1834,7 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 test('search returns only published listings while the owner list hides deleted listings', async () => {
 	const t = setup();
 	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
-	const { nightlyPrice, ...details } = listing;
+	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const base = {
 		...details,
 		cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
@@ -1662,11 +1844,22 @@ test('search returns only published listings while the owner list hides deleted 
 		guestRatingAverage: 0,
 		guestReviewCount: 0,
 		pricePerNightMinor: Math.round(nightlyPrice * 100),
+		discountBps: 0,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: Math.round(nightlyPrice * 100),
 		updatedAt: 1
 	};
 	const ids = await t.run(async (ctx) => [
-		await ctx.db.insert('accommodations', { ...base, name: 'Visible stay', status: 'published' }),
-		await ctx.db.insert('accommodations', { ...base, name: 'Hidden stay', status: 'unpublished' }),
+		await ctx.db.insert('accommodations', {
+			...base,
+			name: 'Visible stay',
+			status: 'published'
+		}),
+		await ctx.db.insert('accommodations', {
+			...base,
+			name: 'Hidden stay',
+			status: 'unpublished'
+		}),
 		await ctx.db.insert('accommodations', {
 			...base,
 			name: 'Gone stay',

@@ -20,6 +20,15 @@ export const bookingCancellationTerms = v.object({
 	checkOut: v.string(),
 	checkOutAt: v.number(),
 	pricePerNightMinor: v.number(),
+	basePricePerNightMinor: v.number(),
+	discountBps: v.number(),
+	stayPricing: v.object({
+		regularNights: v.number(),
+		weekendNights: v.number(),
+		weekendBasePricePerNightMinor: v.union(v.number(), v.null()),
+		weekendPricePerNightMinor: v.union(v.number(), v.null()),
+		totalMinor: v.number()
+	}),
 	// Backfilled overnight stays have no day-use fee; daytime bookings freeze their own fee.
 	stayType: literals('overnight', 'day_use'),
 	pricePerDayUseMinor: v.union(v.number(), v.null()),
@@ -51,6 +60,7 @@ export const bookingCancellation = v.object({
 
 export const bookings = defineTable({
 	// Immutable choice at booking time; absent on historical request bookings.
+	paymentMethod: v.union(v.literal('cash'), v.literal('online')),
 	bookingMode: accommodations.validator.fields.bookingMode,
 	// Optional for existing records; the cron initializes legacy pending deadlines in batches.
 	requestExpiresAt: v.optional(v.number()),

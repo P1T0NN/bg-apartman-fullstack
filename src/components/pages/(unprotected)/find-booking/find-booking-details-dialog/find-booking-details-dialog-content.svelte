@@ -4,6 +4,7 @@
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 
 	// COMPONENTS
+	import BookingPriceBreakdown from '@/features/bookings/components/booking-price-breakdown/booking-price-breakdown.svelte';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
 	import BookingCancellationPolicy from '@/features/bookings/components/booking-cancellation-policy/booking-cancellation-policy.svelte';
 
@@ -17,6 +18,20 @@
 	let { booking }: { booking: Booking } = $props();
 </script>
 
+{#if booking.cancellationTerms.stayPricing}<BookingPriceBreakdown
+		pricing={{
+			pricePerNightMinor: booking.cancellationTerms.basePricePerNightMinor,
+			effectivePricePerNightMinor: booking.cancellationTerms.pricePerNightMinor,
+			discountBps: booking.cancellationTerms.discountBps
+		}}
+		stayPricing={booking.cancellationTerms.stayPricing}
+	/>{/if}
+{#if booking.paymentMethod}
+	<p class="text-sm">
+		<span class="text-muted-foreground">{m['PaymentsFeature.method']()}:</span>
+		<span class="font-medium">{m[`PaymentsFeature.methods.${booking.paymentMethod}`]()}</span>
+	</p>
+{/if}
 <dl class="grid min-w-0 grid-cols-2 gap-x-4 gap-y-5 border-t pt-5 text-sm sm:gap-x-6">
 	<div>
 		<dt class="text-muted-foreground">

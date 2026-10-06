@@ -38,6 +38,7 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 	} as const;
 	const ids = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
+			supportedPaymentMethods: 'cash',
 			ownerId: 'host',
 			name: 'Migration property',
 			description: 'A comfortable property for testing migration.',
@@ -51,6 +52,9 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 			beds: 1,
 			bathrooms: 1,
 			pricePerNightMinor: 9000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 9000,
 			sameDayReservation: false,
 			recommendationSortKey: -3,
 			guestRatingAverage: 0,
@@ -94,12 +98,23 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 			checkInStart: preserved.checkInStart,
 			checkInAt: preserved.checkInAt,
 			pricePerNightMinor: preserved.pricePerNightMinor,
+			discountBps: 0,
+			basePricePerNightMinor: preserved.pricePerNightMinor,
+			stayPricing: preserved.stayPricing,
 			currency: preserved.currency
 		};
 		return {
-			legacy: await ctx.db.insert('bookings', base),
-			partial: await ctx.db.insert('bookings', { ...base, cancellationTerms: partial }),
-			complete: await ctx.db.insert('bookings', { ...base, cancellationTerms: preserved }),
+			legacy: await ctx.db.insert('bookings', { paymentMethod: 'cash', ...base }),
+			partial: await ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
+				...base,
+				cancellationTerms: partial
+			}),
+			complete: await ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
+				...base,
+				cancellationTerms: preserved
+			}),
 			preserved
 		};
 	});

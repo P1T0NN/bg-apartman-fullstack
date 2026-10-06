@@ -44,12 +44,12 @@ export const fetchAccommodationsMap = query({
 
 		return {
 			...page,
-			items: page.items.map(({ _id, name, latitude, longitude, pricePerNightMinor }) => ({
+			items: page.items.map(({ _id, name, latitude, longitude, effectivePricePerNightMinor }) => ({
 				_id,
 				name,
 				latitude,
 				longitude,
-				pricePerNightMinor
+				effectivePricePerNightMinor
 			}))
 		};
 	}

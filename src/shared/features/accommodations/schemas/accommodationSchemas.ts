@@ -1,5 +1,7 @@
 // LIBRARIES
 import { z } from 'zod';
+import { calculateAccommodationPricing } from '../utils/calculateAccommodationPricing.js';
+import { supportedPaymentMethodsSchema } from '../../payments/schemas/paymentSchemas.js';
 
 // CONFIG
 import { STORAGE_CONFIG } from '../../storage/config.js';
@@ -70,14 +72,41 @@ export const accommodationPhotosSchema = z.object({
 	imageKeys: z.array(z.string()).min(5).max(STORAGE_CONFIG.maxFilesPerUpload)
 });
 
-export const accommodationPricingSchema = z.object({
-	nightlyPrice: z.coerce.number().positive().max(100000).multipleOf(0.01),
-	minimumStay: z.coerce.number().int().min(1).max(365),
-	maximumStay: z.preprocess(
-		(value) => (value === '' ? undefined : value),
-		z.coerce.number().int().min(1).max(365).optional()
+export const accommodationPricingSchema = z
+	.object({
+		weekendPrice: z.preprocess(
+			(value) => (value === '' || value === undefined ? null : value),
+			z.coerce.number().positive().max(100000).multipleOf(0.01).nullable()
+		),
+		discountPercent: z.coerce.number().min(0).max(99.99).multipleOf(0.01),
+		supportedPaymentMethods: supportedPaymentMethodsSchema,
+		nightlyPrice: z.coerce.number().positive().max(100000).multipleOf(0.01),
+		minimumStay: z.coerce.number().int().min(1).max(365),
+		maximumStay: z.preprocess(
+			(value) => (value === '' ? undefined : value),
+			z.coerce.number().int().min(1).max(365).optional()
+		)
+	})
+	.refine(
+		(values) =>
+			calculateAccommodationPricing(
+				values.nightlyPrice,
+				values.discountPercent,
+				values.weekendPrice
+			).effectivePricePerNightMinor > 0,
+		{ path: ['discountPercent'], params: { code: 'DISCOUNT_PRICE_TOO_LOW' } }
 	)
-});
+	.refine((values) => values.weekendPrice === null || values.weekendPrice >= values.nightlyPrice, {
+		path: ['weekendPrice'],
+		params: { code: 'WEEKEND_PRICE_TOO_LOW' }
+	})
+	.refine(
+		(values) =>
+			values.weekendPrice === null ||
+			calculateAccommodationPricing(values.weekendPrice, values.discountPercent)
+				.effectivePricePerNightMinor > 0,
+		{ path: ['weekendPrice'], params: { code: 'DISCOUNT_PRICE_TOO_LOW' } }
+	);
 
 const TIME_SLOT_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 

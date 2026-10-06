@@ -36,7 +36,9 @@
 
 <SvelteHead title={m['BookAccommodationPage.title']()} noindex />
 
-<main class="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
+<main
+	class="mx-auto w-full max-w-6xl px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-12"
+>
 	{#if result.error}
 		<ErrorComponent message={m['ErrorMessages.loadFailed']()} />
 	{:else if loadingAccommodation}
@@ -45,10 +47,7 @@
 		{#key accommodation._id}
 			<BookHeader mode={accommodation.bookingMode} />
 
-			<BookCheckout 
-				{accommodation} 
-				availabilityLoading={result.isStale} 
-			/>
+			<BookCheckout {accommodation} availabilityLoading={result.isStale} />
 		{/key}
 	{:else}
 		<EmptyData

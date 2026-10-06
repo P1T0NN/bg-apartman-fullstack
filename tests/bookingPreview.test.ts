@@ -3,6 +3,9 @@ import { createBookingSchema } from '../src/shared/features/bookings/schemas/boo
 
 const limits = { today: '2026-09-27', minimumStay: 2, maximumStay: 30, maxGuests: 4 };
 const stay = {
+	paymentMethod: 'cash' as const,
+	expectedPricePerNightMinor: 8025,
+	expectedTotalMinor: 24075,
 	accommodationId: 'accommodation-id',
 	checkInDate: '2026-10-24',
 	checkOutDate: '2026-10-27',
@@ -92,4 +95,13 @@ test('arrival-today preview enforces overnight stays and the exact local cutoff'
 		createBookingSchema({ ...rules, now: Date.parse('2027-01-01T13:00:00Z') }).safeParse(request)
 			.success
 	).toBe(false);
+});
+
+test('booking payment method is mandatory and rejects unsupported values', () => {
+	for (const paymentMethod of [undefined, '', 'both', 'bank_transfer']) {
+		expect(createBookingSchema(limits).safeParse({ ...stay, paymentMethod }).success).toBe(false);
+	}
+	for (const paymentMethod of ['cash', 'online']) {
+		expect(createBookingSchema(limits).safeParse({ ...stay, paymentMethod }).success).toBe(true);
+	}
 });

@@ -33,6 +33,9 @@ const accommodation = {
 	beds: 3,
 	bathrooms: 1,
 	pricePerNightMinor: 8025,
+	discountBps: 0,
+	weekendPricePerNightMinor: null,
+	effectivePricePerNightMinor: 8025,
 	sameDayReservation: false,
 	recommendationSortKey: -3,
 	guestRatingAverage: 0,
@@ -80,13 +83,16 @@ async function setup() {
 		}
 	});
 	const account = { id: user._id, email: user.email };
-	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', accommodation));
+	const accommodationId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', { supportedPaymentMethods: 'cash', ...accommodation })
+	);
 	async function seedBooking(
 		status: 'pending' | 'confirmed' | 'cancelled' | 'declined' | 'completed' | 'expired',
 		relation: 'host' | 'owner' | 'email' = 'host'
 	) {
 		return t.run((ctx) =>
 			ctx.db.insert('bookings', {
+				paymentMethod: 'cash',
 				accommodationId,
 				status,
 				hostId: relation === 'host' ? user._id : 'other-host',

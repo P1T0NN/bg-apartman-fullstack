@@ -4,12 +4,13 @@
 
 	import AccommodationBookingModeField from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode-field.svelte';
 	import AddAccommodationContinueButton from './add-accommodation-continue-button.svelte';
-	import AccommodationRuleCard from '@/features/accommodations/components/accommodation-rule-card/accommodation-rule-card.svelte';
+	import CardSwitch from '@/components/ui/custom-components/card-switch/card-switch.svelte';
 	import AccommodationTimeZone from '@/features/accommodations/components/accommodation-time-zone/accommodation-time-zone.svelte';
 	import FormSelect from '@/components/ui/custom-components/form/form-select.svelte';
 	import FormTextarea from '@/components/ui/custom-components/form/form-textarea.svelte';
 	import * as Field from '@/components/ui/field/index.js';
 	import { Button } from '@/components/ui/button/index.js';
+	import { Separator } from '@/components/ui/separator/index.js';
 
 	// CONFIG
 	import { m } from '@/lib/paraglide/messages';
@@ -84,9 +85,12 @@
 </script>
 
 <Field.Group>
-	<AccommodationBookingModeField {context} />
+	<Field.Set class="rounded-xl border p-5">
+		<Field.Legend class="px-1">{m['AccommodationsFeature.BookingMode.preferences']()}</Field.Legend>
+		<AccommodationBookingModeField {context} />
+		<AccommodationReservationRulesField {context} />
+	</Field.Set>
 	<AccommodationTimeZone {context} />
-	<AccommodationReservationRulesField {context} />
 
 	<div class="flex flex-row gap-4">
 		{#each checkInFields as field (field.name)}
@@ -108,29 +112,33 @@
 		onValueChange={(value) => context.setValue(checkOutField.name, value)}
 	/>
 
-	{#each rules as rule (rule.name)}
-		<AccommodationRuleCard
-			icon={rule.icon}
-			label={rule.label}
-			description={rule.description}
-			checked={context.checkboxValue(rule.name)}
-			disabled={context.disabled}
-			onCheckedChange={(checked) => context.setValue(rule.name, checked)}
-		/>
-	{/each}
+	<Separator />
+	<Field.Set>
+		<Field.Legend>{m['AccommodationPage.AccommodationDetailsRules.houseRules']()}</Field.Legend>
+		{#each rules as rule (rule.name)}
+			<CardSwitch
+				icon={rule.icon}
+				label={rule.label}
+				description={rule.description}
+				checked={context.checkboxValue(rule.name)}
+				disabled={context.disabled}
+				onCheckedChange={(checked) => context.setValue(rule.name, checked)}
+			/>
+		{/each}
 
-	<FormTextarea
-		field={{
-			kind: 'textarea',
-			name: 'houseRules',
-			label: m['AddAccommodationPage.AddAccommodationFormRules.houseRules'](),
-			placeholder: m['AddAccommodationPage.AddAccommodationFormRules.houseRulesPlaceholder']()
-		}}
-		value={context.inputValue('houseRules')}
-		error={context.errors['houseRules']}
-		disabled={context.disabled}
-		onValueChange={(value) => context.setValue('houseRules', value)}
-	/>
+		<FormTextarea
+			field={{
+				kind: 'textarea',
+				name: 'houseRules',
+				label: m['AddAccommodationPage.AddAccommodationFormRules.houseRules'](),
+				placeholder: m['AddAccommodationPage.AddAccommodationFormRules.houseRulesPlaceholder']()
+			}}
+			value={context.inputValue('houseRules')}
+			error={context.errors['houseRules']}
+			disabled={context.disabled}
+			onValueChange={(value) => context.setValue('houseRules', value)}
+		/>
+	</Field.Set>
 </Field.Group>
 
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">

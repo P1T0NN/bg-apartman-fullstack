@@ -1,6 +1,9 @@
 <script lang="ts">
 	// COMPONENTS
+	import AccommodationPrice from '@/features/accommodations/components/accommodation-price/accommodation-price.svelte';
 	import AddAccommodationContinueButton from './add-accommodation-continue-button.svelte';
+	import FormSelect from '@/components/ui/custom-components/form/form-select.svelte';
+	import { supportedPaymentMethodsField } from '@/features/payments/forms/supportedPaymentMethodsField.js';
 	import FormInput from '@/components/ui/custom-components/form/form-input.svelte';
 	import * as Field from '@/components/ui/field/index.js';
 	import { Button } from '@/components/ui/button/index.js';
@@ -11,6 +14,12 @@
 	// CONTEXT
 	import { getAccommodationFormContext } from '@/features/accommodations/context/accommodationFormContext.js';
 
+	// UTILS
+	import { weekendPriceField } from '@/features/accommodations/forms/weekendPriceField.js';
+	import { calculateAccommodationPricing } from '@/shared/features/accommodations/utils/calculateAccommodationPricing.js';
+	import { discountPercentField } from '@/features/accommodations/forms/discountPercentField.js';
+	// SCHEMAS
+	import { accommodationPricingSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 	// TYPES
 	import type {
 		FormFieldContext,
@@ -20,6 +29,9 @@
 
 	let { context }: { context: FormFieldContext<FormValue> } = $props();
 	const form = getAccommodationFormContext();
+	const pricing = $derived(accommodationPricingSchema.safeParse(context.values));
+	const discountField = $derived(discountPercentField());
+	const weekendField = $derived(weekendPriceField());
 
 	const nightlyPriceField = $derived<InputField>({
 		kind: 'input',
@@ -47,6 +59,7 @@
 		placeholder: m['AddAccommodationPage.AddAccommodationFormPricing.maximumStayPlaceholder'](),
 		class: 'max-w-40'
 	});
+	const paymentField = $derived(supportedPaymentMethodsField());
 	const stayPresets = $derived([
 		{ days: 1, label: m['AddAccommodationPage.AddAccommodationFormPricing.oneDay']() },
 		{ days: 7, label: m['AddAccommodationPage.AddAccommodationFormPricing.sevenDays']() },
@@ -62,7 +75,21 @@
 		disabled={context.disabled}
 		onValueChange={(value) => context.setValue(nightlyPriceField.name, value)}
 	/>
+	<FormInput
+		field={discountField}
+		value={context.inputValue(discountField.name)}
+		error={context.errors[discountField.name]}
+		disabled={context.disabled}
+		onValueChange={(value) => context.setValue(discountField.name, value)}
+	/>
 
+	<FormInput
+		field={weekendField}
+		value={context.inputValue(weekendField.name)}
+		error={context.errors[weekendField.name]}
+		disabled={context.disabled}
+		onValueChange={(value) => context.setValue(weekendField.name, value)}
+	/>
 	<div class="flex flex-col gap-2">
 		<FormInput
 			field={minimumStayField}
@@ -94,6 +121,40 @@
 		disabled={context.disabled}
 		onValueChange={(value) => context.setValue(maximumStayField.name, value)}
 	/>
+	<FormSelect
+		field={paymentField}
+		value={context.inputValue(paymentField.name)}
+		error={context.errors[paymentField.name]}
+		disabled={context.disabled}
+		onValueChange={(value) => context.setValue(paymentField.name, value)}
+	/>
+	{#if pricing.success}
+		<div class="rounded-lg bg-muted p-4">
+			<p class="mb-2 text-sm text-muted-foreground">
+				{m['AccommodationsFeature.Pricing.preview']()}
+			</p>
+			<p class="text-lg font-semibold">
+				<AccommodationPrice
+					pricing={calculateAccommodationPricing(
+						pricing.data.nightlyPrice,
+						pricing.data.discountPercent,
+						pricing.data.weekendPrice
+					)}
+				/>
+			</p>
+			{#if pricing.data.weekendPrice !== null}
+				<p class="mt-3 flex flex-wrap justify-between gap-2 text-sm">
+					<span>{m['AccommodationsFeature.Pricing.weekend']()}</span>
+					<AccommodationPrice
+						pricing={calculateAccommodationPricing(
+							pricing.data.weekendPrice,
+							pricing.data.discountPercent
+						)}
+					/>
+				</p>
+			{/if}
+		</div>
+	{/if}
 </Field.Group>
 
 <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background py-4">

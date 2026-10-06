@@ -42,6 +42,7 @@ export type AccommodationCard = Omit<
 	| 'partiesAllowed'
 	| 'houseRules'
 	| 'cancellationPolicy'
+	| 'supportedPaymentMethods'
 	| 'sameDayReservation'
 	| 'status'
 	| 'updatedAt'
@@ -58,7 +59,7 @@ export type AccommodationCard = Omit<
 /** Lightweight location and price data used to cluster every map search result. */
 export type AccommodationMapMarker = Pick<
 	Doc<'accommodations'>,
-	'_id' | 'name' | 'latitude' | 'longitude' | 'pricePerNightMinor'
+	'_id' | 'name' | 'latitude' | 'longitude' | 'effectivePricePerNightMinor'
 >;
 
 export type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
