@@ -1,6 +1,9 @@
 // STORAGE
 import { resolveStoredFileUrls } from '../../../storage/r2.js';
 
+// UTILS
+import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
 import type { QueryCtx } from '../../../_generated/server.js';
@@ -16,7 +19,7 @@ export async function enrichBookingPage(
 		items.map(async (booking) => {
 			const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
 
-			const isHidden = !accommodation || (onlyPublished && accommodation.status !== 'published');
+			const isHidden = !accommodation || (onlyPublished && !isAccommodationVisible(accommodation));
 
 			if (isHidden) {
 				return {

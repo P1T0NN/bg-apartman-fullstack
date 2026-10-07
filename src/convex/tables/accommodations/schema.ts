@@ -67,6 +67,22 @@ export const accommodations = defineTable({
 		})
 	),
 	status: literals('published', 'unpublished', 'deleted'),
+	// Required on every listing; legacy seeded rows use the booking-fee plan.
+	billingPlanId: literals('flat_fee', 'booking_fee', 'free'),
+	billingTerms: v.union(
+		v.object({
+			model: v.literal('flat_fee'),
+			amountMinor: v.number(),
+			currency: v.string(),
+			intervalMonths: v.number()
+		}),
+		v.object({ model: v.literal('booking_fee'), commissionBps: v.number() }),
+		v.object({ model: v.literal('free') })
+	),
+	/** Platform eligibility, separate from the host's publish/pause choice. */
+	billingStatus: literals('pending_payment', 'active'),
+	/** Paid/free period deadline; null means no paid period, or permanent free access. */
+	billingPeriodEndsAt: v.union(v.number(), v.null()),
 	/** Set with `status: 'deleted'`; the tombstone keeps booking and review receipts resolvable. */
 	deletedAt: v.optional(v.number()),
 	deletedBy: v.optional(v.string()),
@@ -76,6 +92,9 @@ export const accommodations = defineTable({
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_owner_id', ['ownerId'])
 	.index('by_owner_id_type', ['ownerId', 'type'])
+	.index('by_status', ['status'])
+	.index('by_billing_plan_id', ['billingPlanId'])
+	.index('by_billing_status', ['billingStatus'])
 	// Retain creation-time ordering for destination map searches.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
 	.index('by_address_country_city', ['address.country', 'address.city'])
@@ -114,4 +133,7 @@ export const accommodations = defineTable({
 		'recommendationSortKey',
 		'effectivePricePerNightMinor'
 	])
-	.searchIndex('search_name', { searchField: 'name', filterFields: ['ownerId', 'type'] });
+	.searchIndex('search_name', {
+		searchField: 'name',
+		filterFields: ['ownerId', 'type', 'status', 'billingPlanId', 'billingStatus']
+	});

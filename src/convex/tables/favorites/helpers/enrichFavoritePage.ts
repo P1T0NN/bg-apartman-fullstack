@@ -1,6 +1,9 @@
 // HELPERS
 import { resolveImageUrls } from '../../accommodations/utils/resolveImageUrls.js';
 
+// UTILS
+import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
 import type { QueryCtx } from '../../../_generated/server.js';
@@ -20,9 +23,8 @@ export async function withPublishedAccommodationImageUrls({
 		items.map((favorite) => ctx.db.get('accommodations', favorite.accommodationId))
 	);
 
-	const published = accommodations.filter(
-		(accommodation): accommodation is Doc<'accommodations'> =>
-			accommodation !== null && accommodation.status === 'published'
+	const published = accommodations.filter((accommodation): accommodation is Doc<'accommodations'> =>
+		isAccommodationVisible(accommodation)
 	);
 
 	return resolveImageUrls(published);

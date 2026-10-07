@@ -10,6 +10,9 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 // VALIDATORS
 import { publicReview } from '../validators/reviewValidators.js';
 
+// UTILS
+import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
@@ -41,7 +44,7 @@ export const fetchBookingReview = authenticatedQuery({
 			.unique();
 		return {
 			accommodationId: booking.accommodationId,
-			accommodationName: accommodation?.status === 'published' ? accommodation.name : null,
+			accommodationName: isAccommodationVisible(accommodation) ? accommodation.name : null,
 			checkInDate: booking.checkInDate,
 			checkOutDate: booking.checkOutDate,
 			status: booking.status,

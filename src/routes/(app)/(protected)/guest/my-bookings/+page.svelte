@@ -25,7 +25,7 @@
 	import { useSearch } from '@/features/search/hooks/useSearch.svelte';
 	import { useFilters } from '@/features/filters/hooks/useFilters.svelte';
 	import { useBookingSort } from '@/features/bookings/hooks/useBookingSort.svelte';
-	import { useReviewClock } from '@/features/reviews/hooks/useReviewClock.svelte.js';
+	import { useClock } from '@/hooks/useClock.svelte.js';
 
 	// DATA
 	import { BOOKING_STATUS_LABELS } from '@/features/bookings/data/bookingStatusLabels.js';
@@ -35,7 +35,7 @@
 	const search = useSearch({ mode: 'state' });
 	const filters = useFilters({ mode: 'url', defs: BOOKING_FILTER_DEFS });
 	const sort = useBookingSort();
-	const clock = useReviewClock();
+	const clock = useClock();
 
 	const bookings = useConvexPagination(
 		api.tables.bookings.queries.fetchMyBookings.fetchMyBookings,

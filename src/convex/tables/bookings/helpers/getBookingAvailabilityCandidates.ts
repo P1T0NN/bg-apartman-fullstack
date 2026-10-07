@@ -29,6 +29,6 @@ export async function getBookingAvailabilityCandidates(
 	if (candidates.length > BOOKINGS_CONFIG.AVAILABILITY_CHECK_LIMIT) {
 		throw new ConvexError<BackendErrorData>({ code: 'BOOKING_AVAILABILITY_UNAVAILABLE' });
 	}
-	
+
 	return candidates;
 }

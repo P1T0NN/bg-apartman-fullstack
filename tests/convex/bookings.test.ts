@@ -14,6 +14,7 @@ import { api, components } from '../../src/convex/_generated/api';
 import schema from '../../src/convex/schema';
 import authSchema from '../../src/convex/betterAuth/component/schema';
 import { registerResend, successfulResendResponse } from '../fixtures/resend';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 
@@ -124,6 +125,7 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -141,7 +143,16 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 		createBooking,
 		withExpectedTotal({ ...request, expectedPricePerNightMinor: 8025 })
 	);
-	const original = (await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms;
+	const stored = await t.run((ctx) => ctx.db.get('bookings', id));
+	const original = stored?.cancellationTerms;
+	const originalFee = stored?.platformFeeTerms;
+	expect(originalFee).toEqual({
+		model: 'booking_fee',
+		commissionBps: 1000,
+		baseAmountMinor: 24075,
+		amountMinor: 2408,
+		currency: 'EUR'
+	});
 	expect(original).toEqual({
 		stayType: 'overnight',
 		pricePerDayUseMinor: null,
@@ -179,12 +190,16 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 			discountBps: 0,
 			weekendPricePerNightMinor: null,
 			effectivePricePerNightMinor: 9999,
-			cancellationPolicy: custom
+			cancellationPolicy: custom,
+			billingPlanId: 'free',
+			billingTerms: { model: 'free' },
+			billingPeriodEndsAt: null
 		})
 	);
 	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	await host.mutation(updateBookingStatus, { id, status: 'confirmed' });
 	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.cancellationTerms).toEqual(original);
+	expect((await t.run((ctx) => ctx.db.get('bookings', id)))?.platformFeeTerms).toEqual(originalFee);
 	const confirmation =
 		api.tables.bookings.queries.fetchBookingConfirmation.fetchBookingConfirmation;
 	expect((await t.query(confirmation, { id }))?.status).toBe('confirmed');
@@ -195,6 +210,13 @@ test('requests freeze server-owned terms and confirmation preserves them after l
 		createBooking,
 		withExpectedTotal({ ...request, expectedPricePerNightMinor: 9999 })
 	);
+	expect((await t.run((ctx) => ctx.db.get('bookings', nextId)))?.platformFeeTerms).toEqual({
+		model: 'free',
+		commissionBps: 0,
+		baseAmountMinor: 29997,
+		amountMinor: 0,
+		currency: 'EUR'
+	});
 	expect((await t.run((ctx) => ctx.db.get('bookings', nextId)))?.cancellationTerms).toEqual({
 		stayType: 'overnight',
 		pricePerDayUseMinor: null,
@@ -237,6 +259,7 @@ test('requests reject unknown property timezones, elapsed check-in, and DST gaps
 			const { t, hostId } = await setup();
 			const accommodationId = await t.run((ctx) =>
 				ctx.db.insert('accommodations', {
+					...bookingFeeBilling,
 					supportedPaymentMethods: 'cash',
 					...accommodation,
 					ownerId: hostId,
@@ -273,6 +296,7 @@ test('request dates use the property calendar even when its date differs from UT
 		const { t, hostId } = await setup();
 		const accommodationId = await t.run((ctx) =>
 			ctx.db.insert('accommodations', {
+				...bookingFeeBilling,
 				supportedPaymentMethods: 'cash',
 				...accommodation,
 				ownerId: hostId,
@@ -305,6 +329,7 @@ test('host bookings prioritize the oldest pending requests and the newest other 
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -316,6 +341,7 @@ test('host bookings prioritize the oldest pending requests and the newest other 
 		const insert = (status: 'pending' | 'confirmed', checkInDate: string, bookingHostId = hostId) =>
 			t.run((ctx) =>
 				ctx.db.insert('bookings', {
+					platformFeeTerms: null,
 					cancellationTerms: bookingCancellationTerms(checkInDate, '2999-12-31'),
 					...guest,
 					firstName: 'Alex',
@@ -379,6 +405,7 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -434,6 +461,7 @@ test('createBooking stores a guest request and rejects invalid stays and missing
 
 	const missingId = await t.run(async (ctx) => {
 		const id = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -461,6 +489,7 @@ test('signed-in guests own their booking and see it in my-bookings with the owne
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -526,6 +555,7 @@ test('host manages bookings for their own accommodations', async () => {
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -610,6 +640,7 @@ test('arrival today is opt-in, ends exactly at check-in, and still respects mini
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -667,6 +698,7 @@ test.each(['request', 'instant'] as const)(
 		const { t, hostId } = await setup();
 		const accommodationId = await t.run((ctx) =>
 			ctx.db.insert('accommodations', {
+				...bookingFeeBilling,
 				supportedPaymentMethods: 'cash',
 				...accommodation,
 				ownerId: hostId,
@@ -720,6 +752,7 @@ test('historical daytime bookings retain frozen terms and block overlapping new 
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: hostId
@@ -736,6 +769,7 @@ test('historical daytime bookings retain frozen terms and block overlapping new 
 	};
 	const id = await t.run((ctx) =>
 		ctx.db.insert('bookings', {
+			platformFeeTerms: null,
 			...guest,
 			accommodationId,
 			hostId,
@@ -779,6 +813,7 @@ test.each([
 		const { t, hostId } = await setup();
 		const accommodationId = await t.run((ctx) =>
 			ctx.db.insert('accommodations', {
+				...bookingFeeBilling,
 				...accommodation,
 				ownerId: hostId,
 				supportedPaymentMethods
@@ -835,6 +870,7 @@ test('discounted bookings reject stale prices and preserve the accepted nightly 
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...accommodation,
 			ownerId: hostId,
 			supportedPaymentMethods: 'cash',
@@ -876,6 +912,7 @@ test('weekend bookings reject stale totals and freeze the discounted mixed-night
 	const { t, hostId } = await setup();
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...accommodation,
 			ownerId: hostId,
 			supportedPaymentMethods: 'cash',

@@ -59,6 +59,17 @@ export const bookingCancellation = v.object({
 });
 
 export const bookings = defineTable({
+	/** Immutable commission snapshot. Null identifies historical bookings with unknown terms. */
+	platformFeeTerms: v.union(
+		v.null(),
+		v.object({
+			model: literals('booking_fee', 'flat_fee', 'free'),
+			commissionBps: v.number(),
+			baseAmountMinor: v.number(),
+			amountMinor: v.number(),
+			currency: v.string()
+		})
+	),
 	// Immutable choice at booking time; absent on historical request bookings.
 	paymentMethod: v.union(v.literal('cash'), v.literal('online')),
 	bookingMode: accommodations.validator.fields.bookingMode,

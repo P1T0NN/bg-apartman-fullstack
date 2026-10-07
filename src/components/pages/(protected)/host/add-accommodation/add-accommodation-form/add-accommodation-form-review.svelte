@@ -1,7 +1,9 @@
 <script lang="ts">
+	// MESSAGES
+	import { m } from '@/lib/paraglide/messages.js';
+
 	// COMPONENTS
 	import AccommodationReservationRulesPreview from '@/features/accommodations/components/accommodation-reservation-rules/accommodation-reservation-rules-preview.svelte';
-
 	import AccommodationBookingMode from '@/features/accommodations/components/accommodation-booking-mode/accommodation-booking-mode.svelte';
 	import { Button } from '@/components/ui/button/index.js';
 	import AddAccommodationSaveButton from './add-accommodation-save-button.svelte';
@@ -9,11 +11,17 @@
 	import AccommodationPrice from '@/features/accommodations/components/accommodation-price/accommodation-price.svelte';
 	import AccommodationCancellationPolicyPreview from '@/features/accommodations/components/accommodation-cancellation-policy/accommodation-cancellation-policy-preview/accommodation-cancellation-policy-preview.svelte';
 
-	// CONFIG
+	// UTILS
 	import { calculateAccommodationPricing } from '@/shared/features/accommodations/utils/calculateAccommodationPricing.js';
-	import { accommodationLocationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
-	import { saveAccommodationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
-	import { m } from '@/lib/paraglide/messages';
+
+	// SCHEMAS
+	import {
+		accommodationLocationSchema,
+		createAccommodationSchema
+	} from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
+
+	// CONFIG
+	import { ACCOMMODATION_BILLING_PLANS } from '@/shared/features/accommodations/config.js';
 
 	// CONTEXT
 	import { getAccommodationFormContext } from '@/features/accommodations/context/accommodationFormContext.js';
@@ -27,7 +35,7 @@
 	const form = getAccommodationFormContext();
 	const address = $derived(accommodationLocationSchema.safeParse(context.values));
 	const validation = $derived(
-		saveAccommodationSchema.safeParse({
+		createAccommodationSchema.safeParse({
 			...context.values,
 			imageKeys: form.state.files.map((file) => file.id)
 		})
@@ -39,6 +47,7 @@
 					.filter((issue) => issue.path[0] !== 'cancellationPolicy')
 					.map((issue) => issue.message)
 	);
+	const flatFee = ACCOMMODATION_BILLING_PLANS.flat_fee;
 </script>
 
 <section
@@ -140,6 +149,29 @@
 	</p>
 	<p class="text-sm whitespace-pre-wrap">{String(context.values.houseRules)}</p>
 </section>
+<div class="rounded-lg border p-4">
+	<h3 class="font-medium">
+		{m['AddAccommodationPage.AddAccommodationFormReview.billingTitle']()}
+	</h3>
+	{#if context.inputValue('billingPlanId') === 'flat_fee'}
+		<p class="mt-2 text-sm">
+			{m['AddAccommodationPage.AddAccommodationFormReview.flatFee']({
+				amount: flatFee.amountMinor / 100,
+				months: flatFee.intervalMonths
+			})}
+		</p>
+		<p class="mt-1 text-sm text-muted-foreground">
+			{m['AddAccommodationPage.AddAccommodationFormReview.flatFeeHint']()}
+		</p>
+	{:else if context.inputValue('billingPlanId') === 'booking_fee'}
+		<p class="mt-2 text-sm">{m['AddAccommodationPage.AddAccommodationFormReview.bookingFee']()}</p>
+		<p class="mt-1 text-sm text-muted-foreground">
+			{m['AddAccommodationPage.AddAccommodationFormReview.bookingFeeHint']({
+				percent: ACCOMMODATION_BILLING_PLANS.booking_fee.commissionBps / 100
+			})}
+		</p>
+	{/if}
+</div>
 <p>
 	{m['AddAccommodationPage.AddAccommodationFormReview.minimumStay']()}: {context.inputValue(
 		'minimumStay'

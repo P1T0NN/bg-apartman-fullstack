@@ -1,8 +1,10 @@
+// SVELTEKIT IMPORTS
 import { onMount } from 'svelte';
 
 /** Refresh instant-based eligibility each minute and when a sleeping tab becomes visible. */
-export function useReviewClock() {
+export function useClock() {
 	let now = $state(Date.now());
+
 	onMount(() => {
 		const refresh = () => {
 			now = Date.now();

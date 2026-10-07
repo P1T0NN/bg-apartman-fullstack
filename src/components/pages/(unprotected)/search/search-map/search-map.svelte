@@ -107,7 +107,7 @@
 			const price = document.createElement('span');
 			price.className =
 				'flex min-w-11 items-center justify-center rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-foreground shadow-md';
-			price.textContent = `${m['AccommodationsFeature.Pricing.from']()} ${formatCompactCurrency(marker.effectivePricePerNightMinor, getLocale())}`;
+			price.textContent = formatCompactCurrency(marker.effectivePricePerNightMinor, getLocale());
 
 			const pointer = document.createElement('span');
 			pointer.className =

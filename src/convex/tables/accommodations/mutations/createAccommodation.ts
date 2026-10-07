@@ -1,16 +1,25 @@
 // LIBRARIES
 import { ConvexError, v } from 'convex/values';
+
+// BUILDERS
 import { authenticatedUploadMutation } from '../../../builders/convexFunctionBuilders.js';
+
+// AGGREGATES
 import { accommodationOwnerAggregate } from '../aggregates/accommodationOwnerAggregate.js';
 
 // HELPERS
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // CONFIG
-import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
+import {
+	ACCOMMODATION_CONFIG,
+	ACCOMMODATION_BILLING_PLANS
+} from '../../../../shared/features/accommodations/config.js';
 
 // SCHEMAS
-import { saveAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
+import { createAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
+
+// VALIDATORS
 import { createAccommodationValidator } from '../validators/accommodationValidators.js';
 
 // UTILS
@@ -24,11 +33,13 @@ export const createAccommodation = authenticatedUploadMutation({
 	args: createAccommodationValidator.fields,
 	returns: v.id('accommodations'),
 	handler: async (ctx, args) => {
-		const parsed = saveAccommodationSchema.safeParse(args);
+		const parsed = createAccommodationSchema.safeParse(args);
 		if (!parsed.success) throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
 
 		const { nightlyPrice, discountPercent, weekendPrice, ...data } = parsed.data;
 		const pricing = calculateAccommodationPricing(nightlyPrice, discountPercent, weekendPrice);
+		const billingTerms = ACCOMMODATION_BILLING_PLANS[data.billingPlanId];
+		const requiresPayment = billingTerms.model === 'flat_fee';
 
 		const uploaded = new Set(args.uploadedFiles ?? []);
 
@@ -50,6 +61,9 @@ export const createAccommodation = authenticatedUploadMutation({
 			guestRatingAverage: 0,
 			guestReviewCount: 0,
 			ownerId: getOwnerId(ctx.identity),
+			billingTerms,
+			billingStatus: requiresPayment ? 'pending_payment' : 'active',
+			billingPeriodEndsAt: null,
 			status: 'published',
 			updatedAt: Date.now()
 		});

@@ -20,6 +20,7 @@ import { BOOKINGS_CONFIG } from '../../src/shared/features/bookings/config';
 import { PAGINATION_CONFIG } from '../../src/shared/features/pagination/config';
 import { GLOBAL_BACKSTOP_MULTIPLIER } from '../../src/convex/rateLimits/ratelimit.config';
 import { BOOKING_RECOVERY_REQUEST_RATE_LIMIT } from '../../src/convex/rateLimits/bookingRecoveryRateLimits';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 
@@ -63,6 +64,7 @@ async function setup(email = 'alex+stay@example.com') {
 	rateLimiterTest.register(t);
 	const bookingId = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			ownerId: 'host-1',
 			name: 'Apartment',
@@ -100,6 +102,7 @@ async function setup(email = 'alex+stay@example.com') {
 			updatedAt: Date.now()
 		});
 		return ctx.db.insert('bookings', {
+			platformFeeTerms: null,
 			paymentMethod: 'cash',
 			cancellationTerms: bookingCancellationTerms('2026-09-01', '2026-09-05'),
 			accommodationId,

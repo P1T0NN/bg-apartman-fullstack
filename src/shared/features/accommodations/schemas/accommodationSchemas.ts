@@ -1,7 +1,5 @@
 // LIBRARIES
 import { z } from 'zod';
-import { calculateAccommodationPricing } from '../utils/calculateAccommodationPricing.js';
-import { supportedPaymentMethodsSchema } from '../../payments/schemas/paymentSchemas.js';
 
 // CONFIG
 import { STORAGE_CONFIG } from '../../storage/config.js';
@@ -11,11 +9,64 @@ import { ACCOMMODATION_TYPES, AMENITY_KEYS } from '../data/accommodationsData.js
 
 // SCHEMAS
 import { accommodationCancellationPolicySchema } from './cancellationPolicySchemas.js';
-
+import { supportedPaymentMethodsSchema } from '../../payments/schemas/paymentSchemas.js';
 import {
 	timeZoneSchema,
 	timeZoneCoordinatesSchema
 } from '../../timezone/schemas/timezoneSchemas.js';
+
+// UTILS
+import { calculateAccommodationPricing } from '../utils/calculateAccommodationPricing.js';
+
+const billingPlanIdSchema = z.enum(['flat_fee', 'booking_fee']);
+
+export const accommodationBillingPlanSchema = z.object({ billingPlanId: billingPlanIdSchema });
+
+export const changeAccommodationBillingPlanSchema = accommodationBillingPlanSchema.extend({
+	id: z.string().min(1),
+	expectedBillingPlanId: z.enum(['flat_fee', 'booking_fee', 'free'])
+});
+
+const adminFeeDeadlineSchema = z.iso.datetime({ local: true });
+
+/** Validate only the fields belonging to the selected admin fee plan. */
+export const adminAccommodationsFeeDialogFormSchema = z.discriminatedUnion('plan', [
+	z.object({
+		id: z.string().min(1),
+		plan: z.literal('booking_fee'),
+		commission: z.number().min(0).max(100).multipleOf(0.01)
+	}),
+	z
+		.object({
+			id: z.string().min(1),
+			plan: z.literal('flat_fee'),
+			amount: z
+				.number()
+				.positive()
+				.max(Number.MAX_SAFE_INTEGER / 100)
+				.multipleOf(0.01),
+			months: z.number().int().min(1).max(120),
+			status: z.enum(['active', 'pending_payment']),
+			deadline: z.union([z.literal(''), adminFeeDeadlineSchema])
+		})
+		.refine((values) => values.status !== 'active' || Date.parse(values.deadline) > Date.now(), {
+			path: ['deadline']
+		}),
+	z
+		.object({
+			id: z.string().min(1),
+			plan: z.literal('free'),
+			forever: z.boolean(),
+			deadline: z.string()
+		})
+		.refine(
+			(values) =>
+				values.forever ||
+				(adminFeeDeadlineSchema.safeParse(values.deadline).success &&
+					Date.parse(values.deadline) > Date.now()),
+			{ path: ['deadline'] }
+		)
+]);
 
 export const boundsSchema = z
 	.object({
@@ -128,7 +179,7 @@ export const accommodationSectionSchemas = [
 	accommodationLocationSchema,
 	accommodationAmenitiesStepSchema,
 	accommodationPhotosSchema,
-	accommodationPricingSchema,
+	accommodationPricingSchema.and(accommodationBillingPlanSchema),
 	accommodationRulesSchema,
 	accommodationCancellationPolicySchema
 ];
@@ -142,3 +193,8 @@ export const saveAccommodationSchema = accommodationBasicInfoSchema
 	.and(accommodationRulesSchema);
 
 export type AccommodationDetails = z.infer<typeof saveAccommodationSchema>;
+
+/** Creation requires a plan; ordinary listing edits cannot change billing. */
+export const createAccommodationSchema = saveAccommodationSchema.and(
+	accommodationBillingPlanSchema
+);

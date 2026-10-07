@@ -5,6 +5,7 @@
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import StarIcon from '@lucide/svelte/icons/star';
+	import HousesIcon from '@lucide/svelte/icons/houses';
 	import { m } from '@/lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { useCachedConvexQuery } from '@/hooks/useCachedConvexQuery.svelte.js';
@@ -60,6 +61,12 @@
 					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.LOGS}>
 						<ScrollTextIcon aria-hidden="true" />
 						<span>Logs</span>
+					</NativeSidebarLink>
+				</NativeSidebarSection>
+				<NativeSidebarSection title="Accommodations">
+					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.ACCOMMODATIONS}>
+						<HousesIcon aria-hidden="true" />
+						<span>Accommodations</span>
 					</NativeSidebarLink>
 				</NativeSidebarSection>
 				<NativeSidebarSection title="Marketing">

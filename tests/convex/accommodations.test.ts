@@ -1,34 +1,132 @@
 /// <reference types="vite/client" />
 
+// LIBRARIES
 import actionRetrierTest from '@convex-dev/action-retrier/test';
 import aggregateTest from '@convex-dev/aggregate/test';
 import r2Test from '@convex-dev/r2/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { convexTest } from 'convex-test';
-import { api, internal } from '../../src/convex/_generated/api';
-import schema, { tables } from '../../src/convex/schema';
-import { defineSchema, defineTable } from 'convex/server';
+import {
+	defineSchema,
+	defineTable,
+	type FunctionArgs,
+	type FunctionReturnType
+} from 'convex/server';
 import { v } from 'convex/values';
-import { accommodations } from '../../src/convex/tables/accommodations/schema';
+
+// CONVEX
+import { api, internal } from '../../src/convex/_generated/api.js';
+
+// AGGREGATES
+import { accommodationOwnerAggregate } from '../../src/convex/tables/accommodations/aggregates/accommodationOwnerAggregate.js';
+import { reviewAggregate } from '../../src/convex/tables/reviews/aggregates/reviewAggregate.js';
+
+// CONFIG
+import * as accommodationConfig from '../../src/shared/features/accommodations/config.js';
+import {
+	ACCOMMODATION_CONFIG,
+	ACCOMMODATION_BILLING_PLANS
+} from '../../src/shared/features/accommodations/config.js';
+
+// DATA
+import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData.js';
+
+// SCHEMAS
+import schema, { tables } from '../../src/convex/schema.js';
+import { accommodations } from '../../src/convex/tables/accommodations/schema.js';
 import {
 	bookings,
 	bookingCancellationTerms as termsValidator
-} from '../../src/convex/tables/bookings/schema';
-import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms';
-import { accommodationOwnerAggregate } from '../../src/convex/tables/accommodations/aggregates/accommodationOwnerAggregate';
-import { reviewAggregate } from '../../src/convex/tables/reviews/aggregates/reviewAggregate';
+} from '../../src/convex/tables/bookings/schema.js';
 import {
 	accommodationSectionSchemas,
-	saveAccommodationSchema
-} from '../../src/shared/features/accommodations/schemas/accommodationSchemas';
+	adminAccommodationsFeeDialogFormSchema,
+	createAccommodationSchema,
+	saveAccommodationSchema,
+	type AccommodationDetails,
+	type AccommodationSearchFilters
+} from '../../src/shared/features/accommodations/schemas/accommodationSchemas.js';
+import { cancellationPolicySchema } from '../../src/shared/features/accommodations/schemas/cancellationPolicySchemas.js';
 
-import type { AccommodationDetails } from '../../src/shared/features/accommodations/schemas/accommodationSchemas';
-import type { FunctionArgs, FunctionReturnType } from 'convex/server';
-import type { AccommodationSearchFilters } from '../../src/shared/features/accommodations/schemas/accommodationSchemas';
-import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData';
-import { cancellationPolicySchema } from '../../src/shared/features/accommodations/schemas/cancellationPolicySchemas';
-import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
+// FIXTURES
+import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
+
+test('admin fee drafts validate the selected plan, money precision and required expiry', () => {
+	const booking = { id: 'accommodation', plan: 'booking_fee', commission: 10 };
+	expect(
+		adminAccommodationsFeeDialogFormSchema.safeParse({
+			...booking,
+			amount: undefined,
+			deadline: 'invalid'
+		}).success
+	).toBe(true);
+	for (const commission of [0, 12.5, 100])
+		expect(
+			adminAccommodationsFeeDialogFormSchema.safeParse({ ...booking, commission }).success
+		).toBe(true);
+	for (const commission of [undefined, -1, 100.01, 0.001, Number.NaN])
+		expect(
+			adminAccommodationsFeeDialogFormSchema.safeParse({ ...booking, commission }).success
+		).toBe(false);
+
+	const flat = {
+		id: 'accommodation',
+		plan: 'flat_fee',
+		amount: 300,
+		months: 3,
+		status: 'pending_payment',
+		deadline: ''
+	};
+	expect(adminAccommodationsFeeDialogFormSchema.safeParse(flat).success).toBe(true);
+	for (const amount of [undefined, 0, -1, 0.001, Number.NaN])
+		expect(adminAccommodationsFeeDialogFormSchema.safeParse({ ...flat, amount }).success).toBe(
+			false
+		);
+	for (const months of [undefined, 0, 1.5, 121])
+		expect(adminAccommodationsFeeDialogFormSchema.safeParse({ ...flat, months }).success).toBe(
+			false
+		);
+	expect(
+		adminAccommodationsFeeDialogFormSchema.safeParse({ ...flat, status: 'invalid' }).success
+	).toBe(false);
+
+	vi.useFakeTimers();
+	vi.setSystemTime(new Date('2026-10-07T12:00:00Z'));
+	try {
+		expect(
+			adminAccommodationsFeeDialogFormSchema.safeParse({
+				...flat,
+				status: 'active',
+				deadline: '2027-01-01T12:00'
+			}).success
+		).toBe(true);
+		const free = { id: 'accommodation', plan: 'free', forever: false };
+		expect(
+			adminAccommodationsFeeDialogFormSchema.safeParse({ ...free, deadline: '2027-01-01T12:00' })
+				.success
+		).toBe(true);
+		expect(
+			adminAccommodationsFeeDialogFormSchema.safeParse({ ...free, forever: true, deadline: '' })
+				.success
+		).toBe(true);
+		for (const deadline of ['', 'invalid', '2020-01-01T12:00', '2027-02-30T12:00']) {
+			expect(
+				adminAccommodationsFeeDialogFormSchema.safeParse({ ...flat, status: 'active', deadline })
+					.success
+			).toBe(false);
+			expect(adminAccommodationsFeeDialogFormSchema.safeParse({ ...free, deadline }).success).toBe(
+				false
+			);
+		}
+	} finally {
+		vi.useRealTimers();
+	}
+	expect(
+		adminAccommodationsFeeDialogFormSchema.safeParse({ ...booking, plan: 'invalid' }).success
+	).toBe(false);
+});
 
 test('cancellation policies allow only fixed percentages and every decreasing or equal schedule', () => {
 	expect(cancellationPolicySchema.parse(ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY)).toEqual(
@@ -118,12 +216,594 @@ const modules = import.meta.glob('../../src/convex/**/*.ts');
 const imageKeys = ['cover', 'bedroom', 'kitchen', 'bathroom', 'living-room'];
 const listing = {
 	...emptyListing,
+	billingPlanId: 'booking_fee' as const,
 	name: 'Central apartment',
 	description: 'A comfortable and bright apartment near the city centre.',
 	address: { street: 'Knez Mihailova', streetNumber: '10A', city: 'Belgrade', country: 'Serbia' },
 	nightlyPrice: 80.25,
 	imageKeys
 };
+
+test('billing plans control initial visibility and cannot be bypassed through listing edits', async () => {
+	const t = setup();
+	const host = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const stranger = t.withIdentity({ subject: 'stranger', tokenIdentifier: 'issuer|stranger' });
+	const create = api.tables.accommodations.mutations.createAccommodation.createAccommodation;
+	const update = api.tables.accommodations.mutations.updateAccommodation.updateAccommodation;
+	const publish =
+		api.tables.accommodations.mutations.updateAccommodationPublishStatus
+			.updateAccommodationPublishStatus;
+	const detail =
+		api.tables.accommodations.queries.fetchPublicAccommodation.fetchPublicAccommodation;
+	const { billingPlanId: _plan, ...withoutPlan } = listing;
+	expect(createAccommodationSchema.safeParse(withoutPlan).success).toBe(false);
+	expect(
+		createAccommodationSchema.safeParse({ ...listing, billingPlanId: 'unknown' }).success
+	).toBe(false);
+
+	const ids = [];
+	for (const billingPlanId of ['flat_fee', 'booking_fee'] as const) {
+		const keys = imageKeys.map((key) => `${billingPlanId}-${key}`);
+		await t.run(async (ctx) => {
+			for (const key of keys)
+				await ctx.db.insert('storageUploads', {
+					ownerId: 'host',
+					key,
+					status: 'uploaded',
+					createdAt: Date.now()
+				});
+		});
+		ids.push(
+			await host.mutation(create, {
+				...listing,
+				billingPlanId,
+				imageKeys: keys,
+				uploadedFiles: keys
+			})
+		);
+	}
+	const [flatId, bookingId] = ids;
+	const unpaid = await t.run((ctx) => ctx.db.get('accommodations', flatId));
+	expect(unpaid).toMatchObject({
+		status: 'published',
+		billingStatus: 'pending_payment',
+		billingPlanId: 'flat_fee',
+		billingTerms: { model: 'flat_fee', amountMinor: 30000, currency: 'EUR', intervalMonths: 3 }
+	});
+	expect(await detailQuery(flatId)).toBeNull();
+	const publicBookingFee = await detailQuery(bookingId);
+	expect(publicBookingFee?.status).toBe('published');
+	expect(publicBookingFee).not.toHaveProperty('billingTerms');
+	expect(publicBookingFee).not.toHaveProperty('billingPlanId');
+	expect(publicBookingFee).not.toHaveProperty('billingStatus');
+	await host.mutation(publish, { id: flatId, status: 'unpublished' });
+	await host.mutation(publish, { id: flatId, status: 'published' });
+	expect(await detailQuery(flatId)).toBeNull();
+	await expect(
+		stranger.mutation(publish, { id: flatId, status: 'published' })
+	).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+	await host.mutation(update, { id: flatId, houseRules: 'No parties' });
+	expect(await t.run((ctx) => ctx.db.get('accommodations', flatId))).toMatchObject({
+		billingTerms: unpaid?.billingTerms,
+		billingStatus: 'pending_payment',
+		status: 'published'
+	});
+	const forgedUpdate = {
+		id: flatId,
+		billingStatus: 'active',
+		billingPlanId: 'booking_fee',
+		billingTerms: { model: 'flat_fee', amountMinor: 1, currency: 'EUR', intervalMonths: 3 }
+	};
+	await expect(host.mutation(update, forgedUpdate)).rejects.toThrow();
+	const forgedCreation = {
+		...listing,
+		billingStatus: 'active',
+		billingTerms: forgedUpdate.billingTerms
+	};
+	await expect(host.mutation(create, forgedCreation)).rejects.toThrow();
+	const args = { location: { country: 'Serbia' }, paginationOpts: { cursor: null, numItems: 10 } };
+	const search = await t.query(
+		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch,
+		args
+	);
+	expect(search.items.map((item) => item._id)).toEqual([bookingId]);
+	expect(search.items[0]).not.toHaveProperty('billingTerms');
+	const map = await t.query(
+		api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap,
+		args
+	);
+	expect(map.items.map((item) => item._id)).toEqual([bookingId]);
+	const ownerList = await host.query(
+		api.tables.accommodations.queries.fetchMyAccommodations.fetchMyAccommodations,
+		{ paginationOpts: args.paginationOpts }
+	);
+	expect(ownerList.items).toHaveLength(2);
+	expect(ownerList.items.find((item) => item._id === flatId)).toMatchObject({
+		billingStatus: 'pending_payment',
+		billingTerms: unpaid?.billingTerms
+	});
+	await host.mutation(publish, { id: bookingId, status: 'unpublished' });
+	await host.mutation(publish, { id: bookingId, status: 'published' });
+	expect((await t.run((ctx) => ctx.db.get('accommodations', bookingId)))?.billingStatus).toBe(
+		'active'
+	);
+
+	function detailQuery(id: typeof flatId) {
+		return t.query(detail, { id });
+	}
+});
+
+test('fee settings enforce ownership, hide unpaid switches, preserve pauses and lock paid periods', async () => {
+	const t = setup();
+	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const stranger = t.withIdentity({ subject: 'other', tokenIdentifier: 'issuer|other' });
+	const change =
+		api.tables.accommodations.mutations.changeAccommodationBillingPlan
+			.changeAccommodationBillingPlan;
+	const settings =
+		api.tables.accommodations.queries.fetchMyAccommodationSettings.fetchMyAccommodationSettings;
+	const publish =
+		api.tables.accommodations.mutations.updateAccommodationPublishStatus
+			.updateAccommodationPublishStatus;
+	const publicDetail =
+		api.tables.accommodations.queries.fetchPublicAccommodation.fetchPublicAccommodation;
+	const {
+		nightlyPrice: _nightlyPrice,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
+			...details,
+			ownerId: 'host',
+			pricePerNightMinor: 8025,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8025,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			status: 'published',
+			updatedAt: 1
+		})
+	);
+	expect(await stranger.query(settings, { id })).toBeNull();
+	await expect(t.query(settings, { id })).rejects.toMatchObject({
+		data: { code: 'UNAUTHENTICATED' }
+	});
+	await expect(
+		stranger.mutation(change, {
+			id,
+			billingPlanId: 'flat_fee',
+			expectedBillingPlanId: 'booking_fee'
+		})
+	).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+	await owner.mutation(change, {
+		id,
+		billingPlanId: 'flat_fee',
+		expectedBillingPlanId: 'booking_fee'
+	});
+	expect((await owner.query(settings, { id }))?.billing).toMatchObject({
+		billingPlanId: 'flat_fee',
+		billingStatus: 'pending_payment',
+		billingPeriodEndsAt: null,
+		status: 'published',
+		billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee
+	});
+	expect(await t.query(publicDetail, { id })).toBeNull();
+	await owner.mutation(publish, { id, status: 'published' });
+	expect(await t.query(publicDetail, { id })).toBeNull();
+	await expect(
+		owner.mutation(change, {
+			id,
+			billingPlanId: 'booking_fee',
+			expectedBillingPlanId: 'booking_fee'
+		})
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' } });
+	await owner.mutation(change, {
+		id,
+		billingPlanId: 'booking_fee',
+		expectedBillingPlanId: 'flat_fee'
+	});
+	expect((await owner.query(settings, { id }))?.billing).toMatchObject({
+		billingPlanId: 'booking_fee',
+		status: 'published'
+	});
+	const guestListing = await t.query(publicDetail, { id });
+	expect(guestListing).not.toHaveProperty('billingPeriodEndsAt');
+	await owner.mutation(publish, { id, status: 'unpublished' });
+	await owner.mutation(change, {
+		id,
+		billingPlanId: 'flat_fee',
+		expectedBillingPlanId: 'booking_fee'
+	});
+	await owner.mutation(change, {
+		id,
+		billingPlanId: 'booking_fee',
+		expectedBillingPlanId: 'flat_fee'
+	});
+	expect((await owner.query(settings, { id }))?.billing).toMatchObject({
+		status: 'unpublished'
+	});
+	const end = Date.now() + 60000;
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', id, {
+			billingPlanId: 'flat_fee',
+			billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+			billingStatus: 'active',
+			billingPeriodEndsAt: end
+		})
+	);
+	await expect(
+		owner.mutation(change, { id, billingPlanId: 'booking_fee', expectedBillingPlanId: 'flat_fee' })
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_LOCKED' } });
+	await owner.mutation(publish, { id, status: 'published' });
+	expect(await t.query(publicDetail, { id })).not.toBeNull();
+	const searchArgs = {
+		location: { country: 'Serbia' },
+		paginationOpts: { cursor: null, numItems: 10 }
+	};
+	const searchQuery =
+		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch;
+	const mapQuery =
+		api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap;
+	expect((await t.query(searchQuery, searchArgs)).items.map((item) => item._id)).toContain(id);
+	expect((await t.query(mapQuery, searchArgs)).items.map((item) => item._id)).toContain(id);
+	const favorite = api.tables.favorites.mutations.updateFavoriteStatus.updateFavoriteStatus;
+	await stranger.mutation(favorite, { accommodationId: id, favorite: true });
+	await t.run((ctx) => ctx.db.patch('accommodations', id, { billingPeriodEndsAt: null }));
+	expect(await t.query(publicDetail, { id })).toBeNull();
+	expect((await t.query(searchQuery, searchArgs)).items).toHaveLength(0);
+	await t.run((ctx) => ctx.db.patch('accommodations', id, { billingPeriodEndsAt: end }));
+	const before = await t.run((ctx) => ctx.db.get('accommodations', id));
+	await owner.mutation(change, {
+		id,
+		billingPlanId: 'flat_fee',
+		expectedBillingPlanId: 'flat_fee'
+	});
+	expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toEqual(before);
+	await t.run((ctx) => ctx.db.patch('accommodations', id, { billingPeriodEndsAt: Date.now() }));
+	expect((await t.query(searchQuery, searchArgs)).items).toHaveLength(0);
+	expect((await t.query(mapQuery, searchArgs)).items).toHaveLength(0);
+	await expect(
+		stranger.mutation(favorite, { accommodationId: id, favorite: true })
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_NOT_FOUND' } });
+	await expect(
+		t.mutation(api.tables.bookings.mutations.createBooking.createBooking, {
+			accommodationId: id,
+			paymentMethod: 'cash',
+			expectedPricePerNightMinor: 8025,
+			expectedTotalMinor: 8025,
+			checkInDate: '2099-01-01',
+			checkOutDate: '2099-01-02',
+			adults: 1,
+			children: 0,
+			firstName: 'Guest',
+			lastName: 'Test',
+			email: 'guest@example.com',
+			phone: '+381641234567'
+		})
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_NOT_FOUND' } });
+	await owner.mutation(publish, { id, status: 'published' });
+	expect(await t.query(publicDetail, { id })).toBeNull();
+	await owner.mutation(change, {
+		id,
+		billingPlanId: 'booking_fee',
+		expectedBillingPlanId: 'flat_fee'
+	});
+	expect((await owner.query(settings, { id }))?.billing).toMatchObject({
+		billingPeriodEndsAt: null,
+		status: 'published'
+	});
+	await t.run((ctx) => ctx.db.patch('accommodations', id, { status: 'deleted' }));
+	expect(await owner.query(settings, { id })).toBeNull();
+	await expect(
+		owner.mutation(change, { id, billingPlanId: 'flat_fee', expectedBillingPlanId: 'booking_fee' })
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_NOT_FOUND' } });
+});
+
+test('simulated flat-fee payment grants calendar months, preserves pauses, locks switching and expires safely', async () => {
+	vi.useFakeTimers();
+	vi.setSystemTime(new Date('2026-01-31T12:34:56.789Z'));
+	const t = setup();
+	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const stranger = t.withIdentity({ subject: 'other', tokenIdentifier: 'issuer|other' });
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...details,
+			...bookingFeeBilling,
+			ownerId: 'host',
+			status: 'unpublished',
+			billingPlanId: 'flat_fee',
+			billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+			billingStatus: 'pending_payment',
+			pricePerNightMinor: 8025,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			effectivePricePerNightMinor: 8025,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			updatedAt: 1
+		})
+	);
+	const pay = api.tables.accommodations.mutations.payFlatFeeAccommodation.payFlatFeeAccommodation;
+	const expire =
+		internal.tables.accommodations.mutations.expireFlatFeeAccommodation.expireFlatFeeAccommodation;
+	const change =
+		api.tables.accommodations.mutations.changeAccommodationBillingPlan
+			.changeAccommodationBillingPlan;
+	const publicDetail =
+		api.tables.accommodations.queries.fetchPublicAccommodation.fetchPublicAccommodation;
+	try {
+		vi.spyOn(accommodationConfig, 'ACCOMMODATION_PAYMENT_SIMULATION', 'get').mockReturnValue(false);
+		await expect(owner.mutation(pay, { id })).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_PAYMENT_SIMULATION_DISABLED' }
+		});
+		vi.restoreAllMocks();
+		await expect(t.mutation(pay, { id })).rejects.toMatchObject({
+			data: { code: 'UNAUTHENTICATED' }
+		});
+		await expect(stranger.mutation(pay, { id })).rejects.toMatchObject({
+			data: { code: 'FORBIDDEN' }
+		});
+		await owner.mutation(pay, { id });
+		const end = Date.parse('2026-04-30T12:34:56.789Z');
+		const paid = await t.run((ctx) => ctx.db.get('accommodations', id));
+		expect(paid).toMatchObject({
+			billingStatus: 'active',
+			billingPeriodEndsAt: end,
+			status: 'unpublished'
+		});
+		expect(await t.query(publicDetail, { id })).toBeNull();
+		await owner.mutation(pay, { id });
+		expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toEqual(paid);
+		await expect(
+			owner.mutation(change, {
+				id,
+				billingPlanId: 'booking_fee',
+				expectedBillingPlanId: 'flat_fee'
+			})
+		).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_LOCKED' } });
+		await owner.mutation(
+			api.tables.accommodations.mutations.updateAccommodationPublishStatus
+				.updateAccommodationPublishStatus,
+			{ id, status: 'published' }
+		);
+		expect(await t.query(publicDetail, { id })).not.toBeNull();
+		// An early job cannot end the term.
+		await t.mutation(expire, { id, billingPeriodEndsAt: end });
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.billingStatus).toBe('active');
+		// Simulate a renewed term before the old scheduled job executes.
+		const renewedEnd = Date.parse('2026-07-30T12:34:56.789Z');
+		await t.run((ctx) => ctx.db.patch('accommodations', id, { billingPeriodEndsAt: renewedEnd }));
+		vi.setSystemTime(end);
+		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.billingStatus).toBe('active');
+		vi.setSystemTime(renewedEnd);
+		await t.mutation(expire, { id, billingPeriodEndsAt: renewedEnd });
+		expect(await t.run((ctx) => ctx.db.get('accommodations', id))).toMatchObject({
+			billingStatus: 'pending_payment',
+			billingPeriodEndsAt: renewedEnd,
+			status: 'published'
+		});
+		expect(await t.query(publicDetail, { id })).toBeNull();
+		// Expired periods can be paid again and obtain a fresh term.
+		await owner.mutation(pay, { id });
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.billingPeriodEndsAt).toBe(
+			Date.parse('2026-10-30T12:34:56.789Z')
+		);
+		vi.setSystemTime(Date.parse('2026-10-30T12:34:56.789Z'));
+		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		await owner.mutation(change, {
+			id,
+			billingPlanId: 'booking_fee',
+			expectedBillingPlanId: 'flat_fee'
+		});
+		await expect(owner.mutation(pay, { id })).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' }
+		});
+		await t.run((ctx) => ctx.db.patch('accommodations', id, { status: 'deleted' }));
+		await expect(owner.mutation(pay, { id })).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_NOT_FOUND' }
+		});
+	} finally {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	}
+});
+
+test('publication migration restores host choices, preserves deletion and is safe to rerun', async () => {
+	const legacySchema = defineSchema({
+		...tables,
+		accommodations: defineTable(
+			accommodations.validator.extend({
+				publicationIntent: v.optional(v.union(v.literal('published'), v.literal('unpublished')))
+			})
+		)
+	});
+	const t = convexTest(legacySchema, modules);
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const rows = [
+		{ status: 'unpublished', publicationIntent: 'published', expected: 'published' },
+		{ status: 'unpublished', publicationIntent: 'unpublished', expected: 'unpublished' },
+		{ status: 'deleted', publicationIntent: 'published', expected: 'deleted' }
+	] as const;
+	const ids = await t.run(async (ctx) =>
+		Promise.all(
+			rows.map((row) =>
+				ctx.db.insert('accommodations', {
+					...details,
+					...bookingFeeBilling,
+					ownerId: 'host',
+					status: row.status,
+					publicationIntent: row.publicationIntent,
+					billingPlanId: 'flat_fee',
+					billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+					billingStatus: 'pending_payment',
+					pricePerNightMinor: 8025,
+					discountBps: 0,
+					weekendPricePerNightMinor: null,
+					effectivePricePerNightMinor: 8025,
+					recommendationSortKey: -3,
+					guestRatingAverage: 0,
+					guestReviewCount: 0,
+					updatedAt: 1
+				})
+			)
+		)
+	);
+	const migration =
+		internal.migrations.migrateAccommodationPublicationStatus.migrateAccommodationPublicationStatus;
+	const args = { cursor: null, batchSize: 2, oneBatchOnly: true, dryRun: false };
+	for (let run = 0; run < 2; run++) {
+		let page = await t.mutation(migration, args);
+		while (!page.isDone)
+			page = await t.mutation(migration, { ...args, cursor: page.continueCursor });
+	}
+	const results = await t.run((ctx) =>
+		Promise.all(ids.map((id) => ctx.db.get('accommodations', id)))
+	);
+	for (const [index, result] of results.entries()) {
+		expect(result?.status).toBe(rows[index].expected);
+		expect(result?.billingStatus).toBe('pending_payment');
+		expect(result?.updatedAt).toBe(1);
+		expect(result).not.toHaveProperty('publicationIntent');
+	}
+});
+
+test('billing backfill fills legacy listings across pages and preserves existing choices on reruns', async () => {
+	const legacySchema = defineSchema({
+		...tables,
+		accommodations: defineTable(
+			accommodations.validator.omit('billingPlanId', 'billingTerms', 'billingStatus').extend({
+				...accommodations.validator.pick('billingPlanId', 'billingTerms', 'billingStatus').partial()
+					.fields,
+				billingPlanId: v.optional(v.string())
+			})
+		)
+	});
+	const t = convexTest(legacySchema, modules);
+	const {
+		nightlyPrice: _nightlyPrice,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		billingPlanId: _plan,
+		...details
+	} = listing;
+	const base = {
+		...details,
+		ownerId: 'seed-owner',
+		billingPeriodEndsAt: null,
+		pricePerNightMinor: 8025,
+		discountBps: 0,
+		weekendPricePerNightMinor: null,
+		effectivePricePerNightMinor: 8025,
+		recommendationSortKey: -3,
+		guestRatingAverage: 0,
+		guestReviewCount: 0,
+		updatedAt: 1
+	};
+	const ids = await t.run(async (ctx) => {
+		const ids = [];
+		for (const status of ['published', 'unpublished', 'deleted'] as const)
+			ids.push(await ctx.db.insert('accommodations', { ...base, status }));
+		ids.push(
+			await ctx.db.insert('accommodations', {
+				...base,
+				status: 'unpublished',
+				billingPlanId: 'previous-flat-fee-plan',
+				billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+				billingStatus: 'pending_payment'
+			})
+		);
+		ids.push(
+			await ctx.db.insert('accommodations', {
+				...base,
+				status: 'published',
+				billingPlanId: 'booking_fee',
+				billingTerms: { model: 'booking_fee', commissionBps: 1250 },
+				billingStatus: 'active'
+			})
+		);
+		return ids;
+	});
+	const before = await t.run((ctx) =>
+		Promise.all(ids.map((id) => ctx.db.get('accommodations', id)))
+	);
+	const migration = internal.migrations.backfillAccommodationBilling.backfillAccommodationBilling;
+	const args = { cursor: null, batchSize: 2, oneBatchOnly: true, dryRun: false };
+	for (let run = 0; run < 2; run++) {
+		let page = await t.mutation(migration, args);
+		while (!page.isDone) {
+			expect(page.processed).toBeLessThanOrEqual(2);
+			page = await t.mutation(migration, { ...args, cursor: page.continueCursor });
+		}
+	}
+
+	const after = await t.run((ctx) =>
+		Promise.all(ids.map((id) => ctx.db.get('accommodations', id)))
+	);
+	for (let i = 0; i < 3; i++)
+		expect(after[i]).toEqual({
+			...before[i],
+			billingPlanId: 'booking_fee',
+			billingTerms: ACCOMMODATION_BILLING_PLANS.booking_fee,
+			billingStatus: 'active'
+		});
+	expect(after[3]).toEqual({ ...before[3], billingPlanId: 'flat_fee' });
+	expect(after[4]).toEqual(before[4]);
+	const required = convexTest(schema, modules);
+	await required.run(async (ctx) => {
+		for (const row of after) {
+			if (
+				!row ||
+				row.billingTerms === undefined ||
+				row.billingStatus === undefined ||
+				row.billingPlanId !== row.billingTerms.model
+			)
+				throw new Error('Backfilled billing fields are missing');
+			const { _id, _creationTime, ...data } = row;
+			await ctx.db.insert('accommodations', {
+				...data,
+				billingPlanId: row.billingTerms.model,
+				billingTerms: row.billingTerms,
+				billingStatus: row.billingStatus
+			});
+		}
+	});
+	for (const field of ['billingPlanId', 'billingTerms', 'billingStatus'] as const) {
+		const data = { ...base, ...bookingFeeBilling, status: 'published' as const };
+		Reflect.deleteProperty(data, field);
+		await expect(required.run((ctx) => ctx.db.insert('accommodations', data))).rejects.toThrow();
+	}
+	const partial = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...base,
+			status: 'published',
+			billingPlanId: 'booking_fee'
+		})
+	);
+	await expect(
+		t.mutation(migration, { cursor: null, batchSize: 50, oneBatchOnly: true, dryRun: false })
+	).rejects.toThrow('Incomplete billing fields');
+	expect(await t.run((ctx) => ctx.db.get('accommodations', partial))).not.toHaveProperty(
+		'billingStatus'
+	);
+});
 
 test('single-day cleanup preserves arrival-today choices and frozen fees across pages and reruns', async () => {
 	const legacySchema = defineSchema({
@@ -175,12 +855,17 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 		pricePerDayUseMinor: 4500
 	};
 	const ids = await t.run(async (ctx) => [
-		await ctx.db.insert('accommodations', { ...base }),
 		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
+			...base
+		}),
+		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...base,
 			...enabled
 		}),
 		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...base,
 			sameDayReservation: true
 		})
@@ -203,11 +888,13 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 		};
 		return [
 			await ctx.db.insert('bookings', {
+				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...booking,
 				cancellationTerms: legacyTerms
 			}),
 			await ctx.db.insert('bookings', {
+				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...booking,
 				checkOutDate: booking.checkInDate,
@@ -296,6 +983,7 @@ test('backfilled listings can update unrelated fields', async () => {
 	} = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			ownerId: 'host',
 			sameDayReservation: false,
@@ -406,12 +1094,19 @@ test('policy migration fills missing policies in bounded pages and preserves exi
 		under24Hours: 0
 	} as const;
 	const ids = await t.run(async (ctx) => [
-		await ctx.db.insert('accommodations', { ...base }),
 		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
+			...base
+		}),
+		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...base,
 			cancellationPolicy: custom
 		}),
-		await ctx.db.insert('accommodations', { ...base })
+		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
+			...base
+		})
 	]);
 	const migration =
 		internal.migrations.backfillAccommodationCancellationPolicies
@@ -517,7 +1212,13 @@ test('list rows and map pins apply the same discounted stay filters through pagi
 	];
 	const ids = await t.run(async (ctx) => {
 		const inserted = [];
-		for (const row of variants) inserted.push(await ctx.db.insert('accommodations', { ...row }));
+		for (const row of variants)
+			inserted.push(
+				await ctx.db.insert('accommodations', {
+					...bookingFeeBilling,
+					...row
+				})
+			);
 		return inserted;
 	});
 	const stayFilters: AccommodationSearchFilters = {
@@ -712,6 +1413,7 @@ test('recommendation, price and guest rating order filtered results before curso
 		for (const [index, row] of rows.entries()) {
 			inserted.push(
 				await ctx.db.insert('accommodations', {
+					...bookingFeeBilling,
 					...row,
 					guestRatingAverage: ratings[index][0],
 					guestReviewCount: ratings[index][1]
@@ -796,6 +1498,7 @@ test('recommendation backfill refreshes existing scores and can be safely rerun'
 	} = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			imageKeys: [],
@@ -898,6 +1601,7 @@ test('public details resolve ordered photos without exposing owner or storage ke
 	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'private-owner',
@@ -943,6 +1647,7 @@ test('owner listing resolves ordered photos and rejects other identities', async
 	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
@@ -972,10 +1677,13 @@ test('owner listing resolves ordered photos and rejects other identities', async
 
 	const fetchHeader = api.tables.accommodations.queries.fetchMyAccommodation.fetchMyAccommodation;
 	expect(await owner.query(fetchHeader, { id })).toEqual({
+		billingPlanId: 'booking_fee',
+		billingPeriodEndsAt: null,
 		_id: id,
 		name: listing.name,
 		timeZone: listing.timeZone,
 		status: 'published',
+		billingStatus: 'active',
 		address: { city: 'Belgrade', country: 'Serbia' }
 	});
 	expect(await stranger.query(fetchHeader, { id })).toBeNull();
@@ -995,6 +1703,7 @@ test('owner updates one listing section, verifies photos, and refreshes the aggr
 	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run(async (ctx) => {
 		const docId = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
@@ -1110,6 +1819,7 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const id = await t.run(async (ctx) => {
 		const id = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
@@ -1361,6 +2071,7 @@ test('step validation permits local progression, while publication requires ever
 		{ name: listing.name, description: listing.description, imageKeys },
 		{
 			nightlyPrice: 80.25,
+			billingPlanId: 'booking_fee',
 			discountPercent: 0,
 			supportedPaymentMethods: 'cash',
 			minimumStay: 1
@@ -1585,6 +2296,7 @@ test('map search scopes coordinates before pagination and validates bounds', asy
 			['west date line', 0, -179, 4]
 		] as const) {
 			await ctx.db.insert('accommodations', {
+				...bookingFeeBilling,
 				...details,
 				cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 				name,
@@ -1734,6 +2446,7 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 	const { nightlyPrice, discountPercent: _discount, weekendPrice: _weekend, ...details } = listing;
 	const { id, completedBookingId, pendingBookingId, reviewId } = await t.run(async (ctx) => {
 		const docId = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...details,
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			ownerId: 'host',
@@ -1758,6 +2471,7 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 		});
 		const insertBooking = (status: 'completed' | 'pending' | 'cancelled') =>
 			ctx.db.insert('bookings', {
+				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				accommodationId: docId,
 				status,
@@ -1851,16 +2565,19 @@ test('search returns only published listings while the owner list hides deleted 
 	};
 	const ids = await t.run(async (ctx) => [
 		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...base,
 			name: 'Visible stay',
 			status: 'published'
 		}),
 		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...base,
 			name: 'Hidden stay',
 			status: 'unpublished'
 		}),
 		await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			...base,
 			name: 'Gone stay',
 			status: 'deleted',
@@ -1882,4 +2599,355 @@ test('search returns only published listings while the owner list hides deleted 
 		{ paginationOpts: { cursor: null, numItems: 10 } }
 	);
 	expect(list.items.map((item) => item._id).sort()).toEqual([ids[0], ids[1]].sort());
+});
+
+test('admin fee overrides bypass host locks, validate terms, and reject non-admin callers', async () => {
+	const t = setup();
+	const admin = t.withIdentity({
+		subject: 'admin',
+		role: 'admin',
+		tokenIdentifier: 'issuer|admin'
+	});
+	const host = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...details,
+			...bookingFeeBilling,
+			ownerId: 'host',
+			status: 'unpublished',
+			pricePerNightMinor: 10000,
+			effectivePricePerNightMinor: 10000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			updatedAt: 1
+		})
+	);
+	const update =
+		api.tables.accommodations.mutations.updateAccommodationFeeForAdmin
+			.updateAccommodationFeeForAdmin;
+	const grant =
+		api.tables.accommodations.mutations.grantFreeAccommodationFeeForAdmin
+			.grantFreeAccommodationFeeForAdmin;
+	const read = api.tables.accommodations.queries.fetchAccommodationsAdmin.fetchAccommodationsAdmin;
+	const change =
+		api.tables.accommodations.mutations.changeAccommodationBillingPlan
+			.changeAccommodationBillingPlan;
+	const args = {
+		id,
+		billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+		billingStatus: 'active' as const,
+		billingPeriodEndsAt: Date.now() + 86400000
+	};
+	await expect(t.mutation(update, args)).rejects.toMatchObject({
+		data: { code: 'UNAUTHENTICATED' }
+	});
+	await expect(host.mutation(update, args)).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+	await expect(host.mutation(grant, { id, billingPeriodEndsAt: null })).rejects.toMatchObject({
+		data: { code: 'FORBIDDEN' }
+	});
+	await expect(
+		host.query(read, { paginationOpts: { numItems: 10, cursor: null } })
+	).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+	await admin.mutation(update, args);
+	await expect(
+		host.mutation(change, { id, billingPlanId: 'booking_fee', expectedBillingPlanId: 'flat_fee' })
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_LOCKED' } });
+	await admin.mutation(update, {
+		id,
+		billingTerms: { model: 'booking_fee', commissionBps: 1250 },
+		billingStatus: 'active',
+		billingPeriodEndsAt: null
+	});
+	expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+		status: 'unpublished',
+		billingPlanId: 'booking_fee',
+		billingTerms: { commissionBps: 1250 }
+	});
+	for (const commissionBps of [-1, 10001, 0.5, Number.NaN])
+		await expect(
+			admin.mutation(update, {
+				id,
+				billingTerms: { model: 'booking_fee', commissionBps },
+				billingStatus: 'active',
+				billingPeriodEndsAt: null
+			})
+		).rejects.toMatchObject({ data: { code: 'INVALID_ACCOMMODATION' } });
+	await expect(
+		admin.mutation(update, { ...args, billingPeriodEndsAt: null })
+	).rejects.toMatchObject({ data: { code: 'INVALID_ACCOMMODATION' } });
+	await expect(
+		admin.mutation(update, {
+			...args,
+			billingTerms: { ...ACCOMMODATION_BILLING_PLANS.flat_fee, amountMinor: 0 }
+		})
+	).rejects.toMatchObject({ data: { code: 'INVALID_ACCOMMODATION' } });
+	await expect(
+		admin.mutation(grant, { id, billingPeriodEndsAt: Date.now() - 1 })
+	).rejects.toMatchObject({ data: { code: 'INVALID_ACCOMMODATION' } });
+	await admin.mutation(grant, { id, billingPeriodEndsAt: null });
+	await expect(
+		host.mutation(change, { id, billingPlanId: 'free', expectedBillingPlanId: 'free' })
+	).rejects.toMatchObject({ data: { code: 'INVALID_ACCOMMODATION' } });
+	await expect(
+		host.mutation(change, { id, billingPlanId: 'booking_fee', expectedBillingPlanId: 'free' })
+	).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_LOCKED' } });
+	await t.run((ctx) => ctx.db.patch(id, { status: 'deleted' }));
+	await expect(admin.mutation(grant, { id, billingPeriodEndsAt: null })).rejects.toMatchObject({
+		data: { code: 'ACCOMMODATION_NOT_FOUND' }
+	});
+	await expect(admin.mutation(update, args)).rejects.toMatchObject({
+		data: { code: 'ACCOMMODATION_NOT_FOUND' }
+	});
+});
+
+test('flat-fee refund simulation is admin-only, checks the reviewed period and preserves publication', async () => {
+	const t = setup();
+	const admin = t.withIdentity({
+		subject: 'admin',
+		role: 'admin',
+		tokenIdentifier: 'issuer|admin'
+	});
+	const host = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const end = Date.now() + 86400000;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...details,
+			...bookingFeeBilling,
+			ownerId: 'host',
+			status: 'published',
+			pricePerNightMinor: 10000,
+			effectivePricePerNightMinor: 10000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			updatedAt: 1,
+			billingPlanId: 'flat_fee',
+			billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+			billingStatus: 'active',
+			billingPeriodEndsAt: end
+		})
+	);
+	const refund =
+		api.tables.accommodations.mutations.refundFlatFeeForAccommodation.refundFlatFeeForAccommodation;
+	const args = { id, expectedBillingPeriodEndsAt: end, expectedUpdatedAt: 1 };
+	vi.spyOn(accommodationConfig, 'ACCOMMODATION_PAYMENT_SIMULATION', 'get').mockReturnValue(false);
+	try {
+		await expect(admin.mutation(refund, args)).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_PAYMENT_SIMULATION_DISABLED' }
+		});
+		vi.restoreAllMocks();
+		await expect(t.mutation(refund, args)).rejects.toMatchObject({
+			data: { code: 'UNAUTHENTICATED' }
+		});
+		await expect(host.mutation(refund, args)).rejects.toMatchObject({
+			data: { code: 'FORBIDDEN' }
+		});
+		await expect(
+			admin.mutation(refund, { ...args, expectedBillingPeriodEndsAt: end + 1 })
+		).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' } });
+		await expect(admin.mutation(refund, { ...args, expectedUpdatedAt: 2 })).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' }
+		});
+		await admin.mutation(refund, args);
+		expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+			status: 'published',
+			billingPlanId: 'flat_fee',
+			billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+			billingStatus: 'pending_payment',
+			billingPeriodEndsAt: null
+		});
+		await expect(admin.mutation(refund, args)).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' }
+		});
+		await host.mutation(
+			api.tables.accommodations.mutations.changeAccommodationBillingPlan
+				.changeAccommodationBillingPlan,
+			{ id, billingPlanId: 'booking_fee', expectedBillingPlanId: 'flat_fee' }
+		);
+		await expect(admin.mutation(refund, args)).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' }
+		});
+		await t.run((ctx) =>
+			ctx.db.patch(id, {
+				billingPlanId: 'flat_fee',
+				billingTerms: ACCOMMODATION_BILLING_PLANS.flat_fee,
+				billingStatus: 'active',
+				billingPeriodEndsAt: end,
+				status: 'unpublished',
+				updatedAt: 1
+			})
+		);
+		await admin.mutation(refund, args);
+		expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+			status: 'unpublished',
+			billingStatus: 'pending_payment'
+		});
+		await t.run((ctx) => ctx.db.patch(id, { status: 'deleted' }));
+		await expect(admin.mutation(refund, args)).rejects.toMatchObject({
+			data: { code: 'ACCOMMODATION_NOT_FOUND' }
+		});
+	} finally {
+		vi.restoreAllMocks();
+	}
+});
+
+test('free fee grants stay visible, expire to booking fees, and ignore stale expiry jobs', async () => {
+	vi.useFakeTimers();
+	try {
+		vi.setSystemTime(Date.parse('2026-10-07T12:00:00Z'));
+		const t = setup();
+		const admin = t.withIdentity({
+			subject: 'admin',
+			role: 'admin',
+			tokenIdentifier: 'issuer|admin'
+		});
+		const {
+			nightlyPrice: _price,
+			discountPercent: _discount,
+			weekendPrice: _weekend,
+			...details
+		} = listing;
+		const id = await t.run((ctx) =>
+			ctx.db.insert('accommodations', {
+				...details,
+				...bookingFeeBilling,
+				ownerId: 'host',
+				status: 'published',
+				pricePerNightMinor: 10000,
+				effectivePricePerNightMinor: 10000,
+				discountBps: 0,
+				weekendPricePerNightMinor: null,
+				recommendationSortKey: -3,
+				guestRatingAverage: 0,
+				guestReviewCount: 0,
+				updatedAt: 1
+			})
+		);
+		const grant =
+			api.tables.accommodations.mutations.grantFreeAccommodationFeeForAdmin
+				.grantFreeAccommodationFeeForAdmin;
+		const expire =
+			internal.tables.accommodations.mutations.expireFreeAccommodationFee
+				.expireFreeAccommodationFee;
+		const detail =
+			api.tables.accommodations.queries.fetchPublicAccommodation.fetchPublicAccommodation;
+		const end = Date.now() + 60000;
+		await admin.mutation(grant, { id, billingPeriodEndsAt: end });
+		expect(await t.query(detail, { id })).not.toBeNull();
+		const search = await t.query(
+			api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch,
+			{ paginationOpts: { numItems: 10, cursor: null }, location: { country: 'Serbia' } }
+		);
+		expect(search.items.map((item) => item._id)).toContain(id);
+		await t.mutation(expire, { id, billingPeriodEndsAt: end });
+		expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({ billingPlanId: 'free' });
+		await admin.mutation(grant, { id, billingPeriodEndsAt: null });
+		vi.setSystemTime(end);
+		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+			billingPlanId: 'free',
+			billingPeriodEndsAt: null
+		});
+		const nextEnd = Date.now() + 60000;
+		await admin.mutation(grant, { id, billingPeriodEndsAt: nextEnd });
+		await t.run((ctx) => ctx.db.patch(id, { status: 'unpublished' }));
+		vi.setSystemTime(nextEnd);
+		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+			billingPlanId: 'booking_fee',
+			billingTerms: ACCOMMODATION_BILLING_PLANS.booking_fee,
+			billingStatus: 'active',
+			billingPeriodEndsAt: null,
+			status: 'unpublished'
+		});
+		await admin.mutation(grant, { id, billingPeriodEndsAt: Date.now() + 60000 });
+		const oldEnd = Date.now() + 60000;
+		await admin.mutation(
+			api.tables.accommodations.mutations.updateAccommodationFeeForAdmin
+				.updateAccommodationFeeForAdmin,
+			{
+				id,
+				billingTerms: { model: 'booking_fee', commissionBps: 1500 },
+				billingStatus: 'active',
+				billingPeriodEndsAt: null
+			}
+		);
+		vi.setSystemTime(oldEnd);
+		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+			billingPlanId: 'booking_fee',
+			billingTerms: { commissionBps: 1500 }
+		});
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+test('admin accommodation filters and search combine before pagination', async () => {
+	const t = setup();
+	const admin = t.withIdentity({
+		subject: 'admin',
+		role: 'admin',
+		tokenIdentifier: 'issuer|admin'
+	});
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const ids = await t.run(async (ctx) => {
+		const inserted = [];
+		for (const status of ['published', 'unpublished', 'deleted'] as const)
+			inserted.push(
+				await ctx.db.insert('accommodations', {
+					...details,
+					...bookingFeeBilling,
+					name: `AdminFilter ${status}`,
+					ownerId: 'host',
+					status,
+					pricePerNightMinor: 10000,
+					effectivePricePerNightMinor: 10000,
+					discountBps: 0,
+					weekendPricePerNightMinor: null,
+					recommendationSortKey: -3,
+					guestRatingAverage: 0,
+					guestReviewCount: 0,
+					updatedAt: 1
+				})
+			);
+		return inserted;
+	});
+	const query = api.tables.accommodations.queries.fetchAccommodationsAdmin.fetchAccommodationsAdmin;
+	const options = {
+		paginationOpts: { numItems: 1, cursor: null },
+		filters: { status: 'unpublished', billingPlanId: 'booking_fee', billingStatus: 'active' }
+	};
+	for (const search of [undefined, 'AdminFilter']) {
+		const result = await admin.query(query, { ...options, search });
+		expect(result.items.map((item) => item._id)).toEqual([ids[1]]);
+		expect(result.items[0]).toMatchObject({ ownerId: 'host', billingPlanId: 'booking_fee' });
+	}
+	const unknown = await admin.query(query, {
+		paginationOpts: { numItems: 10, cursor: null },
+		filters: { status: 'unknown', billingPlanId: 'unknown' }
+	});
+	expect(unknown.items).toHaveLength(3);
 });

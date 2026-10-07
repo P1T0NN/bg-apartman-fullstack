@@ -12,6 +12,7 @@ import authSchema from '../../src/convex/betterAuth/component/schema';
 import { createAuthOptions } from '../../src/convex/betterAuth/config';
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 const checkDeletion = internal.betterAuth.queries.checkAccountDeletion.checkAccountDeletion;
@@ -84,7 +85,11 @@ async function setup() {
 	});
 	const account = { id: user._id, email: user.email };
 	const accommodationId = await t.run((ctx) =>
-		ctx.db.insert('accommodations', { supportedPaymentMethods: 'cash', ...accommodation })
+		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
+			supportedPaymentMethods: 'cash',
+			...accommodation
+		})
 	);
 	async function seedBooking(
 		status: 'pending' | 'confirmed' | 'cancelled' | 'declined' | 'completed' | 'expired',
@@ -92,6 +97,7 @@ async function setup() {
 	) {
 		return t.run((ctx) =>
 			ctx.db.insert('bookings', {
+				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				accommodationId,
 				status,

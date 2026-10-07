@@ -1,6 +1,5 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
 
 	// LIBRARIES
 	import { createSvelteAuthClient } from '@mmailaender/convex-better-auth-svelte/svelte';
@@ -23,7 +22,9 @@
 	useAnalyticsLocal();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" type="image/webp" href="/logo/opt/logo-transparent-411w.webp" />
+</svelte:head>
 
 {@render children()}
 <Toaster richColors />

@@ -8,10 +8,8 @@
 	// TYPES
 	import type { Doc } from '@convex/_generated/dataModel';
 	let {
-		pricing,
-		from = false
+		pricing
 	}: {
-		from?: boolean;
 		pricing: Pick<
 			Doc<'accommodations'>,
 			'pricePerNightMinor' | 'discountBps' | 'effectivePricePerNightMinor'
@@ -26,9 +24,6 @@
 			<Price value={pricing.pricePerNightMinor} />
 		</s>
 	{/if}
-	{#if from}<span class="font-normal text-muted-foreground">
-			{m['AccommodationsFeature.Pricing.from']()}
-		</span>{/if}
 	<Price value={pricing.effectivePricePerNightMinor} />
 	{#if pricing.effectivePricePerNightMinor < pricing.pricePerNightMinor}
 		<Badge variant="secondary" class="bg-success/10 text-success">

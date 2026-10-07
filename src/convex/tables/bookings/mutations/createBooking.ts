@@ -30,8 +30,12 @@ import { BOOKINGS_CONFIG } from '../../../../shared/features/bookings/config.js'
 
 // UTILS
 import { calculateStayPricing } from '../../../../shared/features/bookings/utils/calculateStayPricing.js';
+import { calculateBookingPlatformFee } from '../../../../shared/features/bookings/utils/calculateBookingPlatformFee.js';
 import { getIsoDateInTimeZone } from '../../../../shared/features/timezone/utils/getIsoDateInTimeZone.js';
 import { getZonedTimestamp } from '../../../../shared/features/timezone/utils/getZonedTimestamp.js';
+
+// UTILS
+import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -61,7 +65,7 @@ export const createBooking = mutation({
 	returns: v.id('bookings'),
 	handler: async (ctx, args) => {
 		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
-		if (!accommodation || accommodation.status !== 'published') {
+		if (!isAccommodationVisible(accommodation)) {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
 
@@ -153,6 +157,12 @@ export const createBooking = mutation({
 
 		const booking = {
 			...bookingDetails,
+			platformFeeTerms: calculateBookingPlatformFee(
+				accommodation,
+				stayPricing.totalMinor,
+				COMPANY_DATA.CURRENCY,
+				now
+			),
 			// Keep the validator-typed id: the shared schema only knows it as a string.
 			accommodationId: args.accommodationId,
 			ownerId,

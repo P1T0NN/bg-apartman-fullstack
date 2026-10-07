@@ -77,8 +77,23 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 			.withIndex('by_address_country_city', (q) => q.eq('address.country', country));
 	}
 
-	// Only published listings are publicly searchable; unpublished and deleted rows stay owner-only.
-	accommodationsQuery = accommodationsQuery.filter((q) => q.eq(q.field('status'), 'published'));
+	// Public search requires the host's publication choice and current billing eligibility.
+	const now = Date.now();
+	accommodationsQuery = accommodationsQuery.filter((q) =>
+		q.and(
+			q.eq(q.field('status'), 'published'),
+			q.eq(q.field('billingStatus'), 'active'),
+			q.or(
+				q.eq(q.field('billingPlanId'), 'booking_fee'),
+				q.eq(q.field('billingPlanId'), 'free'),
+				q.and(
+					q.eq(q.field('billingPlanId'), 'flat_fee'),
+					q.neq(q.field('billingPeriodEndsAt'), null),
+					q.gt(q.field('billingPeriodEndsAt'), now)
+				)
+			)
+		)
+	);
 
 	if (bounds) {
 		// Exclude longitude misses before paginating map pins, preserving existing map pages.

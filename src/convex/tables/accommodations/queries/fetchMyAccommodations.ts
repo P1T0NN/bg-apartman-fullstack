@@ -18,11 +18,11 @@ import { readAccommodationFilters } from '../helpers/readAccommodationFilters.js
 
 // VALIDATORS
 import { listPageArgs } from '../../../validators/listPageArgs.js';
-import { accommodationPage } from '../validators/accommodationValidators.js';
+import { accommodationOwnerPage } from '../validators/accommodationValidators.js';
 
 export const fetchMyAccommodations = authenticatedQuery({
 	args: listPageArgs,
-	returns: accommodationPage,
+	returns: accommodationOwnerPage,
 	handler: async (ctx, args) => {
 		const search = args.search?.trim() || undefined;
 		const filters = readAccommodationFilters(args.filters);
@@ -36,7 +36,15 @@ export const fetchMyAccommodations = authenticatedQuery({
 			filters
 		});
 		// The owner list card only renders the cover, so resolve a single url per row.
-		const items = await resolveImageUrls(page.items, 1);
+		const rows = await resolveImageUrls(page.items, 1);
+		const items = rows.map((row, index) => ({
+			...row,
+			status: page.items[index].status,
+			billingPlanId: page.items[index].billingPlanId,
+			billingTerms: page.items[index].billingTerms,
+			billingStatus: page.items[index].billingStatus,
+			billingPeriodEndsAt: page.items[index].billingPeriodEndsAt
+		}));
 		const total = canCountTotal
 			? filters.type
 				? await getFilteredTotalAggregate(ctx, accommodationOwnerAggregate, [

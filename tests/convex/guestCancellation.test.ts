@@ -10,6 +10,7 @@ import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/c
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 import { checkBookingCancellationRefund } from '../../src/shared/features/bookings/utils/checkBookingCancellationRefund.js';
 import { canCancelBooking } from '../../src/shared/features/bookings/utils/canCancelBooking.js';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 const cancel = api.tables.bookings.mutations.cancelBooking.cancelBooking;
@@ -78,6 +79,7 @@ async function setup(
 	};
 	const { bookingId, accommodationId } = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			ownerId: host._id,
 			name: 'Sunny apartment',
@@ -115,6 +117,7 @@ async function setup(
 			updatedAt: now
 		});
 		const bookingId = await ctx.db.insert('bookings', {
+			platformFeeTerms: null,
 			paymentMethod: 'cash',
 			ownerId: 'guest-1',
 			hostId: host._id,

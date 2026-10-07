@@ -7,6 +7,9 @@ import { authenticatedQuery } from '../../../builders/convexFunctionBuilders.js'
 // AUTH
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
+// SCHEMAS
+import { accommodations } from '../schema.js';
+
 /** Owner-scoped header summary for the my-accommodation workspace. */
 export const fetchMyAccommodation = authenticatedQuery({
 	args: { id: v.id('accommodations') },
@@ -16,6 +19,9 @@ export const fetchMyAccommodation = authenticatedQuery({
 			name: v.string(),
 			timeZone: v.string(),
 			status: v.union(v.literal('published'), v.literal('unpublished')),
+			billingStatus: accommodations.validator.fields.billingStatus,
+			billingPlanId: accommodations.validator.fields.billingPlanId,
+			billingPeriodEndsAt: accommodations.validator.fields.billingPeriodEndsAt,
 			address: v.object({ city: v.string(), country: v.string() })
 		}),
 		v.null()
@@ -34,6 +40,9 @@ export const fetchMyAccommodation = authenticatedQuery({
 			name: accommodation.name,
 			timeZone: accommodation.timeZone,
 			status: accommodation.status,
+			billingStatus: accommodation.billingStatus,
+			billingPlanId: accommodation.billingPlanId,
+			billingPeriodEndsAt: accommodation.billingPeriodEndsAt,
 			address: {
 				city: accommodation.address.city,
 				country: accommodation.address.country

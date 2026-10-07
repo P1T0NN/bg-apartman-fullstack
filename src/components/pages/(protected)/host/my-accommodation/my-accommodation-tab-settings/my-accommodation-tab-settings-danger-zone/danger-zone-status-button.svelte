@@ -4,8 +4,12 @@
 
 	// LIBRARIES
 	import { useMutation, useQuery } from 'convex-svelte';
-	import { api } from '@convex/_generated/api';
-	import { m } from '@/lib/paraglide/messages';
+
+	// MESSAGES
+	import { m } from '@/lib/paraglide/messages.js';
+
+	// CONVEX
+	import { api } from '@convex/_generated/api.js';
 
 	// COMPONENTS
 	import { Button } from '@/components/ui/button/index.js';

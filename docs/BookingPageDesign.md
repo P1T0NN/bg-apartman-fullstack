@@ -78,7 +78,6 @@ reserve space for the bar and the device safe area. Desktop keeps its summary ca
 This placement is the project's design choice, informed by NN/g's small persistent
 controls guidance and Airbnb's upfront pricing approach, not a measured conversion claim.
 
-
 ### Checkout summary hierarchy
 
 Desktop and the mobile inline Price details section share `BookSummaryPricing`: selected

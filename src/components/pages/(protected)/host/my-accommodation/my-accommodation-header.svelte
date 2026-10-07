@@ -1,6 +1,7 @@
 <script lang="ts">
 	// SVELTEKIT IMPORTS
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 
 	// LIBRARIES
 	import { useQuery } from 'convex-svelte';
@@ -14,10 +15,13 @@
 
 	// CONFIG
 	import { m } from '@/lib/paraglide/messages';
-	import {
-		PROTECTED_PAGE_ENDPOINTS,
-		UNPROTECTED_PAGE_ENDPOINTS
-	} from '@/shared/constants/pageEndpoints.js';
+	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+
+	// HOOKS
+	import { useClock } from '@/hooks/useClock.svelte.js';
+
+	// UTILS
+	import { isAccommodationVisible } from '@/shared/features/accommodations/utils/isAccommodationVisible.js';
 
 	// TYPES
 	import type { Id } from '@convex/_generated/dataModel';
@@ -31,13 +35,13 @@
 		api.tables.accommodations.queries.fetchMyAccommodation.fetchMyAccommodation,
 		() => ({ id: accommodationId })
 	);
-	const status = $derived(summary.data?.status ?? accommodation.status);
-	const isPublished = $derived(status === 'published');
+	const clock = useClock();
+	const isPublished = $derived(isAccommodationVisible(summary.data ?? accommodation, clock.now));
 </script>
 
 <header class="flex flex-col gap-5">
 	<a
-		href={PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS}
+		href={resolve('/host/my-accommodations')}
 		class="flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
 	>
 		<span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>

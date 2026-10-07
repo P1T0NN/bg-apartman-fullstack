@@ -16,7 +16,10 @@ import { reviewAggregate } from './tables/reviews/aggregates/reviewAggregate.js'
 import { updateAccommodationReviewSortKeys } from './tables/accommodations/helpers/updateAccommodationReviewSortKeys.js';
 
 // CONFIG
-import { ACCOMMODATION_CONFIG } from '../shared/features/accommodations/config.js';
+import {
+	ACCOMMODATION_CONFIG,
+	ACCOMMODATION_BILLING_PLANS
+} from '../shared/features/accommodations/config.js';
 
 // DATA
 import {
@@ -26,6 +29,7 @@ import {
 
 // UTILS
 import { calculateStayPricing } from '../shared/features/bookings/utils/calculateStayPricing.js';
+import { calculateBookingPlatformFee } from '../shared/features/bookings/utils/calculateBookingPlatformFee.js';
 
 // TYPES
 import type { Doc } from './_generated/dataModel.js';
@@ -318,6 +322,10 @@ export const seedAccommodations = internalMutation({
 				petsAllowed: random() < 0.4,
 				partiesAllowed: random() < 0.2,
 				houseRules: pick(HOUSE_RULES, random),
+				billingPlanId: 'booking_fee',
+				billingTerms: ACCOMMODATION_BILLING_PLANS.booking_fee,
+				billingStatus: 'active',
+				billingPeriodEndsAt: null,
 				status: 'published',
 				updatedAt: Date.now() - Math.floor(random() * 30) * 86_400_000
 			};
@@ -394,7 +402,14 @@ export const seedReviews = internalMutation({
 				);
 				const checkInDate = parseDate(checkOutDate).subtract({ days: nights }).toString();
 
+				const stayPricing = calculateStayPricing(accommodation, checkInDate, checkOutDate);
 				const bookingId = await ctx.db.insert('bookings', {
+					platformFeeTerms: calculateBookingPlatformFee(
+						accommodation,
+						stayPricing.totalMinor,
+						COMPANY_DATA.CURRENCY,
+						now
+					),
 					paymentMethod: accommodation.supportedPaymentMethods === 'online' ? 'online' : 'cash',
 					cancellationTerms: {
 						stayType: 'overnight',
@@ -416,7 +431,7 @@ export const seedReviews = internalMutation({
 						pricePerNightMinor: accommodation.effectivePricePerNightMinor,
 						basePricePerNightMinor: accommodation.pricePerNightMinor,
 						discountBps: accommodation.discountBps,
-						stayPricing: calculateStayPricing(accommodation, checkInDate, checkOutDate),
+						stayPricing,
 						currency: COMPANY_DATA.CURRENCY
 					},
 					ownerId: guestOwnerId,

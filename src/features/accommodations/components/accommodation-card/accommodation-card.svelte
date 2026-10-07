@@ -116,7 +116,7 @@
 
 		<div class="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2">
 			<p class="text-base font-semibold tabular-nums">
-				<AccommodationPrice pricing={accommodation} from />
+				<AccommodationPrice pricing={accommodation} />
 				<span class="text-sm font-normal">
 					{m['AccommodationsFeature.AccommodationCard.night']()}
 				</span>

@@ -50,6 +50,10 @@ const accommodationDoc = docValidator('accommodations', accommodations);
 const accommodationListItem = accommodationDoc
 	.omit(
 		'ownerId',
+		'billingPlanId',
+		'billingTerms',
+		'billingStatus',
+		'billingPeriodEndsAt',
 		'description',
 		'spaceType',
 		'address',
@@ -89,10 +93,26 @@ export const accommodationPage = v.object({
 	total: v.optional(v.number())
 });
 
+export const accommodationOwnerPage = accommodationPage.extend({
+	items: v.array(
+		accommodationListItem.extend({
+			status: accommodations.validator.fields.status,
+			billingPlanId: accommodations.validator.fields.billingPlanId,
+			billingTerms: accommodations.validator.fields.billingTerms,
+			billingStatus: accommodations.validator.fields.billingStatus,
+			billingPeriodEndsAt: accommodations.validator.fields.billingPeriodEndsAt
+		})
+	)
+});
+
 /** Complete editable listing payload; server-owned fields cannot be submitted. */
 export const createAccommodationValidator = accommodations.validator
 	.omit(
 		'ownerId',
+		'billingPlanId',
+		'billingTerms',
+		'billingStatus',
+		'billingPeriodEndsAt',
 		'status',
 		'deletedAt',
 		'deletedBy',
@@ -106,6 +126,7 @@ export const createAccommodationValidator = accommodations.validator
 		'guestReviewCount'
 	)
 	.extend({
+		billingPlanId: accommodations.validator.fields.billingPlanId,
 		nightlyPrice: v.number(),
 		weekendPrice: v.optional(v.union(v.number(), v.null())),
 		discountPercent: v.number()
@@ -115,6 +136,10 @@ export const createAccommodationValidator = accommodations.validator
 export const updateAccommodationValidator = accommodations.validator
 	.omit(
 		'ownerId',
+		'billingPlanId',
+		'billingTerms',
+		'billingStatus',
+		'billingPeriodEndsAt',
 		'status',
 		'deletedAt',
 		'deletedBy',

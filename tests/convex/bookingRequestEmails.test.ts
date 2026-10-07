@@ -17,6 +17,7 @@ import {
 	bookingCancellationTerms,
 	withExpectedTotal
 } from '../fixtures/bookingCancellationTerms.js';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 const create = api.tables.bookings.mutations.createBooking.createBooking;
@@ -115,6 +116,7 @@ async function setup() {
 	});
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			...accommodation,
 			ownerId: host._id

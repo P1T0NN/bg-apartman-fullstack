@@ -1,3 +1,6 @@
+// UTILS
+import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
 import type { QueryCtx } from '../../../_generated/server.js';
@@ -19,7 +22,7 @@ export async function enrichMyReview(ctx: QueryCtx, review: Doc<'reviews'>) {
 		bookingId: review.bookingId,
 		accommodationId: review.accommodationId,
 		status: review.status,
-		accommodationName: accommodation?.status === 'published' ? accommodation.name : null,
+		accommodationName: isAccommodationVisible(accommodation) ? accommodation.name : null,
 		checkInDate: booking?.checkInDate ?? null,
 		checkOutDate: booking?.checkOutDate ?? null
 	};

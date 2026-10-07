@@ -1,7 +1,5 @@
-// DATA
-import type { ACCOMMODATION_SORTS, ACCOMMODATION_TYPES } from '../data/accommodationsData.js';
-
 // TYPES
+import type { ACCOMMODATION_SORTS, ACCOMMODATION_TYPES } from '../data/accommodationsData.js';
 import type { Doc, Id } from '@convex/_generated/dataModel';
 import type { ReviewSummary } from '../../reviews/types/reviewTypes.js';
 import type {
@@ -12,7 +10,15 @@ import type {
 
 export type PublicAccommodation = Omit<
 	Doc<'accommodations'>,
-	'ownerId' | 'imageKeys' | 'recommendationSortKey' | 'guestRatingAverage' | 'guestReviewCount'
+	| 'ownerId'
+	| 'imageKeys'
+	| 'recommendationSortKey'
+	| 'guestRatingAverage'
+	| 'guestReviewCount'
+	| 'billingPlanId'
+	| 'billingTerms'
+	| 'billingStatus'
+	| 'billingPeriodEndsAt'
 > & {
 	imageUrls: string[];
 	reviews: ReviewSummary;
@@ -26,6 +32,10 @@ export type PublicAccommodation = Omit<
 export type AccommodationCard = Omit<
 	Doc<'accommodations'>,
 	| 'ownerId'
+	| 'billingPlanId'
+	| 'billingTerms'
+	| 'billingStatus'
+	| 'billingPeriodEndsAt'
 	| 'description'
 	| 'spaceType'
 	| 'address'
@@ -62,6 +72,12 @@ export type AccommodationMapMarker = Pick<
 	'_id' | 'name' | 'latitude' | 'longitude' | 'effectivePricePerNightMinor'
 >;
 
+export type MyAccommodationCard = AccommodationCard &
+	Pick<
+		Doc<'accommodations'>,
+		'status' | 'billingPlanId' | 'billingTerms' | 'billingStatus' | 'billingPeriodEndsAt'
+	>;
+
 export type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
 
 export type AccommodationSort = (typeof ACCOMMODATION_SORTS)[number];
@@ -73,6 +89,9 @@ export type MyAccommodationSummary = {
 	_id: Id<'accommodations'>;
 	name: string;
 	status: AccommodationPublishStatus;
+	billingPlanId: Doc<'accommodations'>['billingPlanId'];
+	billingStatus: Doc<'accommodations'>['billingStatus'];
+	billingPeriodEndsAt: number | null;
 	address: { city: string; country: string };
 };
 

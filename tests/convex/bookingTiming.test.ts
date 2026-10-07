@@ -11,6 +11,7 @@ import {
 } from '../../src/convex/tables/bookings/schema.js';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config.js';
+import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 
@@ -38,6 +39,7 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 	} as const;
 	const ids = await t.run(async (ctx) => {
 		const accommodationId = await ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
 			supportedPaymentMethods: 'cash',
 			ownerId: 'host',
 			name: 'Migration property',
@@ -104,13 +106,19 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 			currency: preserved.currency
 		};
 		return {
-			legacy: await ctx.db.insert('bookings', { paymentMethod: 'cash', ...base }),
+			legacy: await ctx.db.insert('bookings', {
+				platformFeeTerms: null,
+				paymentMethod: 'cash',
+				...base
+			}),
 			partial: await ctx.db.insert('bookings', {
+				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...base,
 				cancellationTerms: partial
 			}),
 			complete: await ctx.db.insert('bookings', {
+				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...base,
 				cancellationTerms: preserved

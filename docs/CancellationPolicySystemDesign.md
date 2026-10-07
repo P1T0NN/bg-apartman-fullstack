@@ -197,7 +197,7 @@ in the two timezone feature folders; project timing rules remain in their domain
   explicit property-local zone. This preserves the calendar-day window while
   correcting its previous UTC boundary.
 - Eligible-stay queries use the checkout-instant index and server clock. Browser
-  timestamps trigger refreshes only. `useReviewClock` replaces `useReviewDate`
+  timestamps trigger refreshes only. `useClock` replaces `useReviewDate`
   and refreshes every minute and when the tab becomes visible.
 - Browser boundary-asset serving/caching checks are recorded in `TODOProduction.md`.
 - Verification: 110 tests pass across 28 files; `bun run check`,
@@ -211,7 +211,7 @@ in the two timezone feature folders; project timing rules remain in their domain
 Added:
 
 - `src/convex/migrations/backfillBookingTiming.ts`
-- `src/features/reviews/hooks/useReviewClock.svelte.ts`
+- `src/hooks/useClock.svelte.ts`
 - `tests/convex/bookingTiming.test.ts`
 - `tests/fixtures/bookingCancellationTerms.ts`
 - `tests/reviewTiming.test.ts`
@@ -252,7 +252,7 @@ Updated:
 - `src/convex/_generated/api.d.ts` (generated)
 
 Removed `src/features/reviews/hooks/useReviewDate.svelte.ts`; the permanent
-`useReviewClock` hook replaces it.
+`useClock` hook replaces it.
 
 ### Files changed in the earlier map-pin timezone follow-up
 

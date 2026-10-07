@@ -1,4 +1,10 @@
 <script lang="ts">
+	// MESSAGES
+	import { m } from '@/lib/paraglide/messages.js';
+
+	// CONVEX
+	import { api } from '@convex/_generated/api.js';
+
 	// COMPONENTS
 	import * as Card from '@/components/ui/card/index.js';
 	import Form from '@/components/ui/custom-components/form/form.svelte';
@@ -12,12 +18,12 @@
 	import AddAccommodationFormReview from './add-accommodation-form-review.svelte';
 
 	// CONFIG
-	import { api } from '@convex/_generated/api';
 	import { ACCOMMODATION_CONFIG } from '@/shared/features/accommodations/config.js';
 	import { STORAGE_CONFIG } from '@/shared/features/storage/config.js';
-	import { saveAccommodationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 	import { PROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
-	import { m } from '@/lib/paraglide/messages';
+
+	// SCHEMAS
+	import { createAccommodationSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 
 	// UTILS
 	import { gotoParaglide } from '@/utils/gotoParaglide.js';
@@ -33,7 +39,7 @@
 		<Card.Content>
 			<Form
 				function={api.tables.accommodations.mutations.createAccommodation.createAccommodation}
-				schema={saveAccommodationSchema}
+				schema={createAccommodationSchema}
 				bind:values={state.values}
 				bind:uploadFiles={state.files}
 				bind:submitting={state.submitting}
@@ -59,7 +65,9 @@
 					return gotoParaglide(PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS);
 				}}
 				resetOnSuccess={false}
-				successMessage={m['AddAccommodationPage.AddAccommodationForm.published']()}
+				successMessage={state.values.billingPlanId === 'flat_fee'
+					? m['AddAccommodationPage.AddAccommodationForm.savedAwaitingPayment']()
+					: m['AddAccommodationPage.AddAccommodationForm.published']()}
 				errorMessage={m['AddAccommodationPage.AddAccommodationForm.publishError']()}
 				uploadNamespace={ACCOMMODATION_CONFIG.uploadNamespace}
 			>

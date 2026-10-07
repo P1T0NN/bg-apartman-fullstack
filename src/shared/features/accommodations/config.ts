@@ -27,3 +27,20 @@ export const ACCOMMODATION_CONFIG = {
 		mode: 'full_refund'
 	}
 } as const;
+
+/** Enable payment and refund previews until real payment handling is implemented. */
+export const ACCOMMODATION_PAYMENT_SIMULATION: boolean = true;
+
+// Terms are copied into each accommodation when the host chooses a billing plan.
+export const ACCOMMODATION_BILLING_PLANS = {
+	flat_fee: {
+		model: 'flat_fee',
+		amountMinor: 30000, // 300e
+		currency: 'EUR',
+		intervalMonths: 3
+	},
+	booking_fee: {
+		model: 'booking_fee',
+		commissionBps: 1000 // 10%
+	}
+} as const;

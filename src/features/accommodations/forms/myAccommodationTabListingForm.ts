@@ -1,6 +1,5 @@
 // LIBRARIES
 import { z } from 'zod';
-import { supportedPaymentMethodsField } from '@/features/payments/forms/supportedPaymentMethodsField.js';
 
 // LIBRARIES
 import { m } from '@/lib/paraglide/messages';
@@ -10,8 +9,6 @@ import { getLocale } from '@/lib/paraglide/runtime';
 import { STORAGE_CONFIG } from '@/shared/features/storage/config.js';
 
 // UTILS
-import { weekendPriceField } from './weekendPriceField.js';
-import { discountPercentField } from './discountPercentField.js';
 import { getCountryOptions } from '@/shared/utils/countries.js';
 import { getTimeSlots } from '@/utils/getTimeSlots.js';
 
@@ -224,9 +221,37 @@ export function createMyAccommodationTabListingForm(
 				maximumStay: accommodation.maximumStay
 			},
 			fields: [
-				supportedPaymentMethodsField(),
-				discountPercentField(),
-				weekendPriceField(),
+				{
+					kind: 'select',
+					name: 'supportedPaymentMethods',
+					label: m['PaymentsFeature.supported'](),
+					required: true,
+					options: (['cash', 'online', 'both'] as const).map((value) => ({
+						value,
+						label: m[`PaymentsFeature.supportedOptions.${value}`]()
+					}))
+				},
+				{
+					kind: 'input',
+					type: 'number',
+					name: 'discountPercent',
+					label: m['AccommodationsFeature.Pricing.discount'](),
+					description: m['AccommodationsFeature.Pricing.discountHint'](),
+					min: 0,
+					max: 99.99,
+					step: 0.01,
+					required: true
+				},
+				{
+					kind: 'input',
+					type: 'number',
+					name: 'weekendPrice',
+					label: m['AccommodationsFeature.Pricing.weekend'](),
+					description: m['AccommodationsFeature.Pricing.weekendHint'](),
+					min: 0.01,
+					max: 100000,
+					step: 0.01
+				},
 				{
 					kind: 'input',
 					name: 'nightlyPrice',

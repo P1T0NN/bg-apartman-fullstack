@@ -35,6 +35,12 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.accountHasAccommodations']();
 		case 'INVALID_ACCOMMODATION':
 			return m['BackendMessages.invalidAccommodation']();
+		case 'ACCOMMODATION_PAYMENT_SIMULATION_DISABLED':
+			return m['BackendMessages.accommodationPaymentSimulationDisabled']();
+		case 'ACCOMMODATION_BILLING_PLAN_LOCKED':
+			return m['BackendMessages.accommodationBillingPlanLocked']();
+		case 'ACCOMMODATION_BILLING_PLAN_CHANGED':
+			return m['BackendMessages.accommodationBillingPlanChanged']();
 		case 'INVALID_CANCELLATION_POLICY':
 			return m['BackendMessages.invalidCancellationPolicy']();
 		case 'INVALID_BOOKING_CANCELLATION':

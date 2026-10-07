@@ -1191,6 +1191,16 @@
 			"total": "Stay total",
 			"savingsIncluded": "You save {amount}",
 			"discountIncluded": "Discount included in the estimate."
+		},
+		"AccommodationBillingStatusBadge": {
+			"active": "Active",
+			"awaitingPayment": "Awaiting payment",
+			"expired": "Payment period expired"
+		},
+		"AccommodationFlatFeePaymentButton": {
+			"pay": "Pay now",
+			"renew": "Renew now",
+			"success": "Simulated payment completed. Your flat-fee period is now active."
 		}
 	},
 	"BookingsFeature": {
@@ -1817,7 +1827,10 @@
 		"invalidBlockedDateRange": "Select 1-30 consecutive dates, starting today or later in the accommodation's timezone.",
 		"blockedDatesBookingConflict": "These dates overlap a confirmed booking. No dates were blocked.",
 		"paymentMethodUnsupported": "The accommodation's accepted payment methods have changed. Refresh and choose an available payment method.",
-		"bookingPriceChanged": "The nightly price has changed. Review the updated price before submitting again."
+		"bookingPriceChanged": "The nightly price has changed. Review the updated price before submitting again.",
+		"accommodationBillingPlanLocked": "Your paid flat-fee period is still running. You can switch plans when it ends.",
+		"accommodationBillingPlanChanged": "Your accommodation fee plan changed. Review the current plan and try again.",
+		"accommodationPaymentSimulationDisabled": "Payment simulation is disabled in this environment."
 	},
 	"AddAccommodationPage": {
 		"title": "Add an accommodation",
@@ -1834,11 +1847,11 @@
 			"photosTitle": "Help guests picture their stay",
 			"photosHint": "Add 5?10 photos. The first photo is your cover. Use the arrows to reorder.",
 			"pricingTitle": "Set your price and accepted payments",
-			"pricingHint": "Set your nightly rate, stay limits and accepted payment methods.",
+			"pricingHint": "Choose your platform payment plan, nightly rate, stay limits and guest payment methods.",
 			"rulesTitle": "Choose how guests book and set their stay rules",
 			"rulesHint": "Choose host approval or immediate confirmation, then set arrival times and house rules.",
 			"reviewTitle": "Take a final look",
-			"reviewHint": "Check the details below before making this accommodation public.",
+			"reviewHint": "Check the details and your payment plan before creating this accommodation.",
 			"cancellationPolicyTitle": "Cancellation Policy",
 			"cancellationPolicyHint": "Choose what guests receive back if they cancel before check-in. Keep full refund or set amounts by cancellation time."
 		},
@@ -1913,7 +1926,13 @@
 			"oneDay": "1 day",
 			"sevenDays": "7 days",
 			"thirtyDays": "30 days",
-			"previous": "Back"
+			"previous": "Back",
+			"billingTitle": "Accommodation payment",
+			"billingHint": "Choose how you pay the platform. This is separate from how guests pay for their stay.",
+			"flatFee": "Flat fee: €{amount} for {months} months",
+			"flatFeeHint": "Create your accommodation now, then pay to activate it. It stays hidden from guests until payment is confirmed. No platform booking commission.",
+			"bookingFee": "Booking fee: no upfront listing payment",
+			"bookingFeeHint": "Your accommodation goes live when created. The platform takes {percent}% of each booking."
 		},
 		"AddAccommodationFormReview": {
 			"preview": "Listing preview",
@@ -1949,7 +1968,12 @@
 			"shared": "Shared room",
 			"sections": "Accommodation sections",
 			"cancellationPolicy": "Cancellation Policy",
-			"timeZone": "Property timezone"
+			"timeZone": "Property timezone",
+			"billingTitle": "Accommodation payment",
+			"flatFee": "Flat fee: €{amount} for {months} months",
+			"flatFeeHint": "Create your accommodation now, then pay to activate it. It stays hidden from guests until payment is confirmed. No platform booking commission.",
+			"bookingFee": "Booking fee: no upfront listing payment",
+			"bookingFeeHint": "Your accommodation goes live when created. The platform takes {percent}% of each booking."
 		},
 		"AddAccommodationFormRules": {
 			"checkInStart": "Check-in from",
@@ -1970,13 +1994,15 @@
 		"AddAccommodationForm": {
 			"published": "Accommodation published",
 			"images": "Photos",
-			"publishError": "We could not publish your accommodation. Your entries are still on this page. Please try again."
+			"publishError": "We could not save your accommodation. Your entries are still on this page. Please try again.",
+			"savedAwaitingPayment": "Accommodation saved. Pay the listing fee to activate it."
 		},
 		"AddAccommodationContinueButton": {
 			"continue": "Continue"
 		},
 		"AddAccommodationSaveButton": {
-			"save": "Save accommodation"
+			"save": "Save accommodation",
+			"saveAwaitingPayment": "Create accommodation"
 		},
 		"AddAccommodationFormCancellationPolicy": {
 			"previous": "Previous"
@@ -2000,14 +2026,31 @@
 			"filteredLabel": "Accommodations - Filtered",
 			"description": "Manage the listings guests can book."
 		},
-		"MyAccommodationCard": {
-			"manage": "Manage",
-			"guests": "Guests",
-			"bedrooms": "Bedrooms",
-			"beds": "Beds",
-			"bathrooms": "Bathrooms",
+		"columns": {
+			"accommodation": "Accommodation",
+			"visibility": "Visibility",
+			"feePlan": "Fee plan",
+			"nightlyPrice": "Nightly price",
+			"paidUntil": "Paid until",
+			"actions": "Actions"
+		},
+		"loading": "Loading accommodations",
+		"MyAccommodationItem": {
+			"visible": "Visible",
+			"paused": "Paused",
+			"expired": "Expired",
+			"paymentRequired": "Payment required",
+			"flatFee": "Flat fee",
+			"bookingFee": "Booking fee",
+			"flatPrice": "{amount} every {months} months",
+			"bookingRate": "{percent}% per booking",
 			"perNight": "per night",
-			"updated": "Updated {date}"
+			"noPaidPeriod": "No paid flat-fee period",
+			"manage": "Manage",
+			"manageLabel": "Manage {name}",
+			"free": "Free",
+			"noFees": "No platform fees",
+			"forever": "Forever"
 		}
 	},
 	"MyAccommodationPage": {
@@ -2112,7 +2155,9 @@
 			"export": "Export your calendar",
 			"exportHint": "Share availability using an iCal link.",
 			"copyLink": "Copy iCal link",
-			"syncHint": "Calendar updates may take time. Check the last successful sync before confirming a booking on another platform."
+			"syncHint": "Calendar updates may take time. Check the last successful sync before confirming a booking on another platform.",
+			"loadError": "Accommodation fees could not be loaded. Reload the page to try again.",
+			"loading": "Loading accommodation fees"
 		},
 		"MyAccommodationTabSettingsDangerZone": {
 			"title": "Danger zone",
@@ -2186,6 +2231,40 @@
 			"preparationValue": "1 night between stays",
 			"bookingWindow": "Booking window",
 			"windowValue": "6 months ahead"
+		},
+		"MyAccommodationTabSettingsFees": {
+			"currentPlan": "Current plan",
+			"bookingFee": "Booking fee",
+			"flatFee": "Flat fee",
+			"flatPrice": "{amount} for {months} months",
+			"bookingRate": "{percent}% of each booking",
+			"paidUntil": "Paid until {date}",
+			"visible": "Your accommodation is visible in search.",
+			"paused": "Your accommodation is paused.",
+			"hidden": "Your accommodation is hidden until you pay or switch to booking fees.",
+			"locked": "You can switch to booking fees after {date}.",
+			"paidLocked": "You can switch to booking fees when your paid period ends.",
+			"free": "Free",
+			"noFees": "No flat fee or booking commission. This plan is managed by an administrator.",
+			"freeUntil": "Free until {date}. Afterwards, the booking-fee plan applies.",
+			"freeForever": "Free forever."
+		},
+		"MyAccommodationTabSettingsFeesHeader": {
+			"title": "Accommodation fees",
+			"description": "Choose how you pay to list this accommodation. Guest payment methods are managed in your listing."
+		},
+		"MyAccommodationTabSettingsFeesSwitchToFlatDialog": {
+			"switchToFlat": "Switch to flat fee",
+			"confirmationTitle": "Switch to flat fee?",
+			"confirmationHint": "Your accommodation will be hidden from search immediately until you pay {amount} for {months} months. You can switch back to booking fees at any time before payment.",
+			"cancel": "Keep booking fees",
+			"confirm": "Switch and hide accommodation",
+			"updatedHidden": "Flat fee selected. Your accommodation is hidden until payment."
+		},
+		"MyAccommodationTabSettingsFeesSwitchToBookingButton": {
+			"switchToBooking": "Switch to booking fees",
+			"updatedVisible": "Booking fee selected. Your accommodation is visible again.",
+			"updatedPaused": "Booking fee selected. Your accommodation remains paused."
 		}
 	},
 	"MyBookingsPage": {
@@ -2492,5 +2571,94 @@
 		"cashHint": "Pay the accommodation in cash.",
 		"onlineHint": "Arrange online card payment with the accommodation.",
 		"selectedHint": "This accommodation accepts this payment method. No payment is collected when you book."
+	},
+	"AdminAccommodationsPage": {
+		"pageTitle": "Accommodations | Admin",
+		"searchPlaceholder": "Search accommodation names",
+		"clearFilters": "Clear filters ({count})",
+		"empty": "No accommodations match your search or filters.",
+		"columns": {
+			"accommodation": "Accommodation",
+			"owner": "Owner",
+			"visibility": "Visibility",
+			"billing": "Billing status",
+			"feePlan": "Fee plan",
+			"periodEnds": "Period ends",
+			"actions": "Actions"
+		},
+		"filters": {
+			"publication": "Publication",
+			"allPublication": "All publication states",
+			"published": "Published",
+			"paused": "Paused",
+			"deleted": "Deleted",
+			"feePlan": "Fee plan",
+			"allPlans": "All fee plans",
+			"flatFee": "Flat fee",
+			"bookingFee": "Booking fee",
+			"free": "Free",
+			"billing": "Billing status",
+			"allBilling": "All billing statuses",
+			"active": "Active",
+			"paymentRequired": "Payment required"
+		},
+		"AdminAccommodationsHeader": {
+			"title": "Accommodations",
+			"description": "Review listing visibility, fee terms and billing periods."
+		},
+		"AdminAccommodationsItem": {
+			"id": "ID",
+			"owner": "Owner",
+			"deleted": "Deleted",
+			"paused": "Paused",
+			"visible": "Visible",
+			"hidden": "Hidden",
+			"expired": "Expired",
+			"active": "Active",
+			"paymentRequired": "Payment required",
+			"flatFee": "Flat fee",
+			"flatPrice": "{amount} every {months} months",
+			"bookingFee": "Booking fee",
+			"commission": "{percent}% per booking",
+			"free": "Free",
+			"noFees": "No platform fees",
+			"forever": "Forever"
+		},
+		"AdminAccommodationsFeeDialog": {
+			"trigger": "Edit fees"
+		},
+		"AdminAccommodationsFeeDialogHeader": {
+			"title": "Fees for {name}",
+			"hint": "Changes take effect immediately and override host switching restrictions."
+		},
+		"AdminAccommodationsFeeDialogSaveButton": {
+			"save": "Save fees",
+			"saved": "Accommodation fees updated.",
+			"invalid": "Check the fee values. Active flat fees and temporary free access require a future end date."
+		},
+		"AdminAccommodationsFeeDialogForm": {
+			"plan": "Fee plan",
+			"bookingFee": "Booking fee",
+			"flatFee": "Flat fee",
+			"free": "Free",
+			"commission": "Booking commission (%)",
+			"commissionHint": "The standard booking commission is 10%. Zero means no booking commission.",
+			"amount": "Flat fee (EUR)",
+			"months": "Period length (months)",
+			"status": "Billing status",
+			"pendingPayment": "Payment required",
+			"active": "Active",
+			"forever": "Free forever",
+			"freeHint": "No flat fee or booking commission. Temporary free access returns to the booking-fee plan when it expires.",
+			"deadline": "Period ends (your local time)",
+			"cancel": "Cancel"
+		},
+		"AdminAccommodationsRefundFeeDialog": {
+			"trigger": "Refund fee",
+			"title": "Refund the fee for {name}?",
+			"hint": "This removes the current paid period and hides the accommodation until the host pays again or switches to booking fees. Existing bookings are unchanged.",
+			"cancel": "Cancel",
+			"saved": "Paid period removed."
+		}
 	}
 }

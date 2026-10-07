@@ -29,9 +29,10 @@ export const updateAccommodationPublishStatus = authenticatedMutation({
 		if (existing.status === 'deleted')
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 
+		const now = Date.now();
 		if (existing.status === status) return null;
 
-		await ctx.db.patch('accommodations', id, { status, updatedAt: Date.now() });
+		await ctx.db.patch('accommodations', id, { status, updatedAt: now });
 
 		return null;
 	}
