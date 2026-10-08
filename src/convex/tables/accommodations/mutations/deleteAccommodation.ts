@@ -10,15 +10,18 @@ import {
 	internalMutation
 } from '../../../builders/convexFunctionBuilders.js';
 
+// AUTH
+import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
+
 // AGGREGATES
 import { accommodationOwnerAggregate } from '../aggregates/accommodationOwnerAggregate.js';
 import { reviewAggregate } from '../../reviews/aggregates/reviewAggregate.js';
 
-// AUTH
-import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
-
 // STORAGE
 import { deleteStoredFiles } from '../../../storage/r2.js';
+
+// HELPERS
+import { invalidateFeePayment } from '../../accommodationFeePayments/helpers/invalidateFeePayment.js';
 
 // TYPES
 import type { MutationCtx } from '../../../_generated/server.js';
@@ -87,18 +90,21 @@ export const deleteAccommodation = authenticatedMutation({
 	returns: v.null(),
 	handler: async (ctx, { id }) => {
 		const accommodation = await ctx.db.get('accommodations', id);
-		if (!accommodation || accommodation.ownerId !== getOwnerId(ctx.identity))
-			throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
+		const isOwnedAccommodation =
+			accommodation && accommodation.ownerId === getOwnerId(ctx.identity);
+		if (!isOwnedAccommodation) throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 
 		// Repeat deletes are a no-op instead of touching a tombstone again.
 		if (accommodation.status === 'deleted') return null;
 
-		if (await hasActiveBookings(ctx, id))
+		const hasUnresolvedBookings = await hasActiveBookings(ctx, id);
+		if (hasUnresolvedBookings)
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_HAS_ACTIVE_BOOKINGS' });
 
 		await reviewAggregate.clear(ctx, { namespace: id });
 		await accommodationOwnerAggregate.delete(ctx, accommodation);
 		await deleteStoredFiles(ctx, accommodation.imageKeys);
+		await invalidateFeePayment(ctx, id);
 		await ctx.db.patch('accommodations', id, {
 			status: 'deleted',
 			// Storage is already gone; keep the tombstone free of dangling keys.

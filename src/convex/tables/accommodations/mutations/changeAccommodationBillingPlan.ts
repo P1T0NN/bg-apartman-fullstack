@@ -14,6 +14,9 @@ import { ACCOMMODATION_BILLING_PLANS } from '../../../../shared/features/accommo
 import { accommodations } from '../schema.js';
 import { changeAccommodationBillingPlanSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
 
+// HELPERS
+import { invalidateFeePayment } from '../../accommodationFeePayments/helpers/invalidateFeePayment.js';
+
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
@@ -31,8 +34,8 @@ export const changeAccommodationBillingPlan = authenticatedMutation({
 
 		const existing = await ctx.db.get('accommodations', args.id);
 
-		if (!existing || existing.ownerId !== getOwnerId(ctx.identity))
-			throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
+		const isOwnedAccommodation = existing && existing.ownerId === getOwnerId(ctx.identity);
+		if (!isOwnedAccommodation) throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });
 
 		if (existing.status === 'deleted')
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
@@ -52,6 +55,7 @@ export const changeAccommodationBillingPlan = authenticatedMutation({
 		if (isPaidPeriodLocked)
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_BILLING_PLAN_LOCKED' });
 
+		await invalidateFeePayment(ctx, args.id);
 		const requiresPayment = args.billingPlanId === 'flat_fee';
 
 		await ctx.db.patch('accommodations', args.id, {

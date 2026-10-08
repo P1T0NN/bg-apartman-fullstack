@@ -1322,7 +1322,7 @@
 		"AccommodationFlatFeePaymentButton": {
 			"pay": "Pay now",
 			"renew": "Renew now",
-			"success": "Simulated payment completed. Your flat-fee period is now active."
+			"success": "Payment status checked. See your accommodation fee details."
 		}
 	},
 	"BookingsFeature": {
@@ -1953,8 +1953,10 @@
 		"bookingPriceChanged": "The nightly price has changed. Review the updated price before submitting again.",
 		"accommodationBillingPlanLocked": "Your paid flat-fee period is still running. You can switch plans when it ends.",
 		"accommodationBillingPlanChanged": "Your accommodation fee plan changed. Review the current plan and try again.",
-		"accommodationPaymentSimulationDisabled": "Payment simulation is disabled in this environment.",
-		"bookingBenefitsChanged": "The included benefits have changed. Review your booking summary before submitting again."
+		"accommodationPaymentSimulationDisabled": "Payment previews are disabled. Use the accommodation fee checkout.",
+		"bookingBenefitsChanged": "The included benefits have changed. Review your booking summary before submitting again.",
+		"feeCheckoutExpired": "This checkout has expired. Please start a new payment.",
+		"feeRefundUnavailable": "This payment is no longer eligible for the reviewed refund. Refresh and review it again."
 	},
 	"AddAccommodationPage": {
 		"title": "Add an accommodation",
@@ -2696,7 +2698,25 @@
 		"hint": "Choose how you would like to pay. No payment is collected when you book.",
 		"cashHint": "Pay the accommodation in cash.",
 		"onlineHint": "Arrange online card payment with the accommodation.",
-		"selectedHint": "This accommodation accepts this payment method. No payment is collected when you book."
+		"selectedHint": "This accommodation accepts this payment method. No payment is collected when you book.",
+		"FeePayments": {
+			"title": "Fee payment history",
+			"empty": "No fee payments recorded yet.",
+			"manualRenewal": "Each payment buys one fixed period. Renewal requires a new payment; there are no automatic charges.",
+			"creating": "Starting checkout",
+			"pending": "Awaiting payment",
+			"processing": "Payment processing",
+			"paid": "Paid",
+			"expired": "Checkout expired",
+			"failed": "Payment failed",
+			"refundPending": "Refund processing",
+			"refunded": "Refunded",
+			"refundFailed": "Refund needs attention",
+			"partiallyRefunded": "Partially refunded",
+			"refundAmount": "Refunded: {amount}",
+			"refresh": "Check status",
+			"checkoutCancelled": "Checkout was cancelled. You can resume payment using Pay now."
+		}
 	},
 	"AdminAccommodationsPage": {
 		"pageTitle": "Accommodations | Admin",
@@ -2782,9 +2802,28 @@
 		"AdminAccommodationsRefundFeeDialog": {
 			"trigger": "Refund fee",
 			"title": "Refund the fee for {name}?",
-			"hint": "This removes the current paid period and hides the accommodation until the host pays again or switches to booking fees. Existing bookings are unchanged.",
+			"hint": "Refund the remaining amount of this recorded payment. Its paid period is removed only after a successful full refund. Later fee changes and existing bookings are preserved.",
 			"cancel": "Cancel",
-			"saved": "Paid period removed."
+			"saved": "Refund request submitted. Payment history shows the confirmed result."
 		}
+	},
+	"AccommodationPaymentResult": {
+		"pageTitle": "Accommodation payment",
+		"successTitle": "Your payment is confirmed",
+		"successDescription": "Thank you. Your accommodation listing fee has been paid, and your paid period is now active. You can manage your listing and bookings from My accommodations.",
+		"pendingTitle": "We are confirming your payment",
+		"pendingDescription": "Your payment is still being checked. This page will update when confirmation arrives. You can safely leave this page and return to your accommodations. Please do not pay again.",
+		"otherDescription": "Here is the latest status of your listing fee payment. Check your accommodations to review your current listing and billing settings.",
+		"unavailable": "We could not find this payment for your account. Open My accommodations to check your payment history.",
+		"loading": "Loading payment details",
+		"details": "Payment details",
+		"amount": "Listing fee",
+		"status": "Payment status",
+		"paidOn": "Paid on (UTC)",
+		"paidThrough": "Paid through (UTC)",
+		"manualRenewal": "This was a one-time payment. Your listing visibility follows your publication setting. Renewal is manual; you will not be charged automatically.",
+		"verificationFailed": "We could not verify the latest payment status right now. Please check again shortly. Do not submit another payment.",
+		"accommodations": "Check my accommodations",
+		"refresh": "Check payment status"
 	}
 }

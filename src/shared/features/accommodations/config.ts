@@ -29,7 +29,7 @@ export const ACCOMMODATION_CONFIG = {
 } as const;
 
 /** Enable payment and refund previews until real payment handling is implemented. */
-export const ACCOMMODATION_PAYMENT_SIMULATION: boolean = true;
+export const ACCOMMODATION_PAYMENT_SIMULATION: boolean = false;
 
 // Terms are copied into each accommodation when the host chooses a billing plan.
 export const ACCOMMODATION_BILLING_PLANS = {

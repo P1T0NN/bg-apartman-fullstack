@@ -1,3 +1,4 @@
+// LIBRARIES
 import { z } from 'zod';
 
 export const paymentMethodSchema = z.enum(['cash', 'online']);

@@ -1,10 +1,8 @@
 // LIBRARIES
 import { ConvexError } from 'convex/values';
-
-// COMPONENTS
 import { m } from '../lib/paraglide/messages.js';
 
-// TYPES
+// HELPERS
 import { backendErrorDataSchema } from '../shared/types/types.js';
 
 export function getBackendErrorMessage(error: Error): string | undefined {
@@ -13,6 +11,10 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 	if (!parsed.success) return;
 
 	switch (parsed.data.code) {
+		case 'FEE_CHECKOUT_EXPIRED':
+			return m['BackendMessages.feeCheckoutExpired']();
+		case 'FEE_REFUND_UNAVAILABLE':
+			return m['BackendMessages.feeRefundUnavailable']();
 		case 'SAME_DAY_RESERVATION_DISABLED':
 			return m['BackendMessages.sameDayReservationDisabled']();
 		case 'BOOKING_START_PASSED':

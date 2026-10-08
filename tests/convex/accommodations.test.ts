@@ -29,9 +29,6 @@ import {
 	ACCOMMODATION_BILLING_PLANS
 } from '../../src/shared/features/accommodations/config.js';
 
-// DATA
-import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData.js';
-
 // SCHEMAS
 import schema, { tables } from '../../src/convex/schema.js';
 import { accommodations } from '../../src/convex/tables/accommodations/schema.js';
@@ -49,7 +46,8 @@ import {
 } from '../../src/shared/features/accommodations/schemas/accommodationSchemas.js';
 import { cancellationPolicySchema } from '../../src/shared/features/accommodations/schemas/cancellationPolicySchemas.js';
 
-// FIXTURES
+// HELPERS
+import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData.js';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
@@ -548,7 +546,8 @@ test('simulated flat-fee payment grants calendar months, preserves pauses, locks
 		await expect(owner.mutation(pay, { id })).rejects.toMatchObject({
 			data: { code: 'ACCOMMODATION_PAYMENT_SIMULATION_DISABLED' }
 		});
-		vi.restoreAllMocks();
+		// Legacy preview behavior is tested explicitly; production previews stay disabled.
+		vi.spyOn(accommodationConfig, 'ACCOMMODATION_PAYMENT_SIMULATION', 'get').mockReturnValue(true);
 		await expect(t.mutation(pay, { id })).rejects.toMatchObject({
 			data: { code: 'UNAUTHENTICATED' }
 		});
@@ -769,19 +768,20 @@ test('billing backfill fills legacy listings across pages and preserves existing
 	const required = convexTest(schema, modules);
 	await required.run(async (ctx) => {
 		for (const row of after) {
-			if (
+			const billingTerms = row?.billingTerms;
+			const billingStatus = row?.billingStatus;
+			const hasInvalidBackfilledBilling =
 				!row ||
-				row.billingTerms === undefined ||
-				row.billingStatus === undefined ||
-				row.billingPlanId !== row.billingTerms.model
-			)
-				throw new Error('Backfilled billing fields are missing');
+				billingTerms === undefined ||
+				billingStatus === undefined ||
+				row.billingPlanId !== billingTerms.model;
+			if (hasInvalidBackfilledBilling) throw new Error('Backfilled billing fields are missing');
 			const { _id, _creationTime, ...data } = row;
 			await ctx.db.insert('accommodations', {
 				...data,
-				billingPlanId: row.billingTerms.model,
-				billingTerms: row.billingTerms,
-				billingStatus: row.billingStatus
+				billingPlanId: billingTerms.model,
+				billingTerms,
+				billingStatus
 			});
 		}
 	});
@@ -2142,7 +2142,8 @@ test('save schema preserves every step validation and returns normalized values'
 		const saved = saveAccommodationSchema.safeParse(input);
 		expect(section.success).toBe(false);
 		expect(saved.success).toBe(false);
-		if (!section.success && !saved.success) {
+		const hasBothValidationErrors = !section.success && !saved.success;
+		if (hasBothValidationErrors) {
 			expect(saved.error.issues).toEqual(expect.arrayContaining(section.error.issues));
 		}
 	}
@@ -2752,7 +2753,8 @@ test('flat-fee refund simulation is admin-only, checks the reviewed period and p
 		await expect(admin.mutation(refund, args)).rejects.toMatchObject({
 			data: { code: 'ACCOMMODATION_PAYMENT_SIMULATION_DISABLED' }
 		});
-		vi.restoreAllMocks();
+		// Legacy preview behavior is tested explicitly; production previews stay disabled.
+		vi.spyOn(accommodationConfig, 'ACCOMMODATION_PAYMENT_SIMULATION', 'get').mockReturnValue(true);
 		await expect(t.mutation(refund, args)).rejects.toMatchObject({
 			data: { code: 'UNAUTHENTICATED' }
 		});

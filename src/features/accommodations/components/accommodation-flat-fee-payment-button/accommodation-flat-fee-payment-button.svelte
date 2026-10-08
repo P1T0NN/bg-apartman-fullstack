@@ -1,8 +1,6 @@
 <script lang="ts">
 	// LIBRARIES
-	import { useMutation } from 'convex-svelte';
-
-	// MESSAGES
+	import { useAction } from 'convex-svelte';
 	import { m } from '@/lib/paraglide/messages.js';
 
 	// CONVEX
@@ -27,15 +25,19 @@
 		isExpired: boolean;
 		pending: boolean;
 	} = $props();
-	const pay = useMutation(
-		api.tables.accommodations.mutations.payFlatFeeAccommodation.payFlatFeeAccommodation
+	const pay = useAction(
+		api.tables.accommodationFeePayments.actions.createFeeCheckout.createFeeCheckout
 	);
 
 	async function payFlatFee() {
 		if (pending) return;
 		pending = true;
 		try {
-			await pay({ id: accommodationId });
+			const result = await pay({ accommodationId });
+			if (result.url) {
+				window.location.assign(result.url);
+				return;
+			}
 			toastMessage({
 				type: 'success',
 				message: m['AccommodationsFeature.AccommodationFlatFeePaymentButton.success']()
@@ -49,7 +51,9 @@
 </script>
 
 <Button type="button" disabled={pending} onclick={() => void payFlatFee()}>
-	{#if pending}<Spinner data-icon="inline-start" />{/if}
+	{#if pending}
+		<Spinner data-icon="inline-start" />
+	{/if}
 	{isExpired
 		? m['AccommodationsFeature.AccommodationFlatFeePaymentButton.renew']()
 		: m['AccommodationsFeature.AccommodationFlatFeePaymentButton.pay']()}

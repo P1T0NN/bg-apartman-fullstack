@@ -1,7 +1,7 @@
 // LIBRARIES
-import { literals } from 'convex-helpers/validators';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import { literals } from 'convex-helpers/validators';
 
 // SCHEMAS
 import { accommodations } from './tables/accommodations/schema.js';
@@ -13,6 +13,8 @@ import { favorites } from './tables/favorites/schema.js';
 import { feedbacks } from './tables/feedbacks/schema.js';
 import { reviews } from './tables/reviews/schema.js';
 import { loyaltyMemberships } from './tables/loyaltyMemberships/schema.js';
+import { accommodationFeePayments } from './tables/accommodationFeePayments/schema.js';
+import { stripeWebhookEvents } from './tables/stripeWebhookEvents/schema.js';
 
 export const tables = {
 	accommodations,
@@ -24,6 +26,8 @@ export const tables = {
 	feedbacks,
 	reviews,
 	loyaltyMemberships,
+	accommodationFeePayments,
+	stripeWebhookEvents,
 	newsletters: defineTable({
 		/** Normalized (trimmed, lowercased) subscriber email. */
 		email: v.string(),

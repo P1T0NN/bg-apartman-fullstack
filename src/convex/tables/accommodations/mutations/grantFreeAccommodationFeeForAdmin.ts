@@ -1,7 +1,14 @@
 // LIBRARIES
 import { ConvexError, v } from 'convex/values';
-import { adminMutation } from '../../../builders/convexFunctionBuilders.js';
+
+// CONVEX
 import { internal } from '../../../_generated/api.js';
+
+// BUILDERS
+import { adminMutation } from '../../../builders/convexFunctionBuilders.js';
+
+// HELPERS
+import { invalidateFeePayment } from '../../accommodationFeePayments/helpers/invalidateFeePayment.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -24,9 +31,11 @@ export const grantFreeAccommodationFeeForAdmin = adminMutation({
 
 		const accommodation = await ctx.db.get('accommodations', id);
 
-		if (!accommodation || accommodation.status === 'deleted')
+		const isAvailableAccommodation = accommodation && accommodation.status !== 'deleted';
+		if (!isAvailableAccommodation)
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 
+		await invalidateFeePayment(ctx, id);
 		await ctx.db.patch('accommodations', id, {
 			billingPlanId: 'free',
 			billingTerms: { model: 'free' },
@@ -36,7 +45,10 @@ export const grantFreeAccommodationFeeForAdmin = adminMutation({
 		});
 
 		if (billingPeriodEndsAt !== null)
-			await ctx.scheduler.runAt(billingPeriodEndsAt,internal.tables.accommodations.mutations.expireFreeAccommodationFee.expireFreeAccommodationFee,
+			await ctx.scheduler.runAt(
+				billingPeriodEndsAt,
+				internal.tables.accommodations.mutations.expireFreeAccommodationFee
+					.expireFreeAccommodationFee,
 				{ id, billingPeriodEndsAt }
 			);
 

@@ -1,9 +1,13 @@
+// UTILS
 import { calculateDiscountedPrice } from '../../accommodations/utils/calculateAccommodationPricing.js';
 import {
 	calculateStayPricing,
 	type NightlyPricing
 } from '../../bookings/utils/calculateStayPricing.js';
+// DATA
 import { LOYALTY_LEVELS } from '../data/loyaltyData.js';
+
+// TYPES
 import type {
 	LoyaltyBookingBenefits,
 	LoyaltyDiscountMode,
@@ -24,6 +28,7 @@ export function calculateLoyaltyQuote(
 	const eligible = reward !== undefined && services !== null && discountMode !== null;
 	const loyaltyBps = reward ? reward.discount * 100 : 0;
 	const loyaltyWins = eligible && loyaltyBps > pricing.discountBps;
+
 	const finalPricing: NightlyPricing = eligible
 		? {
 				...pricing,
@@ -32,24 +37,30 @@ export function calculateLoyaltyQuote(
 				loyaltyDiscountBps: discountMode === 'stack' ? loyaltyBps : 0
 			}
 		: pricing;
+
 	const stayPricing = calculateStayPricing(finalPricing, checkInDate, checkOutDate);
+
 	const effectivePricePerNightMinor = calculateDiscountedPrice(
 		calculateDiscountedPrice(finalPricing.pricePerNightMinor, finalPricing.discountBps),
 		finalPricing.loyaltyDiscountBps ?? 0
 	);
+
 	let benefits: LoyaltyBookingBenefits | null = null;
+
 	if (eligible) {
 		const original = calculateStayPricing(
 			{ ...pricing, discountBps: 0, loyaltyDiscountBps: 0 },
 			checkInDate,
 			checkOutDate
 		);
+
 		const property = calculateStayPricing(pricing, checkInDate, checkOutDate);
 		const usesPropertyDiscount = discountMode === 'stack' || !loyaltyWins;
 		const propertySavingsMinor = usesPropertyDiscount
 			? original.totalMinor - property.totalMinor
 			: 0;
 		const breakfast = services.breakfast ? reward.breakfast : 'none';
+
 		benefits = {
 			level: reward.level,
 			discountMode,
@@ -64,5 +75,6 @@ export function calculateLoyaltyQuote(
 			spa: services.spa && reward.spa
 		};
 	}
+	
 	return { pricing: { ...finalPricing, effectivePricePerNightMinor }, stayPricing, benefits };
 }

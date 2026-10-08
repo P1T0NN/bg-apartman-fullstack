@@ -197,10 +197,11 @@ status and dates remain visible; guest details use a native disclosure.
   alone grants `free` terms; required nullable `billingPeriodEndsAt` sets the
   deadline or permanent access. Matching-period internal expiry restores catalog
   booking fees and preserves publish/pause status. Free plans are excluded from
-  host creation and host plan selection. No new optional billing fields are needed. Admin-only `refundFlatFeeForAccommodation`
-  simulates revoking an active flat-fee period behind the payment simulation flag;
-  it checks the reviewed period and update timestamp and preserves publication
-  and bookings. Its destructive confirmation lives in the admin refund-fee dialog.
+  host creation and host plan selection. No new optional billing fields are needed. Admin refunds target recorded
+  payments through `accommodationFeePayments/actions/refundAccommodationFee`.
+  The dialog freezes the payment ID and refundable amount; server checks admin
+  identity and remaining balance. Only verified full refunds revoke the matching
+  still-current paid period. The legacy payment/refund simulation flag is false.
 
 - `/admin/reviews` provides indexed cursor moderation with required reasons,
   reversible hide/restore, and `completeBookingAdmin` for support-confirmed
@@ -517,6 +518,52 @@ Current app-facing functions are:
   suggestions, minimum two characters, maximum seven results).
 
 ## Domain rules
+
+- Stripe SDK initialization and reusable provider operations live under
+  `src/convex/stripe/helpers`; pure provider utilities belong under `utils` when
+  needed, and registered provider actions under `actions`. `getStripe` resolves
+  deployment secrets on use, never at import time. The internal Node action
+  `verifyStripeTestSetup` performs only test-mode account/balance reads and returns
+  limited readiness fields; it does not prove live eligibility or bank settlement.
+  Listing fees use approved one-time fixed periods with manual renewal; no
+  subscription or automatic renewal is included. Accommodation/booking table
+  features retain ownership of their domain transitions. See
+  `AccommodationBillingSystemDesign.md` and `TODO.md` for outstanding decisions.
+  Stripe Zod boundary schemas live in
+  `src/shared/features/stripe/schemas/stripeSchemas.ts`; shared Stripe types live in
+  `src/shared/features/stripe/types/stripeTypes.ts`. Helpers import these contracts
+  instead of declaring local schemas or provider-specific type aliases.
+  `src/shared/features/stripe/config.ts` owns `STRIPE_CONFIG`: Checkout timing,
+  provider limits, webhook path/events, metadata purpose and key-mode patterns.
+  Keep secrets in deployment environment variables.
+
+- `accommodationFeePayments` owns authenticated Checkout actions, paginated owner/
+  admin history and internal payment/refund transitions; `stripeWebhookEvents`
+  deduplicates provider events. Frozen server-owned EUR amounts and intervals
+  determine one-time Checkout prices. SDK helpers/actions under `src/convex/stripe`
+  verify signatures, retrieve authoritative provider state and use idempotency
+  keys. `POST /stripe-webhook` handles Checkout/refund events; activation does not
+  depend on a browser redirect. Plan changes/overrides/deletion invalidate pending
+  attempts; late money is refunded without overriding publication or newer access.
+  Full refunds revoke only their own period. `src/features/payments` owns host fee
+  history; `src/shared/features/payments/utils/calculatePaidPeriodEnd.ts` clamps UTC
+  calendar months. Guest booking checkout and automatic renewal are excluded.
+  Summary return validators live in
+  `accommodationFeePayments/validators/accommodationFeePaymentsValidators.ts`.
+  `getFeePayment` and `getFeePaymentByIntent` each own an individual query file.
+  Attached sessions must be provider-confirmed closed before replacement; paid or
+  processing sessions and verification failures block a second checkout. Creation
+  and request budgets use the existing rate limiter with shared Stripe config.
+  `maintainFeePaymentsCron` retries indexed due receipts and deletes only confirmed
+  closed unpaid attempts after retention. Paid/processing/unresolved receipts are
+  retained. Event receipts have a separate bounded retention cleanup. Existing
+  attempts are enrolled by `backfillFeePaymentMaintenance`.
+  Hosted Checkout success returns to `/host/accommodation-payment-successful`.
+  The route owns confirmation logic and content; header and loading components
+  live under the matching protected host component directory.
+  `fetchFeePaymentConfirmation` checks receipt and accommodation ownership and
+  exposes a safe summary. The page refreshes Stripe state once and displays live
+  status; only the currently applied paid period earns a success message.
 
 - Host listing billing is separate from guest payment methods. The offer catalog
   lives in shared accommodations `config.ts`, and plan validation lives in

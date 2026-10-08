@@ -2,8 +2,21 @@
 import { internal } from './_generated/api';
 import { STORAGE_CONFIG } from '../shared/features/storage/config.js';
 import { BOOKINGS_CONFIG } from '../shared/features/bookings/config.js';
+import { STRIPE_CONFIG } from '../shared/features/stripe/config.js';
 
 const crons = cronJobs();
+
+crons.interval(
+	'reconcile and clean up listing fee payments',
+	{ minutes: STRIPE_CONFIG.maintenanceIntervalMinutes },
+	internal.tables.accommodationFeePayments.crons.maintainFeePaymentsCron.maintainFeePaymentsCron
+);
+crons.interval(
+	'clean up Stripe event receipts',
+	{ minutes: STRIPE_CONFIG.maintenanceIntervalMinutes },
+	internal.tables.stripeWebhookEvents.crons.cleanupStripeWebhookEventsCron
+		.cleanupStripeWebhookEventsCron
+);
 
 crons.interval(
 	'expire unanswered booking requests',

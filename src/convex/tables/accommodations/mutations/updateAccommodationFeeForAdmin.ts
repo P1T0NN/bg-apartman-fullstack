@@ -1,15 +1,18 @@
 // LIBRARIES
 import { ConvexError, v } from 'convex/values';
 
-// BUILDERS
-import { adminMutation } from '../../../builders/convexFunctionBuilders.js';
-
 // CONVEX
 import { internal } from '../../../_generated/api.js';
+
+// BUILDERS
+import { adminMutation } from '../../../builders/convexFunctionBuilders.js';
 
 // SCHEMAS
 import { accommodations } from '../schema.js';
 import { updateAccommodationFeeForAdminSchema } from '../../../../shared/features/accommodations/schemas/updateAccommodationFeeForAdminSchema.js';
+
+// HELPERS
+import { invalidateFeePayment } from '../../accommodationFeePayments/helpers/invalidateFeePayment.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -36,11 +39,14 @@ export const updateAccommodationFeeForAdmin = adminMutation({
 		const hasInvalidBookingFee =
 			billingTerms.model === 'booking_fee' &&
 			(billingStatus !== 'active' || billingPeriodEndsAt !== null);
-		if (hasInvalidPeriod || hasInvalidBookingFee)
+		const hasInvalidBillingTerms = hasInvalidPeriod || hasInvalidBookingFee;
+		if (hasInvalidBillingTerms)
 			throw new ConvexError<BackendErrorData>({ code: 'INVALID_ACCOMMODATION' });
 		const accommodation = await ctx.db.get('accommodations', args.id);
-		if (!accommodation || accommodation.status === 'deleted')
+		const isAvailableAccommodation = accommodation && accommodation.status !== 'deleted';
+		if (!isAvailableAccommodation)
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
+		await invalidateFeePayment(ctx, args.id);
 		await ctx.db.patch('accommodations', args.id, {
 			billingPlanId: billingTerms.model,
 			billingTerms,
@@ -48,11 +54,11 @@ export const updateAccommodationFeeForAdmin = adminMutation({
 			billingPeriodEndsAt,
 			updatedAt: now
 		});
-		if (
+		const shouldSchedulePaidPeriodExpiry =
 			billingTerms.model === 'flat_fee' &&
 			billingStatus === 'active' &&
-			billingPeriodEndsAt !== null
-		)
+			billingPeriodEndsAt !== null;
+		if (shouldSchedulePaidPeriodExpiry)
 			await ctx.scheduler.runAt(
 				billingPeriodEndsAt,
 				internal.tables.accommodations.mutations.expireFlatFeeAccommodation
