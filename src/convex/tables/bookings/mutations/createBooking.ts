@@ -18,6 +18,8 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { sendBookingRequestEmail } from '../emails/sendBookingRequestEmail.js';
 import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationEmail.js';
 import { checkBookingAvailability } from '../helpers/checkBookingAvailability.js';
+import { getBookingBenefitsContext } from '../../loyaltyMemberships/helpers/getBookingBenefitsContext.js';
+import { loyaltyBookingBenefitsValidator } from '../../loyaltyMemberships/validators/loyaltyBenefitsValidators.js';
 
 // SCHEMAS
 import { createBookingSchema } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
@@ -29,7 +31,8 @@ import { COMPANY_DATA } from '../../../../shared/config.js';
 import { BOOKINGS_CONFIG } from '../../../../shared/features/bookings/config.js';
 
 // UTILS
-import { calculateStayPricing } from '../../../../shared/features/bookings/utils/calculateStayPricing.js';
+import { calculateLoyaltyQuote } from '../../../../shared/features/loyalty/utils/calculateLoyaltyQuote.js';
+import { areLoyaltyBenefitsEqual } from '../../../../shared/features/loyalty/utils/areLoyaltyBenefitsEqual.js';
 import { calculateBookingPlatformFee } from '../../../../shared/features/bookings/utils/calculateBookingPlatformFee.js';
 import { getIsoDateInTimeZone } from '../../../../shared/features/timezone/utils/getIsoDateInTimeZone.js';
 import { getZonedTimestamp } from '../../../../shared/features/timezone/utils/getZonedTimestamp.js';
@@ -52,6 +55,7 @@ export const createBooking = mutation({
 		expectedBookingMode: v.optional(v.union(v.literal('request'), v.literal('instant'))),
 		expectedPricePerNightMinor: v.number(),
 		expectedTotalMinor: v.number(),
+		expectedLoyaltyBenefits: v.optional(v.union(loyaltyBookingBenefitsValidator, v.null())),
 		checkInDate: v.string(),
 		checkOutDate: v.string(),
 		adults: v.number(),
@@ -69,10 +73,6 @@ export const createBooking = mutation({
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
 
-		const effectivePrice = accommodation.effectivePricePerNightMinor;
-		if (args.expectedPricePerNightMinor !== effectivePrice) {
-			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_PRICE_CHANGED' });
-		}
 		const supported = accommodation.supportedPaymentMethods;
 		const paymentMethod = args.paymentMethod;
 		const paymentUnsupported = supported !== 'both' && paymentMethod !== supported;
@@ -116,11 +116,26 @@ export const createBooking = mutation({
 			});
 		}
 
-		const stayPricing = calculateStayPricing(
+		const identity = await ctx.auth.getUserIdentity();
+		const ownerId = identity ? getOwnerId(identity) : undefined;
+		const loyalty = await getBookingBenefitsContext(ctx, accommodation, ownerId);
+		const quote = calculateLoyaltyQuote(
 			accommodation,
 			parsed.data.checkInDate,
-			parsed.data.checkOutDate
+			parsed.data.checkOutDate,
+			paymentMethod === 'cash' ? loyalty.level : 0,
+			loyalty.services,
+			parsed.data.adults + parsed.data.children,
+			loyalty.discountMode
 		);
+		const effectivePrice = quote.pricing.effectivePricePerNightMinor;
+		const stayPricing = quote.stayPricing;
+		if (args.expectedPricePerNightMinor !== effectivePrice) {
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_PRICE_CHANGED' });
+		}
+		if (!areLoyaltyBenefitsEqual(args.expectedLoyaltyBenefits, quote.benefits)) {
+			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_BENEFITS_CHANGED' });
+		}
 		if (args.expectedTotalMinor !== stayPricing.totalMinor)
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_PRICE_CHANGED' });
 		const { checkInStart, checkOut } = accommodation;
@@ -143,10 +158,6 @@ export const createBooking = mutation({
 		}
 		if (checkOutAt <= checkInAt)
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_TERMS_UNAVAILABLE' });
-
-		// Signed-in guests own their booking immediately; anonymous requests stay claimable later.
-		const identity = await ctx.auth.getUserIdentity();
-		const ownerId = identity ? getOwnerId(identity) : undefined;
 
 		const {
 			expectedBookingMode: _expectedBookingMode,
@@ -182,7 +193,8 @@ export const createBooking = mutation({
 				checkOutAt,
 				pricePerNightMinor: effectivePrice,
 				basePricePerNightMinor: accommodation.pricePerNightMinor,
-				discountBps: accommodation.discountBps,
+				discountBps: quote.pricing.discountBps,
+				loyaltyBenefits: quote.benefits ?? undefined,
 				stayPricing,
 				stayType: 'overnight' as const,
 				pricePerDayUseMinor: null,

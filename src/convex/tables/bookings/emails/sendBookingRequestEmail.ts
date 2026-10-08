@@ -1,5 +1,6 @@
 // EMAILS
 import { sendEmail } from '../../../emails/sendEmail.js';
+import { formatLoyaltyBookingBenefits } from '../../loyaltyMemberships/emails/formatLoyaltyBookingBenefits.js';
 import { sendBookingRequestEmailTranslation } from '../../../emails/translations/sendBookingRequestEmailTranslation.js';
 
 // DATA
@@ -25,6 +26,7 @@ export async function sendBookingRequestEmail(
 	const { COLORS, TYPOGRAPHY } = EMAIL_DATA;
 
 	const terms = data.booking.cancellationTerms;
+	const benefits = formatLoyaltyBookingBenefits(terms);
 
 	const path =
 		data.recipient === 'host' ? '/host/bookings' : `/book-confirmation/${data.bookingId}`;
@@ -51,10 +53,11 @@ export async function sendBookingRequestEmail(
 		subject: subject[data.recipient],
 		previewText: emailHeading,
 		idempotencyKey: `booking-request/${data.bookingId}/${data.recipient}`,
-		text: `${emailHeading}\n\n${body.text(bodyData)}`,
+		text: [emailHeading, body.text(bodyData), ...benefits].join('\n\n'),
 		content: `
 			<h1 style="margin:0 0 16px;font-family:${TYPOGRAPHY.FONT_FAMILY};font-size:28px;line-height:36px;color:${COLORS.FOREGROUND};">${escapeHtml(emailHeading)}</h1>
 			${body.html(bodyData)}
+			${benefits.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
 		`
 	});
 }

@@ -5,8 +5,16 @@ import { calculateDiscountedPrice } from '../../accommodations/utils/calculateAc
 export type NightlyPricing = {
 	pricePerNightMinor: number;
 	discountBps: number;
+	loyaltyDiscountBps?: number;
 	weekendPricePerNightMinor?: number | null;
 };
+
+function discountedNightlyPrice(price: number, pricing: NightlyPricing): number {
+	return calculateDiscountedPrice(
+		calculateDiscountedPrice(price, pricing.discountBps),
+		pricing.loyaltyDiscountBps ?? 0
+	);
+}
 
 /** ISO dates are property-local calendar labels. UTC arithmetic avoids browser timezone and DST shifts. */
 export function getNightlyPricing(pricing: NightlyPricing, date: string) {
@@ -18,7 +26,7 @@ export function getNightlyPricing(pricing: NightlyPricing, date: string) {
 	return {
 		pricePerNightMinor,
 		discountBps: pricing.discountBps,
-		effectivePricePerNightMinor: calculateDiscountedPrice(pricePerNightMinor, pricing.discountBps)
+		effectivePricePerNightMinor: discountedNightlyPrice(pricePerNightMinor, pricing)
 	};
 }
 
@@ -47,14 +55,14 @@ export function calculateStayPricing(
 	const weekendPricePerNightMinor =
 		weekendBasePricePerNightMinor === null
 			? null
-			: calculateDiscountedPrice(weekendBasePricePerNightMinor, pricing.discountBps);
+			: discountedNightlyPrice(weekendBasePricePerNightMinor, pricing);
 	return {
 		regularNights,
 		weekendNights,
 		weekendBasePricePerNightMinor,
 		weekendPricePerNightMinor,
 		totalMinor:
-			regularNights * calculateDiscountedPrice(pricing.pricePerNightMinor, pricing.discountBps) +
+			regularNights * discountedNightlyPrice(pricing.pricePerNightMinor, pricing) +
 			weekendNights * (weekendPricePerNightMinor ?? 0)
 	};
 }

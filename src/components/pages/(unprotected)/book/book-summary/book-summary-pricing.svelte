@@ -4,27 +4,30 @@
 	import Price from '@/components/ui/custom-components/price/price.svelte';
 	import { Separator } from '@/components/ui/separator/index.js';
 	import { Badge } from '@/components/ui/badge/index.js';
+	import LoyaltyBookingBenefits from '@/features/loyalty/components/loyalty-booking-benefits/loyalty-booking-benefits.svelte';
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 	import { formatDate } from '@/shared/utils/date.js';
-	import { calculateStayPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { calculateLoyaltyQuote } from '@/shared/features/loyalty/utils/calculateLoyaltyQuote.js';
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	let {
 		accommodation,
+		quote,
 		checkInDate,
 		checkOutDate,
 		guests
 	}: {
 		accommodation: PublicAccommodation;
+		quote: ReturnType<typeof calculateLoyaltyQuote>;
 		checkInDate: string;
 		checkOutDate: string;
 		guests: number;
 	} = $props();
 
-	const stayPricing = $derived(calculateStayPricing(accommodation, checkInDate, checkOutDate));
+	const stayPricing = $derived(quote.stayPricing);
 	const nights = $derived(stayPricing.regularNights + stayPricing.weekendNights);
 	const hasDiscount = $derived(
 		accommodation.effectivePricePerNightMinor < accommodation.pricePerNightMinor
@@ -48,7 +51,12 @@
 		</div>
 		<Separator />
 		<div>
-			<BookingPriceBreakdown pricing={accommodation} {stayPricing} showTotal={false} />
+			<BookingPriceBreakdown
+				pricing={quote.pricing}
+				{stayPricing}
+				loyaltyBenefits={quote.benefits ?? undefined}
+				showTotal={false}
+			/>
 		</div>
 		<Separator />
 		<div
@@ -68,8 +76,8 @@
 				<span class="text-sm font-normal text-muted-foreground">
 					{m['AccommodationsFeature.Pricing.from']()}
 				</span>
-				<Price value={accommodation.effectivePricePerNightMinor} />
-				{#if hasDiscount}
+				<Price value={quote.pricing.effectivePricePerNightMinor} />
+				{#if hasDiscount && !quote.benefits}
 					<Badge variant="secondary" class="bg-success/10 text-success">
 						{m['AccommodationsFeature.Pricing.discountLabel']({
 							percent: new Intl.NumberFormat(getLocale()).format(accommodation.discountBps / 100)
@@ -78,6 +86,16 @@
 				{/if}
 			</p>
 		</div>
+		{#if quote.benefits}
+			{#if quote.benefits.loyaltyDiscountBps > 0}
+				<p class="text-sm text-muted-foreground">
+					{m['LoyaltyFeature.BookingBenefits.loyaltyDiscount']({
+						percent: quote.benefits.loyaltyDiscountBps / 100
+					})}
+				</p>
+			{/if}
+			<LoyaltyBookingBenefits benefits={quote.benefits} />
+		{/if}
 		<p class="text-sm leading-6 text-muted-foreground">
 			{m['BookingPage.BookSummary.chooseDates']()}
 		</p>

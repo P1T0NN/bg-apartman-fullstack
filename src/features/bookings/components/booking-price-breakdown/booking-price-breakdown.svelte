@@ -5,6 +5,8 @@
 	// COMPONENTS
 	import Price from '@/components/ui/custom-components/price/price.svelte';
 	import { Badge } from '@/components/ui/badge/index.js';
+	import LoyaltyBookingBenefits from '@/features/loyalty/components/loyalty-booking-benefits/loyalty-booking-benefits.svelte';
+	import type { LoyaltyBookingBenefits as LoyaltyBenefits } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	// UTILS
 	import { formatCurrency } from '@/shared/utils/currency.js';
 	// TYPES
@@ -15,19 +17,25 @@
 	let {
 		pricing,
 		stayPricing,
+		loyaltyBenefits,
 		showTotal = true
 	}: {
 		pricing: NightlyPricing & { effectivePricePerNightMinor: number };
 		stayPricing: ReturnType<typeof calculateStayPricing>;
+		loyaltyBenefits?: LoyaltyBenefits;
 		showTotal?: boolean;
 	} = $props();
 
-	const regularTotalMinor = $derived(
-		stayPricing.regularNights * pricing.effectivePricePerNightMinor
+	const regularRate = $derived(
+		loyaltyBenefits ? pricing.pricePerNightMinor : pricing.effectivePricePerNightMinor
 	);
-	const weekendTotalMinor = $derived(
-		stayPricing.weekendNights * (stayPricing.weekendPricePerNightMinor ?? 0)
+	const weekendRate = $derived(
+		loyaltyBenefits
+			? stayPricing.weekendBasePricePerNightMinor
+			: stayPricing.weekendPricePerNightMinor
 	);
+	const regularTotalMinor = $derived(stayPricing.regularNights * regularRate);
+	const weekendTotalMinor = $derived(stayPricing.weekendNights * (weekendRate ?? 0));
 	// Compare original and accepted nightly totals, preserving per-night rounding and frozen receipts.
 	const savingsMinor = $derived(
 		stayPricing.regularNights * pricing.pricePerNightMinor +
@@ -46,7 +54,7 @@
 				{m['AccommodationsFeature.Pricing.regularNights']()}
 			</dt>
 			<dd class="col-start-1 row-start-2 text-xs text-muted-foreground tabular-nums">
-				{stayPricing.regularNights} × <Price value={pricing.effectivePricePerNightMinor} />
+				{stayPricing.regularNights} × <Price value={regularRate} />
 			</dd>
 			<dd class="col-start-2 row-span-2 row-start-1 text-right font-medium tabular-nums">
 				<Price value={regularTotalMinor} />
@@ -59,10 +67,34 @@
 				{m['AccommodationsFeature.Pricing.weekendNights']()}
 			</dt>
 			<dd class="col-start-1 row-start-2 text-xs text-muted-foreground tabular-nums">
-				{stayPricing.weekendNights} × <Price value={stayPricing.weekendPricePerNightMinor!} />
+				{stayPricing.weekendNights} × <Price value={weekendRate!} />
 			</dd>
 			<dd class="col-start-2 row-span-2 row-start-1 text-right font-medium tabular-nums">
 				<Price value={weekendTotalMinor} />
+			</dd>
+		</div>
+	{/if}
+	{#if loyaltyBenefits?.propertySavingsMinor}
+		<div class="flex flex-wrap justify-between gap-2">
+			<dt>
+				{m['LoyaltyFeature.BookingBenefits.propertyDiscount']({
+					percent: loyaltyBenefits.propertyDiscountBps / 100
+				})}
+			</dt>
+			<dd class="font-medium tabular-nums">
+				−<Price value={loyaltyBenefits.propertySavingsMinor} />
+			</dd>
+		</div>
+	{/if}
+	{#if loyaltyBenefits?.loyaltySavingsMinor}
+		<div class="flex flex-wrap justify-between gap-2">
+			<dt>
+				{m['LoyaltyFeature.BookingBenefits.loyaltyDiscount']({
+					percent: loyaltyBenefits.loyaltyDiscountBps / 100
+				})}
+			</dt>
+			<dd class="font-medium tabular-nums">
+				−<Price value={loyaltyBenefits.loyaltySavingsMinor} />
 			</dd>
 		</div>
 	{/if}
@@ -74,7 +106,11 @@
 	{/if}
 </dl>
 
-{#if savingsMinor > 0}
+{#if loyaltyBenefits}
+	<div class="mt-5 border-t pt-4">
+		<LoyaltyBookingBenefits benefits={loyaltyBenefits} />
+	</div>
+{:else if savingsMinor > 0}
 	<div class="mt-4 flex flex-col gap-2">
 		<p class="flex flex-wrap items-center gap-2 text-sm font-medium">
 			<Badge variant="secondary" class="bg-success/10 text-success">

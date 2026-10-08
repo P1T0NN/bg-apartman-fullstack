@@ -12,6 +12,7 @@
 	// COMPONENTS
 	import { Button } from '@/components/ui/button/index.js';
 	import Price from '@/components/ui/custom-components/price/price.svelte';
+	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
 	import BookCheckoutConfirmButton from './book-checkout-confirm-button.svelte';
 	import BookSummary from '../book-summary/book-summary.svelte';
 	import BookCheckoutForm from './book-checkout-form/book-checkout-form.svelte';
@@ -19,9 +20,9 @@
 	// HOOKS
 	import { useSearchParams } from '@/hooks/useSearchParams.svelte.js';
 	import { useGuestLocal } from '@/features/guests/hooks/useGuestLocal.svelte.js';
+	import { useLoyaltyQuote } from '@/features/loyalty/hooks/useLoyaltyQuote.svelte.js';
 
 	// UTILS
-	import { calculateStayPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
 	import { timeZoneSchema } from '@/shared/features/timezone/schemas/timezoneSchemas.js';
 	import { createBookingSchema } from '@/shared/features/bookings/schemas/bookingSchemas.js';
 	import { getIsoDateInTimeZone } from '@/shared/features/timezone/utils/getIsoDateInTimeZone.js';
@@ -67,12 +68,23 @@
 
 	const checkInDate = $derived(values.checkInDate);
 	const checkOutDate = $derived(values.checkOutDate);
-	const stayPricing = $derived(calculateStayPricing(accommodation, checkInDate, checkOutDate));
+	const loyalty = useLoyaltyQuote({
+		accommodation: () => accommodation,
+		paymentMethod: () =>
+			accommodation.supportedPaymentMethods === 'both'
+				? values.paymentMethod
+				: accommodation.supportedPaymentMethods,
+		checkInDate: () => checkInDate,
+		checkOutDate: () => checkOutDate,
+		guests: () => values.adults + values.children
+	});
+	const stayPricing = $derived(loyalty.quote.stayPricing);
+	const quoteUnavailable = $derived(loyalty.result.isLoading || Boolean(loyalty.result.error));
 	const nights = $derived(stayPricing.regularNights + stayPricing.weekendNights);
 	const timeZone = $derived(timeZoneSchema.safeParse(accommodation.timeZone));
 
 	async function handleBookAccommodation(): Promise<void> {
-		if (submitting || !timeZone.success) return;
+		if (submitting || quoteUnavailable || !timeZone.success) return;
 
 		submitting = true;
 
@@ -100,12 +112,8 @@
 							? values.paymentMethod
 							: (accommodation.supportedPaymentMethods ?? 'cash'),
 					accommodationId: accommodation._id,
-					expectedPricePerNightMinor: accommodation.effectivePricePerNightMinor,
-					expectedTotalMinor: calculateStayPricing(
-						accommodation,
-						values.checkInDate,
-						values.checkOutDate
-					).totalMinor,
+					expectedPricePerNightMinor: loyalty.quote.pricing.effectivePricePerNightMinor,
+					expectedTotalMinor: loyalty.quote.stayPricing.totalMinor,
 					expectedBookingMode: accommodation.bookingMode ?? 'request'
 				});
 
@@ -117,6 +125,7 @@
 
 				createdBookingId = await createBooking({
 					...parsed.data,
+					expectedLoyaltyBenefits: loyalty.quote.benefits,
 					accommodationId: accommodation._id,
 					guestId: guest.ensureGuestId()
 				});
@@ -142,6 +151,10 @@
 	}
 </script>
 
+{#if loyalty.result.error}
+	<ErrorComponent message={m['ErrorMessages.loadFailed']()} />
+{/if}
+
 <div
 	{@attach (node) => {
 		checkout = node;
@@ -152,19 +165,21 @@
 	<div class="hidden min-w-0 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
 		<BookSummary
 			{accommodation}
+			quote={loyalty.quote}
 			{checkInDate}
 			{checkOutDate}
 			guests={values.adults + values.children}
-			{submitting}
+			submitting={submitting || quoteUnavailable}
 			onBook={handleBookAccommodation}
 		/>
 	</div>
 
 	<BookCheckoutForm
 		{accommodation}
+		quote={loyalty.quote}
 		bind:values
 		bind:errors
-		{submitting}
+		submitting={submitting || quoteUnavailable}
 		onBook={handleBookAccommodation}
 		{availabilityLoading}
 	/>
@@ -183,7 +198,9 @@
 				</p>
 				<p class="text-lg font-semibold wrap-anywhere tabular-nums">
 					<Price
-						value={nights > 0 ? stayPricing.totalMinor : accommodation.effectivePricePerNightMinor}
+						value={nights > 0
+							? stayPricing.totalMinor
+							: loyalty.quote.pricing.effectivePricePerNightMinor}
 					/>
 				</p>
 				<Button
@@ -195,7 +212,7 @@
 				</Button>
 			</div>
 			<BookCheckoutConfirmButton
-				{submitting}
+				submitting={submitting || quoteUnavailable}
 				mode={accommodation.bookingMode}
 				onclick={handleBookAccommodation}
 				class="mt-0 w-auto max-w-[60%] min-w-0 text-center whitespace-normal"

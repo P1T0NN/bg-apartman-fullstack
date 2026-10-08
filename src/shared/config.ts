@@ -26,6 +26,8 @@ export const COMPANY_DATA = {
 	LOGO: '/logo/opt/logo-1536w.webp',
 	DESCRIPTION: 'Description',
 	CURRENCY: 'EUR',
+	/** IANA store timezone: admin dashboard day boundaries and buckets are computed in this zone. */
+	TIMEZONE: 'UTC',
 	WHATSAPP_NUMBER,
 	WHATSAPP_CONTACT_URL: `https://wa.me/${WHATSAPP_NUMBER}`,
 	INSTAGRAM_URL: 'https://www.instagram.com/companyname/',

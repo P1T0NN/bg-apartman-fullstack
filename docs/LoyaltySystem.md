@@ -27,6 +27,33 @@ Increase direct bookings and reward returning guests.
 
 BGAPARTMAN | LOYALTY PROGRAM
 
+### QUESTIONS
+
+These decisions remain unresolved. The suggestions below are not approved rules;
+automatic qualification and live booking rewards must remain disabled until the
+relevant decisions are confirmed.
+
+1. **When does membership start?** After the first completed qualifying stay,
+   or immediately after an eligible advance booking?
+2. **What are the exact level thresholds?** Proposed: Level 1 at 1–2 completed
+   qualifying stays, Level 2 at 3–4, Level 3 at 5+. The original table overlaps at five.
+3. **What is an advance direct booking?** Is a booking on this site before the
+   property's check-in time sufficient, including same-day bookings, or must it
+   be made at least one calendar day before arrival?
+4. **How is cash verified?** Is cash mandatory both to earn and use rewards?
+   Must the host/admin confirm receipt before the stay receives credit?
+5. **Which properties participate?** All properties, or explicitly enabled
+   properties? Which services can each property fulfil?
+6. **How do property and loyalty discounts combine?** Apply the better single
+   discount, or apply loyalty after the property discount? For a €100 rate with a
+   10% property discount and 20% loyalty discount, these produce €80 and €72
+   respectively; adding the percentages to produce €70 is a different rule.
+7. **Does progress expire?** Proposed: lifetime progress without requalification.
+8. **Do historical bookings count?** Proposed: no automatic historical credit;
+   selecting cash historically does not prove payment was received.
+9. **What earns a stay credit?** Proposed: each completed, qualifying, verified
+   booking counts once; cancellations and no-shows do not count.
+
 ### RESEARCH
 
 The recommendations below supplement the original program description. They are

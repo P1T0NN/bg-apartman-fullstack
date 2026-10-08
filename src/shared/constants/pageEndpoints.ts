@@ -11,6 +11,7 @@ export const PROTECTED_PAGE_ENDPOINTS = {
 	FAVORITES: resolve('/guest/favorites'),
 	MY_BOOKINGS: resolve('/guest/my-bookings'),
 	MY_REVIEWS: resolve('/guest/my-reviews'),
+	MY_BENEFITS: resolve('/guest/benefits'),
 	MY_BOOKING: (id: string) => resolve(`/guest/my-bookings/${id}`),
 	GUEST_SETTINGS: resolve('/guest/settings')
 };

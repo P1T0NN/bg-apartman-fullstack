@@ -10,6 +10,7 @@ import { BOOKING_STATUSES } from '../../../shared/features/bookings/data/booking
 
 // SCHEMAS
 import { accommodations } from '../accommodations/schema.js';
+import { loyaltyBookingBenefitsValidator } from '../loyaltyMemberships/validators/loyaltyBenefitsValidators.js';
 
 /** Server-owned terms frozen when the request is submitted, never reconstructed from a listing. */
 export const bookingCancellationTerms = v.object({
@@ -22,6 +23,7 @@ export const bookingCancellationTerms = v.object({
 	pricePerNightMinor: v.number(),
 	basePricePerNightMinor: v.number(),
 	discountBps: v.number(),
+	loyaltyBenefits: v.optional(loyaltyBookingBenefitsValidator),
 	stayPricing: v.object({
 		regularNights: v.number(),
 		weekendNights: v.number(),

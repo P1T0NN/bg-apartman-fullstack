@@ -12,6 +12,7 @@
 	import AccommodationReviews from '../accommodation-reviews/accommodation-reviews.svelte';
 	import AccommodationReviewBookings from '../accommodation-reviews/accommodation-review-bookings.svelte';
 	import Reviews from '@/features/reviews/components/reviews/reviews.svelte';
+	import LoyaltyPropertyBenefits from '@/features/loyalty/components/loyalty-property-benefits/loyalty-property-benefits.svelte';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -22,6 +23,7 @@
 <div class="min-w-0 divide-y divide-border wrap-anywhere">
 	<AccommodationDetailsOverview {accommodation} />
 	<AccommodationDetailsPricing {accommodation} />
+	<LoyaltyPropertyBenefits {accommodation} />
 	<AccommodationDetailsAmenities {accommodation} />
 
 	<Reviews reviewSummary={accommodation.reviews}>

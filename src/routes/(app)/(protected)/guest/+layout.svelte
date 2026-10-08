@@ -51,6 +51,10 @@
 						<span class="icon-[lucide--star]" aria-hidden="true"></span>
 						<span>{m['Components.GuestSidebar.reviews']()}</span>
 					</NativeSidebarLink>
+					<NativeSidebarLink href={PROTECTED_PAGE_ENDPOINTS.MY_BENEFITS}>
+						<span class="icon-[lucide--gift]" aria-hidden="true"></span>
+						<span>{m['Components.GuestSidebar.benefits']()}</span>
+					</NativeSidebarLink>
 					<NativeSidebarLink href={PROTECTED_PAGE_ENDPOINTS.CLAIM_BOOKING}>
 						<span class="icon-[lucide--ticket]" aria-hidden="true"></span>
 						<span>{m['Components.GuestSidebar.claimBooking']()}</span>

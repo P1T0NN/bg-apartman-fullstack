@@ -9,9 +9,11 @@
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
+	import type { calculateLoyaltyQuote } from '@/shared/features/loyalty/utils/calculateLoyaltyQuote.js';
 
 	let {
 		accommodation,
+		quote,
 		checkInDate,
 		checkOutDate,
 		guests,
@@ -19,6 +21,7 @@
 		onBook
 	}: {
 		accommodation: PublicAccommodation;
+		quote: ReturnType<typeof calculateLoyaltyQuote>;
 		checkInDate: string;
 		checkOutDate: string;
 		guests: number;
@@ -53,7 +56,7 @@
 				</div>
 			</div>
 
-			<BookSummaryPricing {accommodation} {checkInDate} {checkOutDate} {guests} />
+			<BookSummaryPricing {accommodation} {quote} {checkInDate} {checkOutDate} {guests} />
 		</Card.Content>
 
 		<Card.Footer class="flex-col items-stretch gap-3">

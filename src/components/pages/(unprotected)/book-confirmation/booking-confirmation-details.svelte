@@ -118,6 +118,7 @@
 						discountBps: confirmation.cancellationTerms.discountBps
 					}}
 					stayPricing={confirmation.cancellationTerms.stayPricing}
+					loyaltyBenefits={confirmation.cancellationTerms.loyaltyBenefits}
 				/>{/if}
 			{#if confirmation.paymentMethod}
 				<p class="text-sm">

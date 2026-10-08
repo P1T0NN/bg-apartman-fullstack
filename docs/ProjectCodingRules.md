@@ -31,6 +31,50 @@ and [`InfiniteScrollingSystemDesign.md`](./InfiniteScrollingSystemDesign.md).
 
 ## Domain feature pieces
 
+- `/guest/benefits` is linked from the guest sidebar and reads the authenticated
+  guest's recorded loyalty total through `fetchMyBenefits`.
+  Its presentational components live under `components/pages/(protected)/guest/benefits`;
+  completed-stay history reuses the owner-scoped `fetchMyBookings` query with the
+  completed status filter and bounded pagination. Completed bookings are labelled
+  separately from earned loyalty credit. There are no preview controls or dummy
+  memberships, stays, or prices. Static program rewards live in
+  `shared/features/loyalty/data/loyaltyData.ts`; eligibility, level thresholds and
+  real booking discounts await the open policies in `LoyaltySystem.md`. Explicitly
+  assigned levels show their defined rewards without inferring stay thresholds. The page
+  labels rewards as coming soon and handles loading, empty, and error states.
+
+- `convex/tables/loyaltyMemberships` owns the loyalty membership table, indexed
+  by authenticated owner ID, and the private-to-the-guest `fetchMyBenefits` query.
+  Missing membership returns zero qualifying stays and no join date. Account
+  deletion removes that account's membership. There is no client-facing write
+  operation, historical backfill, or stay-credit award until program rules are
+  confirmed. The guest page displays real recorded data without awarding benefits.
+
+- Loyalty reward definitions and pricing live under `shared/features/loyalty`;
+  reactive quotes and reusable benefits displays live under `features/loyalty`.
+  `LOYALTY_CONFIG` keeps live booking application disabled with no selected
+  discount-combination mode until the open policies are approved. The engine
+  supports the better single discount and sequential property-then-loyalty
+  discounts, rounding each step per night in integer cents for regular and
+  weekend rates. Percentages are never added. A membership's optional `level`
+  is explicit; `qualifyingStays` never automatically determines it.
+- A property's optional server-owned `loyaltyServices` records which services
+  it commits to providing. Missing settings grant no booking benefits; ordinary
+  host create/update validators exclude this field. Level 2 breakfast covers
+  at most two booked guests; Level 3 covers all booked guests. Unavailable
+  parking, breakfast and spa services are never promised.
+- `fetchBookingBenefits` reads the authenticated viewer's own level and a
+  visible property's booking context. Anonymous and online bookings receive no
+  loyalty benefits. `createBooking` recomputes the quote and checks the reviewed
+  rate, total and included benefits; stale or forged offers are rejected.
+  Accepted rewards are frozen in optional `cancellationTerms.loyaltyBenefits`,
+  preserving legacy bookings without backfills. Commission uses the final
+  accepted stay total. The booking price breakdown renders separate property
+  and loyalty savings and included services at checkout, public confirmation,
+  guest trips, recovered booking details and host booking details. Property
+  details show the viewer's offer with its cash condition. Guest and host
+  request/confirmation emails use the same saved rewards and final price.
+
 | Area                  | Existing pieces and intended use                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Accommodation form    | `add-accommodation-form.svelte` composes seven editing steps plus Review, including the shared Cancellation Policy editor after House Rules. `useAccommodationForm.svelte.ts` owns values, step, `furthestStep`, and per-step `validate`, shared through `accommodationFormContext.ts`; the Continue button calls `validate`, which selects the step schema and calls `safeParse`. `saveAccommodationSchema` validates listing details; `createAccommodationSchema` additionally requires the billing plan for creation. The location step uses `google-street-input.svelte` (Places proxy, `kind: 'street'`, two characters and a 300 ms debounce) and loads `google-map.svelte` with the authenticated `/api/geocode` proxy. `accommodation-amenities` and `useAmenityDialog.svelte.ts` commit only on Save. The upload field stays mounted to keep previews; the final Create/Publish action uploads photos and calls `createAccommodation` (no drafts).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |

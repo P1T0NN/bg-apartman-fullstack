@@ -58,6 +58,7 @@ const accommodationListItem = accommodationDoc
 		'spaceType',
 		'address',
 		'amenities',
+		'loyaltyServices',
 		'imageKeys',
 		'checkInStart',
 		'timeZone',
@@ -108,6 +109,7 @@ export const accommodationOwnerPage = accommodationPage.extend({
 /** Complete editable listing payload; server-owned fields cannot be submitted. */
 export const createAccommodationValidator = accommodations.validator
 	.omit(
+		'loyaltyServices',
 		'ownerId',
 		'billingPlanId',
 		'billingTerms',
@@ -135,6 +137,7 @@ export const createAccommodationValidator = accommodations.validator
 /** Section-agnostic update payload: any subset of the editable listing fields plus the target id. */
 export const updateAccommodationValidator = accommodations.validator
 	.omit(
+		'loyaltyServices',
 		'ownerId',
 		'billingPlanId',
 		'billingTerms',

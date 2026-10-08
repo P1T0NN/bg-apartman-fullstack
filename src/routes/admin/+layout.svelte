@@ -1,5 +1,6 @@
 <script lang="ts">
 	// LIBRARIES
+	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import ScrollTextIcon from '@lucide/svelte/icons/scroll-text';
 	import MailIcon from '@lucide/svelte/icons/mail';
@@ -54,6 +55,10 @@
 		<div class="flex flex-col gap-4 p-3">
 			<nav aria-label="Admin" class="flex flex-col gap-1">
 				<NativeSidebarSection title="General">
+					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.DASHBOARD}>
+						<LayoutDashboardIcon aria-hidden="true" />
+						<span>Dashboard</span>
+					</NativeSidebarLink>
 					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.USERS}>
 						<UsersIcon aria-hidden="true" />
 						<span>Users</span>
@@ -92,7 +97,7 @@
 	<main class="flex min-w-0 flex-1 flex-col bg-background md:overflow-hidden md:rounded-s-2xl">
 		<NativeSidebarPageHeader
 			title="Admin"
-			rootHref={ADMIN_PAGE_ENDPOINTS.USERS}
+			rootHref={ADMIN_PAGE_ENDPOINTS.DASHBOARD}
 			pageName={breadcrumbUser.data?.name}
 			sidebarLabel="Open admin navigation"
 			onOpenSidebar={() => (mobileSidebarOpen = true)}

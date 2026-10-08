@@ -21,6 +21,8 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 			return m['BackendMessages.paymentMethodUnsupported']();
 		case 'BOOKING_PRICE_CHANGED':
 			return m['BackendMessages.bookingPriceChanged']();
+		case 'BOOKING_BENEFITS_CHANGED':
+			return m['BackendMessages.bookingBenefitsChanged']();
 		case 'BOOKING_MODE_CHANGED':
 			return m['BackendMessages.bookingModeChanged']();
 		case 'BOOKING_DATES_UNAVAILABLE':

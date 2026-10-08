@@ -1,13 +1,27 @@
 <script lang="ts">
+	// LIBRARIES
 	import { useQuery } from 'convex-svelte';
-	import { api } from '@convex/_generated/api';
 	import { m } from '@/lib/paraglide/messages';
-	import HostDashboardHeader from '@/components/pages/(protected)/host/dashboard/host-dashboard-header.svelte';
+
+	// CONVEX
+	import { api } from '@convex/_generated/api';
+
+	// COMPONENTS
+	import AnalyticsDashboardHeader from '@/features/analytics/components/analytics-dashboard-header/analytics-dashboard-header.svelte';
+	import AnalyticsRevenueChart from '@/features/analytics/components/analytics-revenue-chart/analytics-revenue-chart.svelte';
+	import AnalyticsStats from '@/features/analytics/components/analytics-stats/analytics-stats.svelte';
 	import ErrorComponent from '@/components/ui/custom-components/error-component/error-component.svelte';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
-	import { useSearchParams } from '@/hooks/useSearchParams.svelte';
+
+	// CONFIG
 	import { PROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+
+	// HOOKS
+	import { createAnalyticsDashboard } from '@/features/analytics/hooks/useAnalyticsDashboard.svelte.js';
+	import { useSearchParams } from '@/hooks/useSearchParams.svelte';
+
+	const analytics = createAnalyticsDashboard('host');
 
 	const pendingBookings = useQuery(
 		api.tables.bookings.queries.hasPendingHostBookings.hasPendingHostBookings,
@@ -19,8 +33,12 @@
 
 <SvelteHead title={m['HostDashboardPage.pageTitle']()} noindex />
 
-<div class="flex flex-col gap-6">
-	<HostDashboardHeader />
+<div class="flex min-h-full min-w-0 flex-1 flex-col gap-6">
+	<AnalyticsDashboardHeader
+		label={m['HostDashboardPage.hostLabel']()}
+		title={m['HostDashboardPage.dashboard']()}
+	/>
+
 	{#if pendingBookings.error}
 		<ErrorComponent message={m['ErrorMessages.loadFailed']()} />
 	{:else if pendingBookings.data}
@@ -47,4 +65,8 @@
 			></span>
 		</Link>
 	{/if}
+
+	<AnalyticsStats scope="host" loading={analytics.statsLoading} error={analytics.statsError} />
+
+	<AnalyticsRevenueChart />
 </div>

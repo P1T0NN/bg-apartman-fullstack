@@ -1,6 +1,123 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"example_message": "Hello world {username}",
+	"AnalyticsFeature": {
+		"AnalyticsData": {
+			"revenue": "Revenue",
+			"bookings": "Bookings",
+			"occupancyRate": "Occupancy rate",
+			"cancellationRate": "Cancellation rate"
+		},
+		"AnalyticsStats": {
+			"loadError": "Couldn't load dashboard stats."
+		},
+		"AnalyticsStatsCard": {
+			"vsPreviousPeriod": "vs previous period",
+			"noPreviousData": "No previous data"
+		},
+		"AnalyticsDashboardHeader": {
+			"timeRangeLabel": "Time range",
+			"today": "Today",
+			"last7Days": "7d",
+			"last30Days": "30d",
+			"last90Days": "90d",
+			"refresh": "Refresh",
+			"custom": "Custom",
+			"rangeTooLong": "You cannot select more than 366 days at once"
+		},
+		"AnalyticsRevenueChart": {
+			"title": "Revenue",
+			"descriptionPrefix": "Showing total revenue for",
+			"loadError": "Couldn't load the revenue chart."
+		}
+	},
+	"BenefitsPage": {
+		"pageTitle": "My benefits",
+		"loading": "Loading your benefits",
+		"BenefitsHeader": {
+			"eyebrow": "BGAPARTMAN · DIRECT BOOKING REWARDS",
+			"title": "My benefits",
+			"description": "Your stays, your rewards, and more to look forward to."
+		},
+		"BenefitsSummary": {
+			"title": "Your benefits",
+			"comingSoon": "Rewards coming soon",
+			"startTitle": "Something to look forward to.",
+			"returningTitle": "Your return visits matter.",
+			"startDescription": "Discover the rewards planned for guests who book directly and return to stay.",
+			"recordedStays": "Qualifying stays recorded",
+			"staysDescription": "This is your recorded loyalty total. Completed bookings are shown separately below.",
+			"joined": "Member since {date}",
+			"availability": "Loyalty rewards are not available for bookings yet. Included services will depend on the property and will be confirmed in your booking summary.",
+			"findStay": "Find a stay",
+			"levelRewards": "Your level rewards"
+		},
+		"BenefitsLevels": {
+			"title": "Explore the rewards",
+			"description": "The planned program has three levels. Each higher level replaces the previous discount.",
+			"level": "Level",
+			"discount": "Discount",
+			"parking": "Parking",
+			"breakfast": "Breakfast",
+			"spa": "Spa access",
+			"availabilityNote": "Rewards are coming soon. Included services will depend on the property's participation and facilities."
+		},
+		"BenefitsLevelItem": {
+			"level": "Level {level}",
+			"included": "Free",
+			"notIncluded": "Not included",
+			"allGuests": "all guests",
+			"twoGuests": "up to 2 guests",
+			"discount": "loyalty discount",
+			"parking": "Free parking",
+			"breakfast": "Free breakfast for {guests}",
+			"breakfastIncluded": "Free for {guests}",
+			"spa": "Free spa access",
+			"current": "Your level"
+		},
+		"BenefitsHistory": {
+			"title": "Your completed stays",
+			"description": "Your completed bookings on BGAPARTMAN. A completed stay does not automatically earn loyalty credit.",
+			"emptyTitle": "Your story starts with a stay",
+			"emptyDescription": "Once a host marks your booking as completed, it will appear here."
+		},
+		"BenefitsStayItem": {
+			"completed": "Completed",
+			"unavailable": "Accommodation no longer available"
+		},
+		"BenefitsGuide": {
+			"title": "How it works",
+			"qualifyTitle": "Which bookings qualify?",
+			"qualifyDescription": "The program is designed for advance direct bookings paid in cash. Full eligibility details will be available when rewards launch.",
+			"availabilityTitle": "Where can I use my benefits?",
+			"availabilityDescription": "Included rewards will depend on each property's services and participation. Parking, breakfast and spa access will only be offered where available.",
+			"discountsTitle": "How do the levels work?",
+			"discountsDescription": "The planned levels offer 10%, 15% and 20% discounts. Higher levels include the previous level's services and replace its discount.",
+			"progressTitle": "Where can I see my progress?",
+			"progressDescription": "Your recorded qualifying-stay total appears above. Your completed bookings are listed separately, so you can keep track of your trips."
+		}
+	},
+	"LoyaltyFeature": {
+		"BookingBenefits": {
+			"title": "Included loyalty benefits",
+			"level": "Loyalty benefits · Level {level}",
+			"propertyDiscount": "Property discount ({percent}%)",
+			"loyaltyDiscount": "Loyalty discount ({percent}%)",
+			"propertyOffer": "The property discount gives you the better price. Your included loyalty services are unchanged.",
+			"parking": "Free parking",
+			"breakfastTwo": "Free breakfast for up to 2 people",
+			"breakfastAll": "Free breakfast for all guests",
+			"spa": "Free spa access",
+			"breakfastCoverage": "Breakfast included for",
+			"guest": "booked guest",
+			"guests": "booked guests"
+		},
+		"PropertyBenefits": {
+			"title": "Your benefits at this property",
+			"discount": "{percent}% loyalty discount",
+			"cash": "Available with cash payment. Your checkout summary confirms the final price and included services."
+		}
+	},
 	"HomePage": {
 		"title": "Apartments and stays in Serbia",
 		"description": "Find apartments, holiday homes and rooms across Serbia and the Balkans, real guest reviews and clear cancellation terms.",
@@ -676,6 +793,11 @@
 			"submitted": "Submitted {date}",
 			"view": "View review"
 		}
+	},
+	"AdminDashboardPage": {
+		"pageTitle": "Dashboard | Admin",
+		"adminLabel": "Admin",
+		"dashboard": "Dashboard"
 	},
 	"AdminReviewsPage": {
 		"AdminReviewSupport": {
@@ -1737,6 +1859,7 @@
 			"switchToTravelling": "Switch to travelling"
 		},
 		"GuestSidebar": {
+			"benefits": "My benefits",
 			"reviews": "My reviews",
 			"travelling": "Travelling",
 			"navigationLabel": "Travelling navigation",
@@ -1830,7 +1953,8 @@
 		"bookingPriceChanged": "The nightly price has changed. Review the updated price before submitting again.",
 		"accommodationBillingPlanLocked": "Your paid flat-fee period is still running. You can switch plans when it ends.",
 		"accommodationBillingPlanChanged": "Your accommodation fee plan changed. Review the current plan and try again.",
-		"accommodationPaymentSimulationDisabled": "Payment simulation is disabled in this environment."
+		"accommodationPaymentSimulationDisabled": "Payment simulation is disabled in this environment.",
+		"bookingBenefitsChanged": "The included benefits have changed. Review your booking summary before submitting again."
 	},
 	"AddAccommodationPage": {
 		"title": "Add an accommodation",
@@ -2418,7 +2542,9 @@
 		"loadFailed": "Couldn't load this content. Please try again."
 	},
 	"HostDashboardPage": {
-		"pageTitle": "Dashboard",
+		"pageTitle": "Dashboard | Host",
+		"hostLabel": "Host",
+		"dashboard": "Dashboard",
 		"pendingTitle": "Pending bookings need your attention",
 		"pendingDescription": "You have booking requests for your accommodations awaiting a response. Review them and confirm or decline each request.",
 		"reviewPending": "Review pending bookings"

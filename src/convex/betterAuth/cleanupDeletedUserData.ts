@@ -8,12 +8,17 @@ import { internalMutation } from '../builders/convexFunctionBuilders.js';
 // STORAGE
 import { queueUploadDeletion } from '../storage/r2.js';
 
+// HELPERS
+import { getLoyaltyMembership } from '../tables/loyaltyMemberships/helpers/getLoyaltyMembership.js';
+
 const CLEANUP_BATCH_SIZE = 50;
 
 export const cleanupDeletedUserData = internalMutation({
 	args: { ownerId: v.string() },
 	returns: v.null(),
 	handler: async (ctx, args) => {
+		const membership = await getLoyaltyMembership(ctx, args.ownerId);
+		if (membership) await ctx.db.delete('loyaltyMemberships', membership._id);
 		const uploadBatches = await Promise.all(
 			(['pending', 'processing', 'uploaded'] as const).map((status) =>
 				ctx.db

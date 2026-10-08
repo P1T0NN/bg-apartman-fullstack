@@ -2,6 +2,7 @@
 import { literals } from 'convex-helpers/validators';
 import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import { loyaltyServicesValidator } from '../loyaltyMemberships/validators/loyaltyBenefitsValidators.js';
 
 // CONFIG
 import { ACCOMMODATION_TYPES } from '../../../shared/features/accommodations/data/accommodationsData.js';
@@ -37,6 +38,8 @@ export const accommodations = defineTable({
 	guestRatingAverage: v.number(),
 	guestReviewCount: v.number(),
 	amenities: v.array(v.string()),
+	// Explicit service commitments; ordinary listing edits cannot grant loyalty rewards.
+	loyaltyServices: v.optional(loyaltyServicesValidator),
 	// Ordered R2 keys; the first image is the cover.
 	imageKeys: v.array(v.string()),
 	checkInStart: v.string(), // Local property time, HH:mm.

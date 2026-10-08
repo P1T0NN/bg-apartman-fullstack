@@ -25,6 +25,7 @@
 			discountBps: booking.cancellationTerms.discountBps
 		}}
 		stayPricing={booking.cancellationTerms.stayPricing}
+		loyaltyBenefits={booking.cancellationTerms.loyaltyBenefits}
 	/>{/if}
 {#if booking.paymentMethod}
 	<p class="text-sm">

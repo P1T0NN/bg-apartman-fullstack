@@ -15,6 +15,9 @@ import schema from '../../src/convex/schema';
 import authSchema from '../../src/convex/betterAuth/component/schema';
 import { registerResend, successfulResendResponse } from '../fixtures/resend';
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
+import { LOYALTY_CONFIG } from '../../src/shared/features/loyalty/config.js';
+import { calculateLoyaltyQuote } from '../../src/shared/features/loyalty/utils/calculateLoyaltyQuote.js';
+import { formatLoyaltyBookingBenefits } from '../../src/convex/tables/loyaltyMemberships/emails/formatLoyaltyBookingBenefits.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 
@@ -40,6 +43,153 @@ afterEach(async () => {
 	vi.useRealTimers();
 	vi.unstubAllEnvs();
 	vi.unstubAllGlobals();
+	LOYALTY_CONFIG.BOOKING_ENABLED = false;
+	LOYALTY_CONFIG.DISCOUNT_MODE = null;
+});
+
+test('loyalty pricing is authoritative, rejects changed services and freezes the accepted rewards', async () => {
+	LOYALTY_CONFIG.BOOKING_ENABLED = true;
+	LOYALTY_CONFIG.DISCOUNT_MODE = 'stack';
+	const { t, hostId } = await setup();
+	const property = {
+		...bookingFeeBilling,
+		...accommodation,
+		ownerId: hostId,
+		supportedPaymentMethods: 'both' as const,
+		discountBps: 1000,
+		effectivePricePerNightMinor: 7223,
+		weekendPricePerNightMinor: 12000,
+		loyaltyServices: { parking: true, breakfast: true, spa: false }
+	};
+	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', property));
+	const membershipId = await t.run((ctx) =>
+		ctx.db.insert('loyaltyMemberships', {
+			ownerId: 'loyalty-guest',
+			qualifyingStays: 0,
+			level: 2,
+			joinedAt: 1000
+		})
+	);
+	const member = t.withIdentity({
+		subject: 'loyalty-guest',
+		tokenIdentifier: 'issuer|loyalty-guest'
+	});
+	const quote = calculateLoyaltyQuote(
+		property,
+		'2999-07-20',
+		'2999-07-23',
+		2,
+		property.loyaltyServices,
+		4,
+		'stack'
+	);
+	const request = {
+		...guest,
+		accommodationId,
+		checkInDate: '2999-07-20',
+		checkOutDate: '2999-07-23',
+		adults: 2,
+		children: 2,
+		expectedPricePerNightMinor: quote.pricing.effectivePricePerNightMinor,
+		expectedTotalMinor: quote.stayPricing.totalMinor,
+		expectedLoyaltyBenefits: quote.benefits
+	};
+
+	await expect(t.mutation(createBooking, request)).rejects.toThrow('BOOKING_PRICE_CHANGED');
+	await expect(
+		member.mutation(createBooking, { ...request, expectedLoyaltyBenefits: null })
+	).rejects.toThrow('BOOKING_BENEFITS_CHANGED');
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, {
+			loyaltyServices: { parking: true, breakfast: false, spa: false }
+		})
+	);
+	await expect(member.mutation(createBooking, request)).rejects.toThrow('BOOKING_BENEFITS_CHANGED');
+	await t.run((ctx) =>
+		ctx.db.patch('accommodations', accommodationId, { loyaltyServices: property.loyaltyServices })
+	);
+
+	const id = await member.mutation(createBooking, request);
+	const accepted = await t.run((ctx) => ctx.db.get('bookings', id));
+	expect(accepted!.cancellationTerms.loyaltyBenefits).toEqual(quote.benefits);
+	expect(accepted!.cancellationTerms.pricePerNightMinor).toBe(
+		quote.pricing.effectivePricePerNightMinor
+	);
+	expect(accepted!.platformFeeTerms!.baseAmountMinor).toBe(quote.stayPricing.totalMinor);
+	expect(accepted!.cancellationTerms.loyaltyBenefits!.breakfastGuests).toBe(2);
+
+	await t.run(async (ctx) => {
+		await ctx.db.patch('loyaltyMemberships', membershipId, { level: 3 });
+		await ctx.db.patch('accommodations', accommodationId, {
+			pricePerNightMinor: 20000,
+			effectivePricePerNightMinor: 18000,
+			loyaltyServices: { parking: false, breakfast: false, spa: false }
+		});
+	});
+	const confirmation = await t.query(
+		api.tables.bookings.queries.fetchBookingConfirmation.fetchBookingConfirmation,
+		{ id }
+	);
+	expect(confirmation!.cancellationTerms).toEqual(accepted!.cancellationTerms);
+	const emailLines = formatLoyaltyBookingBenefits(confirmation!.cancellationTerms);
+	expect(emailLines).toContain('Free parking');
+	expect(emailLines).toContain('Free breakfast for up to 2 people');
+	expect(emailLines).toContain('Breakfast covers 2 booked guests');
+	expect(emailLines).not.toContain('Free spa access');
+});
+
+test('existing levels do not apply benefits to online bookings or while the rollout is disabled', async () => {
+	LOYALTY_CONFIG.BOOKING_ENABLED = true;
+	LOYALTY_CONFIG.DISCOUNT_MODE = 'stack';
+	const { t, hostId } = await setup();
+	const property = {
+		...bookingFeeBilling,
+		...accommodation,
+		ownerId: hostId,
+		supportedPaymentMethods: 'both' as const,
+		loyaltyServices: { parking: true, breakfast: true, spa: true }
+	};
+	const accommodationId = await t.run((ctx) => ctx.db.insert('accommodations', property));
+	await t.run((ctx) =>
+		ctx.db.insert('loyaltyMemberships', {
+			ownerId: 'loyalty-guest',
+			level: 3,
+			qualifyingStays: 1,
+			joinedAt: 1000
+		})
+	);
+	const member = t.withIdentity({
+		subject: 'loyalty-guest',
+		tokenIdentifier: 'issuer|loyalty-guest'
+	});
+	const request = withExpectedTotal({
+		...guest,
+		accommodationId,
+		checkInDate: '2999-07-20',
+		checkOutDate: '2999-07-23',
+		adults: 2,
+		children: 0,
+		expectedPricePerNightMinor: 8025,
+		expectedLoyaltyBenefits: null
+	});
+	const onlineId = await member.mutation(createBooking, { ...request, paymentMethod: 'online' });
+	const online = await t.run((ctx) => ctx.db.get('bookings', onlineId));
+	expect(online!.cancellationTerms.loyaltyBenefits).toBeUndefined();
+	expect(online!.cancellationTerms.stayPricing.totalMinor).toBe(24075);
+	LOYALTY_CONFIG.BOOKING_ENABLED = false;
+	const context = await member.query(
+		api.tables.loyaltyMemberships.queries.fetchBookingBenefits.fetchBookingBenefits,
+		{ accommodationId }
+	);
+	expect(context).toEqual({ level: 3, services: null, discountMode: null });
+	const cashId = await member.mutation(createBooking, {
+		...request,
+		checkInDate: '2999-08-20',
+		checkOutDate: '2999-08-23'
+	});
+	const cash = await t.run((ctx) => ctx.db.get('bookings', cashId));
+	expect(cash!.cancellationTerms.loyaltyBenefits).toBeUndefined();
+	expect(cash!.cancellationTerms.stayPricing.totalMinor).toBe(24075);
 });
 
 async function setup() {

@@ -12,6 +12,7 @@ import { bookingRecoverySessions } from './tables/bookingRecoverySessions/schema
 import { favorites } from './tables/favorites/schema.js';
 import { feedbacks } from './tables/feedbacks/schema.js';
 import { reviews } from './tables/reviews/schema.js';
+import { loyaltyMemberships } from './tables/loyaltyMemberships/schema.js';
 
 export const tables = {
 	accommodations,
@@ -22,6 +23,7 @@ export const tables = {
 	favorites,
 	feedbacks,
 	reviews,
+	loyaltyMemberships,
 	newsletters: defineTable({
 		/** Normalized (trimmed, lowercased) subscriber email. */
 		email: v.string(),

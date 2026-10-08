@@ -87,3 +87,69 @@ export function formatRelativeTime(timestamp: number, locale: string, now = Date
 		style: 'narrow'
 	}).format(Math.trunc(difference / milliseconds), unit);
 }
+
+type ZonedParts = {
+	year: number;
+	month: number;
+	day: number;
+	hour: number;
+	minute: number;
+	second: number;
+};
+
+function getZonedParts(timestamp: number, timeZone: string): ZonedParts {
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		hour12: false,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit'
+	}).formatToParts(new Date(timestamp));
+
+	const values: Record<string, number> = {};
+	for (const part of parts) {
+		if (part.type !== 'literal') values[part.type] = Number(part.value);
+	}
+
+	return {
+		year: values.year,
+		month: values.month,
+		day: values.day,
+		hour: values.hour % 24,
+		minute: values.minute,
+		second: values.second
+	};
+}
+
+function getTimeZoneOffsetMs(timestamp: number, timeZone: string): number {
+	const parts = getZonedParts(timestamp, timeZone);
+	const asUtc = Date.UTC(
+		parts.year,
+		parts.month - 1,
+		parts.day,
+		parts.hour,
+		parts.minute,
+		parts.second
+	);
+	return asUtc - timestamp;
+}
+
+/**
+ * The store calendar day for a timestamp, expressed as the UTC midnight of that date. These keys
+ * are exactly 24h apart, so they can be iterated, while still naming the day the store is in.
+ */
+export function getStoreDayKey(timestamp: number, timeZone: string): number {
+	const parts = getZonedParts(timestamp, timeZone);
+	return Date.UTC(parts.year, parts.month - 1, parts.day);
+}
+
+/** The absolute instant of the store's midnight starting the day that contains `timestamp`. */
+export function getStoreDayStart(timestamp: number, timeZone: string): number {
+	const key = getStoreDayKey(timestamp, timeZone);
+	// The offset must be read at (or near) the resulting instant, so it is applied twice.
+	const approximate = key - getTimeZoneOffsetMs(key, timeZone);
+	return key - getTimeZoneOffsetMs(approximate, timeZone);
+}

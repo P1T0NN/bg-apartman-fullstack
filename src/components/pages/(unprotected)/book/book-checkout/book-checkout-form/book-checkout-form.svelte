@@ -25,9 +25,11 @@
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
 	import type { BookingCheckoutValues } from '@/shared/features/bookings/types/bookingTypes.js';
+	import type { calculateLoyaltyQuote } from '@/shared/features/loyalty/utils/calculateLoyaltyQuote.js';
 
 	let {
 		accommodation,
+		quote,
 		values = $bindable(),
 		submitting,
 		errors = $bindable(),
@@ -35,6 +37,7 @@
 		availabilityLoading
 	}: {
 		accommodation: PublicAccommodation;
+		quote: ReturnType<typeof calculateLoyaltyQuote>;
 		values: BookingCheckoutValues;
 		errors: Record<string, string>;
 		onBook: () => Promise<void>;
@@ -123,6 +126,7 @@
 					{m['AccommodationPage.priceDetails']()}
 				</h3>
 				<BookSummaryPricing
+					{quote}
 					{accommodation}
 					{checkInDate}
 					{checkOutDate}
