@@ -130,6 +130,9 @@
 	policy={booking.cancellationTerms.policy}
 	timeZone={booking.cancellationTerms.timeZone}
 	checkInAt={booking.cancellationTerms.checkInAt}
+	refundDeadlineAt={booking.cancellationTerms.refundDeadlineAt}
+	amountMinor={booking.cancellationTerms.stayPricing.totalMinor}
+	currency={booking.cancellationTerms.currency}
 	status={booking.status}
 	booked
 />

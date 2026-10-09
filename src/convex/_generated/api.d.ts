@@ -64,7 +64,9 @@ import type * as migrations_backfillAccommodationTimeZones from "../migrations/b
 import type * as migrations_backfillBookingEmails from "../migrations/backfillBookingEmails.js";
 import type * as migrations_backfillBookingPlatformFees from "../migrations/backfillBookingPlatformFees.js";
 import type * as migrations_backfillBookingTiming from "../migrations/backfillBookingTiming.js";
+import type * as migrations_backfillCancellationPresets from "../migrations/backfillCancellationPresets.js";
 import type * as migrations_backfillFeePaymentMaintenance from "../migrations/backfillFeePaymentMaintenance.js";
+import type * as migrations_backfillLoyalty from "../migrations/backfillLoyalty.js";
 import type * as migrations_backfillOwnerIds from "../migrations/backfillOwnerIds.js";
 import type * as migrations_backfillPaymentMethods from "../migrations/backfillPaymentMethods.js";
 import type * as migrations_backfillReservationRules from "../migrations/backfillReservationRules.js";
@@ -145,10 +147,12 @@ import type * as tables_accommodations_mutations_payFlatFeeAccommodation from ".
 import type * as tables_accommodations_mutations_refundFlatFeeForAccommodation from "../tables/accommodations/mutations/refundFlatFeeForAccommodation.js";
 import type * as tables_accommodations_mutations_updateAccommodation from "../tables/accommodations/mutations/updateAccommodation.js";
 import type * as tables_accommodations_mutations_updateAccommodationFeeForAdmin from "../tables/accommodations/mutations/updateAccommodationFeeForAdmin.js";
+import type * as tables_accommodations_mutations_updateAccommodationLoyaltyForAdmin from "../tables/accommodations/mutations/updateAccommodationLoyaltyForAdmin.js";
 import type * as tables_accommodations_mutations_updateAccommodationPublishStatus from "../tables/accommodations/mutations/updateAccommodationPublishStatus.js";
 import type * as tables_accommodations_queries_fetchAccommodationsAdmin from "../tables/accommodations/queries/fetchAccommodationsAdmin.js";
 import type * as tables_accommodations_queries_fetchAccommodationsMapSearch from "../tables/accommodations/queries/fetchAccommodationsMapSearch.js";
 import type * as tables_accommodations_queries_fetchAccommodationsSearch from "../tables/accommodations/queries/fetchAccommodationsSearch.js";
+import type * as tables_accommodations_queries_fetchFeaturedAccommodations from "../tables/accommodations/queries/fetchFeaturedAccommodations.js";
 import type * as tables_accommodations_queries_fetchMyAccommodation from "../tables/accommodations/queries/fetchMyAccommodation.js";
 import type * as tables_accommodations_queries_fetchMyAccommodationListing from "../tables/accommodations/queries/fetchMyAccommodationListing.js";
 import type * as tables_accommodations_queries_fetchMyAccommodationSettings from "../tables/accommodations/queries/fetchMyAccommodationSettings.js";
@@ -167,6 +171,7 @@ import type * as tables_bookingRecoveryTokens_mutations_storeBookingRecoveryToke
 import type * as tables_bookingRecoveryTokens_ratelimiting_bookingRecoveryTokenRateLimits from "../tables/bookingRecoveryTokens/ratelimiting/bookingRecoveryTokenRateLimits.js";
 import type * as tables_bookingRecoveryTokens_validators_bookingRecoveryTokenValidators from "../tables/bookingRecoveryTokens/validators/bookingRecoveryTokenValidators.js";
 import type * as tables_bookings_aggregates_bookingOwnerAggregate from "../tables/bookings/aggregates/bookingOwnerAggregate.js";
+import type * as tables_bookings_crons_completeBookingsCron from "../tables/bookings/crons/completeBookingsCron.js";
 import type * as tables_bookings_crons_expireBookingRequestsCron from "../tables/bookings/crons/expireBookingRequestsCron.js";
 import type * as tables_bookings_emails_sendBookingCancellationEmail from "../tables/bookings/emails/sendBookingCancellationEmail.js";
 import type * as tables_bookings_emails_sendBookingConfirmationEmail from "../tables/bookings/emails/sendBookingConfirmationEmail.js";
@@ -180,6 +185,7 @@ import type * as tables_bookings_helpers_getBookingGuestDetails from "../tables/
 import type * as tables_bookings_helpers_getBookingToClaim from "../tables/bookings/helpers/getBookingToClaim.js";
 import type * as tables_bookings_helpers_getHostBookingPage from "../tables/bookings/helpers/getHostBookingPage.js";
 import type * as tables_bookings_helpers_readBookingFilters from "../tables/bookings/helpers/readBookingFilters.js";
+import type * as tables_bookings_mutations_archiveBooking from "../tables/bookings/mutations/archiveBooking.js";
 import type * as tables_bookings_mutations_cancelBooking from "../tables/bookings/mutations/cancelBooking.js";
 import type * as tables_bookings_mutations_claimBooking from "../tables/bookings/mutations/claimBooking.js";
 import type * as tables_bookings_mutations_completeBookingAdmin from "../tables/bookings/mutations/completeBookingAdmin.js";
@@ -206,6 +212,7 @@ import type * as tables_feedbacks_queries_fetchFeedbacksAdmin from "../tables/fe
 import type * as tables_feedbacks_validators_feedbackValidators from "../tables/feedbacks/validators/feedbackValidators.js";
 import type * as tables_loyaltyMemberships_emails_formatLoyaltyBookingBenefits from "../tables/loyaltyMemberships/emails/formatLoyaltyBookingBenefits.js";
 import type * as tables_loyaltyMemberships_emails_translations_loyaltyBookingBenefitsTranslation from "../tables/loyaltyMemberships/emails/translations/loyaltyBookingBenefitsTranslation.js";
+import type * as tables_loyaltyMemberships_helpers_awardLoyaltyStay from "../tables/loyaltyMemberships/helpers/awardLoyaltyStay.js";
 import type * as tables_loyaltyMemberships_helpers_getBookingBenefitsContext from "../tables/loyaltyMemberships/helpers/getBookingBenefitsContext.js";
 import type * as tables_loyaltyMemberships_helpers_getLoyaltyMembership from "../tables/loyaltyMemberships/helpers/getLoyaltyMembership.js";
 import type * as tables_loyaltyMemberships_queries_fetchBookingBenefits from "../tables/loyaltyMemberships/queries/fetchBookingBenefits.js";
@@ -303,7 +310,9 @@ declare const fullApi: ApiFromModules<{
   "migrations/backfillBookingEmails": typeof migrations_backfillBookingEmails;
   "migrations/backfillBookingPlatformFees": typeof migrations_backfillBookingPlatformFees;
   "migrations/backfillBookingTiming": typeof migrations_backfillBookingTiming;
+  "migrations/backfillCancellationPresets": typeof migrations_backfillCancellationPresets;
   "migrations/backfillFeePaymentMaintenance": typeof migrations_backfillFeePaymentMaintenance;
+  "migrations/backfillLoyalty": typeof migrations_backfillLoyalty;
   "migrations/backfillOwnerIds": typeof migrations_backfillOwnerIds;
   "migrations/backfillPaymentMethods": typeof migrations_backfillPaymentMethods;
   "migrations/backfillReservationRules": typeof migrations_backfillReservationRules;
@@ -384,10 +393,12 @@ declare const fullApi: ApiFromModules<{
   "tables/accommodations/mutations/refundFlatFeeForAccommodation": typeof tables_accommodations_mutations_refundFlatFeeForAccommodation;
   "tables/accommodations/mutations/updateAccommodation": typeof tables_accommodations_mutations_updateAccommodation;
   "tables/accommodations/mutations/updateAccommodationFeeForAdmin": typeof tables_accommodations_mutations_updateAccommodationFeeForAdmin;
+  "tables/accommodations/mutations/updateAccommodationLoyaltyForAdmin": typeof tables_accommodations_mutations_updateAccommodationLoyaltyForAdmin;
   "tables/accommodations/mutations/updateAccommodationPublishStatus": typeof tables_accommodations_mutations_updateAccommodationPublishStatus;
   "tables/accommodations/queries/fetchAccommodationsAdmin": typeof tables_accommodations_queries_fetchAccommodationsAdmin;
   "tables/accommodations/queries/fetchAccommodationsMapSearch": typeof tables_accommodations_queries_fetchAccommodationsMapSearch;
   "tables/accommodations/queries/fetchAccommodationsSearch": typeof tables_accommodations_queries_fetchAccommodationsSearch;
+  "tables/accommodations/queries/fetchFeaturedAccommodations": typeof tables_accommodations_queries_fetchFeaturedAccommodations;
   "tables/accommodations/queries/fetchMyAccommodation": typeof tables_accommodations_queries_fetchMyAccommodation;
   "tables/accommodations/queries/fetchMyAccommodationListing": typeof tables_accommodations_queries_fetchMyAccommodationListing;
   "tables/accommodations/queries/fetchMyAccommodationSettings": typeof tables_accommodations_queries_fetchMyAccommodationSettings;
@@ -406,6 +417,7 @@ declare const fullApi: ApiFromModules<{
   "tables/bookingRecoveryTokens/ratelimiting/bookingRecoveryTokenRateLimits": typeof tables_bookingRecoveryTokens_ratelimiting_bookingRecoveryTokenRateLimits;
   "tables/bookingRecoveryTokens/validators/bookingRecoveryTokenValidators": typeof tables_bookingRecoveryTokens_validators_bookingRecoveryTokenValidators;
   "tables/bookings/aggregates/bookingOwnerAggregate": typeof tables_bookings_aggregates_bookingOwnerAggregate;
+  "tables/bookings/crons/completeBookingsCron": typeof tables_bookings_crons_completeBookingsCron;
   "tables/bookings/crons/expireBookingRequestsCron": typeof tables_bookings_crons_expireBookingRequestsCron;
   "tables/bookings/emails/sendBookingCancellationEmail": typeof tables_bookings_emails_sendBookingCancellationEmail;
   "tables/bookings/emails/sendBookingConfirmationEmail": typeof tables_bookings_emails_sendBookingConfirmationEmail;
@@ -419,6 +431,7 @@ declare const fullApi: ApiFromModules<{
   "tables/bookings/helpers/getBookingToClaim": typeof tables_bookings_helpers_getBookingToClaim;
   "tables/bookings/helpers/getHostBookingPage": typeof tables_bookings_helpers_getHostBookingPage;
   "tables/bookings/helpers/readBookingFilters": typeof tables_bookings_helpers_readBookingFilters;
+  "tables/bookings/mutations/archiveBooking": typeof tables_bookings_mutations_archiveBooking;
   "tables/bookings/mutations/cancelBooking": typeof tables_bookings_mutations_cancelBooking;
   "tables/bookings/mutations/claimBooking": typeof tables_bookings_mutations_claimBooking;
   "tables/bookings/mutations/completeBookingAdmin": typeof tables_bookings_mutations_completeBookingAdmin;
@@ -445,6 +458,7 @@ declare const fullApi: ApiFromModules<{
   "tables/feedbacks/validators/feedbackValidators": typeof tables_feedbacks_validators_feedbackValidators;
   "tables/loyaltyMemberships/emails/formatLoyaltyBookingBenefits": typeof tables_loyaltyMemberships_emails_formatLoyaltyBookingBenefits;
   "tables/loyaltyMemberships/emails/translations/loyaltyBookingBenefitsTranslation": typeof tables_loyaltyMemberships_emails_translations_loyaltyBookingBenefitsTranslation;
+  "tables/loyaltyMemberships/helpers/awardLoyaltyStay": typeof tables_loyaltyMemberships_helpers_awardLoyaltyStay;
   "tables/loyaltyMemberships/helpers/getBookingBenefitsContext": typeof tables_loyaltyMemberships_helpers_getBookingBenefitsContext;
   "tables/loyaltyMemberships/helpers/getLoyaltyMembership": typeof tables_loyaltyMemberships_helpers_getLoyaltyMembership;
   "tables/loyaltyMemberships/queries/fetchBookingBenefits": typeof tables_loyaltyMemberships_queries_fetchBookingBenefits;

@@ -323,6 +323,7 @@ export const seedAccommodations = internalMutation({
 				partiesAllowed: random() < 0.2,
 				houseRules: pick(HOUSE_RULES, random),
 				billingPlanId: 'booking_fee',
+				loyaltyEligible: false,
 				billingTerms: ACCOMMODATION_BILLING_PLANS.booking_fee,
 				billingStatus: 'active',
 				billingPeriodEndsAt: null,
@@ -403,7 +404,14 @@ export const seedReviews = internalMutation({
 				const checkInDate = parseDate(checkOutDate).subtract({ days: nights }).toString();
 
 				const stayPricing = calculateStayPricing(accommodation, checkInDate, checkOutDate);
+				const checkInAt = getZonedTimestamp(
+					checkInDate,
+					accommodation.checkInStart,
+					accommodation.timeZone
+				);
+				const policy = accommodation.cancellationPolicy;
 				const bookingId = await ctx.db.insert('bookings', {
+					loyaltyStatus: 'ineligible',
 					platformFeeTerms: calculateBookingPlatformFee(
 						accommodation,
 						stayPricing.totalMinor,
@@ -414,14 +422,15 @@ export const seedReviews = internalMutation({
 					cancellationTerms: {
 						stayType: 'overnight',
 						pricePerDayUseMinor: null,
-						policy: accommodation.cancellationPolicy,
+						policy,
+						refundDeadlineAt:
+							policy.mode === 'custom' || policy.mode === 'full_refund'
+								? undefined
+								: checkInAt -
+									ACCOMMODATION_CONFIG.CANCELLATION_POLICY_HOURS[policy.mode] * 60 * 60 * 1000,
 						timeZone: accommodation.timeZone,
 						checkInStart: accommodation.checkInStart,
-						checkInAt: getZonedTimestamp(
-							checkInDate,
-							accommodation.checkInStart,
-							accommodation.timeZone
-						),
+						checkInAt,
 						checkOut: accommodation.checkOut,
 						checkOutAt: getZonedTimestamp(
 							checkOutDate,

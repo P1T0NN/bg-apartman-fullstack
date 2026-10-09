@@ -62,6 +62,7 @@ async function setup() {
 	const stranger = t.withIdentity({ subject: 'stranger' });
 	const id = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
+			loyaltyEligible: false,
 			ownerId: 'host',
 			name: 'Fee test',
 			description: 'Test listing',
@@ -352,6 +353,9 @@ test('host checkout uses frozen terms, safe return URLs and one-time idempotent 
 			expect(body.get('line_items[0][price_data][unit_amount]')).toBe('30000');
 			expect(body.get('success_url')).toContain(
 				`https://app.example.com/host/accommodation-payment-successful?fee_payment=${payment._id}`
+			);
+			expect(body.get('cancel_url')).toBe(
+				`https://app.example.com/host/my-accommodations/${id}?tab=billing&fee_checkout=cancelled`
 			);
 			expect(body.has('subscription_data')).toBe(false);
 			expect(body.has('payment_method_types')).toBe(false);

@@ -1,42 +1,75 @@
 <script lang="ts">
-	import { m } from '@/lib/paraglide/messages';
+	// COMPONENTS
 	import AccommodationDetailsCancellationPolicyItem from './accommodation-details-cancellation-policy-item.svelte';
+
+	// UTILS
+	import { m } from '@/lib/paraglide/messages';
+	import { cn } from '@/utils/utils.js';
 	import { displayCancellationPolicyPeriods } from '@/shared/features/accommodations/utils/displayCancellationPolicyPeriods.js';
+
+	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
 
 	let { accommodation }: { accommodation: PublicAccommodation } = $props();
+
 	const periods = $derived(displayCancellationPolicyPeriods(accommodation.cancellationPolicy));
 	const fullRefund = $derived(periods.length === 1);
+	const preset = $derived(
+		accommodation.cancellationPolicy.mode === 'flexible' ||
+			accommodation.cancellationPolicy.mode === 'moderate' ||
+			accommodation.cancellationPolicy.mode === 'firm'
+			? accommodation.cancellationPolicy.mode
+			: null
+	);
 </script>
 
-<section id="cancellation-policy" class="scroll-mt-24 py-9" aria-labelledby="cancellation-title">
+<section id="cancellation-policy" class="scroll-mt-32 py-9" aria-labelledby="cancellation-title">
 	<h2 id="cancellation-title" class="mb-6 text-2xl font-semibold tracking-tight">
 		{m['BookingsFeature.BookingCancellationPolicy.title']()}
 	</h2>
 
-	<div class="flex items-start gap-4 rounded-xl bg-muted/50 p-5 sm:p-6">
+	<div
+		class={cn(
+			'flex items-start gap-4 rounded-xl border p-5',
+			fullRefund ? 'border-primary/30 bg-primary/5' : 'bg-muted/50'
+		)}
+	>
 		<span
-			class="mt-0.5 icon-[lucide--shield-check] size-6 shrink-0 text-muted-foreground"
+			class={cn(
+				'mt-0.5 size-6 shrink-0',
+				fullRefund
+					? 'icon-[lucide--circle-check] text-primary'
+					: 'icon-[lucide--shield-check] text-muted-foreground'
+			)}
 			aria-hidden="true"
 		></span>
 		<div>
 			<h3 class="text-lg font-semibold tracking-tight">
-				{fullRefund
-					? m['AccommodationPage.CancellationPolicy.fullTitle']()
-					: m['AccommodationPage.CancellationPolicy.customTitle']()}
+				{preset
+					? m[`CancellationPolicies.${preset}`]()
+					: fullRefund
+						? m['AccommodationPage.CancellationPolicy.fullTitle']()
+						: m['AccommodationPage.CancellationPolicy.customTitle']()}
 			</h3>
 			<p class="mt-1 max-w-prose text-sm leading-6 text-muted-foreground">
-				{fullRefund
-					? m['AccommodationPage.CancellationPolicy.fullHint']()
-					: m['AccommodationPage.CancellationPolicy.customHint']()}
+				{preset
+					? m[`CancellationPolicies.${preset}Description`]()
+					: fullRefund
+						? m['AccommodationPage.CancellationPolicy.fullHint']()
+						: m['AccommodationPage.CancellationPolicy.customHint']()}
 			</p>
 		</div>
 	</div>
+	{#if preset}
+		<p class="mt-3 text-sm text-muted-foreground">
+			{m['CancellationPolicies.inclusiveDeadline']()}
+		</p>
+	{/if}
 
 	{#if !fullRefund}
-		<div class="mt-6">
+		<div class="mt-4 overflow-hidden rounded-xl border">
 			<div
-				class="hidden grid-cols-[minmax(0,1fr)_auto] gap-4 border-b pb-3 text-xs font-medium text-muted-foreground sm:grid"
+				class="hidden items-center justify-between gap-4 border-b bg-muted/50 px-5 py-3 text-xs font-medium text-muted-foreground sm:flex"
 				aria-hidden="true"
 			>
 				<span>{m['AccommodationPage.CancellationPolicy.cancelWhen']()}</span>
@@ -50,19 +83,23 @@
 		</div>
 	{/if}
 
-	<div class="mt-6 flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
-		<p>{m['AccommodationPage.CancellationPolicy.beforeArrival']()}</p>
-		<p class="flex items-start gap-2 text-xs leading-5">
-			<span class="mt-0.5 icon-[lucide--clock-3] size-4 shrink-0" aria-hidden="true"></span>
+	<ul class="mt-6 flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+		<li class="flex items-start gap-3">
+			<span class="mt-1 icon-[lucide--info] size-4 shrink-0" aria-hidden="true"></span>
+			{m['AccommodationPage.CancellationPolicy.beforeArrival']()}
+		</li>
+		<li class="flex items-start gap-3">
+			<span class="mt-1 icon-[lucide--clock-3] size-4 shrink-0" aria-hidden="true"></span>
 			<span>
 				{m['BookingsFeature.BookingCancellationPolicy.policyTime']({
 					timeZone: accommodation.timeZone
 				})}
 				{#if !fullRefund}{m['BookingsFeature.BookingCancellationPolicy.elapsedHours']()}{/if}
 			</span>
-		</p>
-		<p class="border-t pt-4 text-xs leading-5">
+		</li>
+		<li class="flex items-start gap-3">
+			<span class="mt-1 icon-[lucide--credit-card] size-4 shrink-0" aria-hidden="true"></span>
 			{m['AccommodationPage.CancellationPolicy.noPayment']()}
-		</p>
-	</div>
+		</li>
+	</ul>
 </section>

@@ -11,7 +11,7 @@
 	import { formatMonth } from '@/shared/utils/date.js';
 
 	// TYPES
-	import type { NightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { NightlyPricing } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	import type { Month } from 'bits-ui';
 	import type { DateValue } from '@internationalized/date';
 

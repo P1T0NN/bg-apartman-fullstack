@@ -20,7 +20,6 @@
 	{#snippet trigger({ id })}
 		<Button
 			type="button"
-			variant="outline"
 			class="min-h-11 w-full sm:w-auto"
 			commandfor={id}
 			command="show-modal"

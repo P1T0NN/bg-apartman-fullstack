@@ -14,6 +14,7 @@
 	let {
 		period,
 		checkInAt,
+		refundDeadlineAt,
 		timeZone,
 		current = false,
 		timeline = false,
@@ -21,6 +22,7 @@
 	}: {
 		period: CancellationPolicyPeriod;
 		checkInAt?: number;
+		refundDeadlineAt?: number;
 		timeZone: string;
 		current?: boolean;
 		timeline?: boolean;
@@ -28,13 +30,19 @@
 	} = $props();
 
 	const end = $derived(
-		checkInAt === undefined ? undefined : checkInAt - (period.untilHours * DAY_IN_MS) / 24
+		period.percentage === 100 && refundDeadlineAt !== undefined
+			? refundDeadlineAt
+			: checkInAt === undefined
+				? undefined
+				: checkInAt - (period.untilHours * DAY_IN_MS) / 24
 	);
 
 	const start = $derived(
-		checkInAt === undefined || period.afterHours === null
-			? undefined
-			: checkInAt - (period.afterHours * DAY_IN_MS) / 24
+		period.percentage === 0 && refundDeadlineAt !== undefined
+			? refundDeadlineAt
+			: checkInAt === undefined || period.afterHours === null
+				? undefined
+				: checkInAt - (period.afterHours * DAY_IN_MS) / 24
 	);
 
 	const expired = $derived(

@@ -44,7 +44,7 @@
 />
 
 <main
-	class="mx-auto w-full max-w-6xl px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-16"
+	class="mx-auto w-full max-w-6xl px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-16"
 >
 	{#if result.error}
 		<ErrorComponent message={m['AccommodationPage.error']()} />
@@ -58,14 +58,12 @@
 
 			<AccommodationNavigation />
 
-			<div
-				class="grid grid-cols-1 items-start gap-9 pt-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-16 lg:pt-10"
-			>
-				<div class="min-w-0 lg:col-start-1 lg:row-start-1">
+			<div class="flex flex-col gap-9 pt-8 lg:flex-row lg:items-start lg:gap-16 lg:pt-10">
+				<div class="min-w-0 flex-1">
 					<AccommodationDetails {accommodation} />
 				</div>
 
-				<div class="hidden min-w-0 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:block">
+				<div class="hidden w-88 shrink-0 lg:sticky lg:top-32 lg:block">
 					<AccommodationSummary {accommodation} />
 				</div>
 			</div>
@@ -88,7 +86,7 @@
 					<Button
 						href={UNPROTECTED_PAGE_ENDPOINTS.BOOK_ACCOMMODATION(accommodation._id) +
 							page.url.search}
-						class="min-h-11 max-w-[60%] text-center whitespace-normal"
+						class="min-h-11 max-w-3/5 text-center whitespace-normal"
 					>
 						{m['AccommodationPage.AccommodationSummary.planBooking']()}
 					</Button>

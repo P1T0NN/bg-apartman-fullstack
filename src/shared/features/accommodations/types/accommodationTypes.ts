@@ -40,6 +40,7 @@ export type AccommodationCard = Omit<
 	| 'spaceType'
 	| 'address'
 	| 'amenities'
+	| 'loyaltyServices'
 	| 'imageKeys'
 	| 'checkInStart'
 	| 'timeZone'

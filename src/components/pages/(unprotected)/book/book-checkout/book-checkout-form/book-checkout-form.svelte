@@ -21,6 +21,7 @@
 	import { getMinimumDate } from '@/shared/features/accommodations/utils/getMinimumDate.js';
 	import { timeZoneSchema } from '@/shared/features/timezone/schemas/timezoneSchemas.js';
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+	import { COMPANY_DATA } from '@/shared/config.js';
 
 	// TYPES
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';
@@ -197,7 +198,13 @@
 				{m['BookingsFeature.BookingStayDatesLegend.availabilityHint']()}
 			</p>
 			<div class="mt-5 flex flex-col gap-3 border-t pt-5 text-sm leading-6">
-				<AccommodationGuestCancellationPolicy {accommodation} {checkInDate} currentOnly />
+				<AccommodationGuestCancellationPolicy
+					{accommodation}
+					{checkInDate}
+					amountMinor={quote.stayPricing.totalMinor > 0 ? quote.stayPricing.totalMinor : undefined}
+					currency={COMPANY_DATA.CURRENCY}
+					currentOnly
+				/>
 				<ButtonLink
 					href={cancellationPolicyHref}
 					variant="link"

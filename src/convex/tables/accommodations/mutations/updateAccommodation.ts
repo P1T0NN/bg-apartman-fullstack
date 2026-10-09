@@ -11,7 +11,7 @@ import { accommodationOwnerAggregate } from '../aggregates/accommodationOwnerAgg
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // SCHEMAS
-import { saveAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
+import { storedAccommodationSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
 import { cancellationPolicySchema } from '../../../../shared/features/accommodations/schemas/cancellationPolicySchemas.js';
 import { timeZoneSchema } from '../../../../shared/features/timezone/schemas/timezoneSchemas.js';
 
@@ -75,7 +75,7 @@ export const updateAccommodation = authenticatedUploadMutation({
 		}
 
 		// Unknown keys (id, uploadedFiles, retainedFiles) are stripped by the schema.
-		const parsed = saveAccommodationSchema.safeParse({
+		const parsed = storedAccommodationSchema.safeParse({
 			...existing,
 			...args,
 			timeZone: changesPosition ? args.timeZone : existing.timeZone,
@@ -95,7 +95,6 @@ export const updateAccommodation = authenticatedUploadMutation({
 		const pricing = calculateAccommodationPricing(nightlyPrice, discountPercent, weekendPrice);
 		await ctx.db.patch('accommodations', args.id, {
 			...data,
-			cancellationPolicy: args.cancellationPolicy ?? existing.cancellationPolicy,
 			...pricing,
 			updatedAt: Date.now()
 		});

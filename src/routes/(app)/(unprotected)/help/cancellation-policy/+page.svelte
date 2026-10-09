@@ -33,24 +33,16 @@
 
 	const ranges = [
 		{
-			time: m['HelpCancellationPolicyPage.rangeSeven'](),
-			refund: m['HelpCancellationPolicyPage.rangeSevenRefund']()
+			time: m['CancellationPolicies.flexible'](),
+			refund: m['CancellationPolicies.flexibleDeadline']()
 		},
 		{
-			time: m['HelpCancellationPolicyPage.rangeFive'](),
-			refund: m['HelpCancellationPolicyPage.hostSets']()
+			time: m['CancellationPolicies.moderate'](),
+			refund: m['CancellationPolicies.moderateDeadline']()
 		},
 		{
-			time: m['HelpCancellationPolicyPage.rangeThree'](),
-			refund: m['HelpCancellationPolicyPage.hostSets']()
-		},
-		{
-			time: m['HelpCancellationPolicyPage.rangeOne'](),
-			refund: m['HelpCancellationPolicyPage.hostSets']()
-		},
-		{
-			time: m['HelpCancellationPolicyPage.rangeFinal'](),
-			refund: m['HelpCancellationPolicyPage.hostSets']()
+			time: m['CancellationPolicies.firm'](),
+			refund: m['CancellationPolicies.firmDeadline']()
 		}
 	];
 </script>

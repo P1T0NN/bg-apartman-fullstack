@@ -1,6 +1,6 @@
 <script lang="ts">
 	// LIBRARIES
-	import { useAction, useQuery } from 'convex-svelte';
+	import { useQuery } from 'convex-svelte';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 	import { m } from '@/lib/paraglide/messages.js';
 
@@ -8,20 +8,26 @@
 	import { api } from '@convex/_generated/api.js';
 
 	// COMPONENTS
-	import { Button } from '@/components/ui/button/index.js';
 	import NativeDialog from '@/components/ui/native-components/native-dialog/native-dialog.svelte';
-	import ConfirmDialogActions from '@/components/ui/custom-components/confirm-dialog-actions/confirm-dialog-actions.svelte';
-
-	// UTILS
-	import { toastMessage } from '@/utils/toastMessage.js';
+	import RefundFeeButton from './refund-fee-button.svelte';
 
 	// TYPES
-	import type { AdminAccommodationsFeeDialogAccommodation } from '../admin-accommodations-fee-dialog/adminAccommodationsFeeDialogTypes.js';
+	import type { FunctionReturnType } from 'convex/server';
 	import type { Id } from '@convex/_generated/dataModel.js';
+	import type { Snippet } from 'svelte';
 
-	let { accommodation }: { accommodation: AdminAccommodationsFeeDialogAccommodation } = $props();
+	type Accommodation = FunctionReturnType<
+		typeof api.tables.accommodations.queries.fetchAccommodationsAdmin.fetchAccommodationsAdmin
+	>['items'][number];
+
+	let {
+		accommodation,
+		trigger: refundTrigger
+	}: {
+		accommodation: Accommodation;
+		trigger: Snippet<[{ id: string; eligible: boolean }]>;
+	} = $props();
 	const titleId = $props.id();
-	let pending = $state(false);
 	let reviewedPaymentId = $state<Id<'accommodationFeePayments'> | null>(null);
 	let reviewedAmount = $state(0);
 	const payments = useQuery(
@@ -37,35 +43,9 @@
 			(payment.status === 'paid' || payment.status === 'refund_pending')
 		)
 	);
-	const refund = useAction(
-		api.tables.accommodationFeePayments.actions.refundAccommodationFee.refundAccommodationFee
-	);
 	const isReviewedPaymentCurrent = $derived(
 		eligible && payment?._id === reviewedPaymentId && remaining === reviewedAmount
 	);
-
-	async function refundFee(close: () => void) {
-		const paymentId = reviewedPaymentId;
-		const expectedAmountMinor = reviewedAmount;
-		const canSubmitRefund = !pending && paymentId !== null && expectedAmountMinor > 0;
-		if (!canSubmitRefund) return;
-		pending = true;
-		try {
-			await refund({
-				paymentId,
-				expectedAmountMinor
-			});
-			close();
-			toastMessage({
-				type: 'success',
-				message: m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.saved']()
-			});
-		} catch (error) {
-			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
-		} finally {
-			pending = false;
-		}
-	}
 </script>
 
 <NativeDialog
@@ -78,18 +58,7 @@
 	}}
 >
 	{#snippet trigger({ id })}
-		{#if eligible}
-			<Button
-				type="button"
-				variant="destructive"
-				size="sm"
-				disabled={pending}
-				commandfor={id}
-				command="show-modal"
-			>
-				{m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.trigger']()}
-			</Button>
-		{/if}
+		{@render refundTrigger({ id, eligible })}
 	{/snippet}
 	{#snippet children({ id, close })}
 		<div class="flex flex-col gap-5 p-6">
@@ -109,14 +78,15 @@
 					}).format(reviewedAmount / 100)}
 				</p>
 			{/if}
-			<ConfirmDialogActions
-				{pending}
-				cancelCommandFor={id}
-				cancelLabel={m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.cancel']()}
-				confirmLabel={m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.trigger']()}
-				confirmDisabled={!isReviewedPaymentCurrent}
-				onConfirm={() => refundFee(close)}
-			/>
+			{#if reviewedPaymentId}
+				<RefundFeeButton
+					paymentId={reviewedPaymentId}
+					expectedAmountMinor={reviewedAmount}
+					canRefund={isReviewedPaymentCurrent}
+					dialogId={id}
+					{close}
+				/>
+			{/if}
 		</div>
 	{/snippet}
 </NativeDialog>

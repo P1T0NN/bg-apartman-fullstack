@@ -13,7 +13,7 @@ export function isAccommodationVisible<T extends VisibilityFields>(
 ): accommodation is T {
 	if (!accommodation || accommodation.status !== 'published') return false;
 	if (accommodation.billingStatus !== 'active') return false;
-	
+
 	return (
 		accommodation.billingPlanId === 'booking_fee' ||
 		accommodation.billingPlanId === 'free' ||

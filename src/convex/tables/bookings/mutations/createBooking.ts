@@ -20,11 +20,13 @@ import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationE
 import { checkBookingAvailability } from '../helpers/checkBookingAvailability.js';
 import { getBookingBenefitsContext } from '../../loyaltyMemberships/helpers/getBookingBenefitsContext.js';
 import { loyaltyBookingBenefitsValidator } from '../../loyaltyMemberships/validators/loyaltyBenefitsValidators.js';
+import { accommodations } from '../../accommodations/schema.js';
 
 // SCHEMAS
 import { createBookingSchema } from '../../../../shared/features/bookings/schemas/bookingSchemas.js';
 import { timeZoneSchema } from '../../../../shared/features/timezone/schemas/timezoneSchemas.js';
-import { cancellationPolicySchema } from '../../../../shared/features/accommodations/schemas/cancellationPolicySchemas.js';
+import { recordedCancellationPolicySchema } from '../../../../shared/features/accommodations/schemas/cancellationPolicySchemas.js';
+import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations/config.js';
 
 // CONFIG
 import { COMPANY_DATA } from '../../../../shared/config.js';
@@ -55,6 +57,7 @@ export const createBooking = mutation({
 		expectedBookingMode: v.optional(v.union(v.literal('request'), v.literal('instant'))),
 		expectedPricePerNightMinor: v.number(),
 		expectedTotalMinor: v.number(),
+		expectedCancellationPolicy: accommodations.validator.fields.cancellationPolicy,
 		expectedLoyaltyBenefits: v.optional(v.union(loyaltyBookingBenefitsValidator, v.null())),
 		checkInDate: v.string(),
 		checkOutDate: v.string(),
@@ -90,9 +93,15 @@ export const createBooking = mutation({
 
 		const instant = bookingMode === 'instant';
 
-		const policy = cancellationPolicySchema.safeParse(accommodation.cancellationPolicy);
+		const policy = recordedCancellationPolicySchema.safeParse(accommodation.cancellationPolicy);
+		const reviewedPolicy = recordedCancellationPolicySchema.safeParse(
+			args.expectedCancellationPolicy
+		);
 
-		if (!timeZone.success || !policy.success) {
+		const policyChanged =
+			!reviewedPolicy.success ||
+			(policy.success && JSON.stringify(policy.data) !== JSON.stringify(reviewedPolicy.data));
+		if (!timeZone.success || !policy.success || policyChanged) {
 			throw new ConvexError<BackendErrorData>({ code: 'BOOKING_TERMS_UNAVAILABLE' });
 		}
 
@@ -123,7 +132,7 @@ export const createBooking = mutation({
 			accommodation,
 			parsed.data.checkInDate,
 			parsed.data.checkOutDate,
-			paymentMethod === 'cash' ? loyalty.level : 0,
+			loyalty.level,
 			loyalty.services,
 			parsed.data.adults + parsed.data.children,
 			loyalty.discountMode
@@ -167,6 +176,7 @@ export const createBooking = mutation({
 		} = parsed.data;
 
 		const booking = {
+			loyaltyStatus: accommodation.loyaltyEligible ? ('pending' as const) : ('ineligible' as const),
 			...bookingDetails,
 			platformFeeTerms: calculateBookingPlatformFee(
 				accommodation,
@@ -189,6 +199,11 @@ export const createBooking = mutation({
 				timeZone: timeZone.data,
 				checkInStart,
 				checkInAt,
+				refundDeadlineAt:
+					policy.data.mode === 'custom' || policy.data.mode === 'full_refund'
+						? undefined
+						: checkInAt -
+							ACCOMMODATION_CONFIG.CANCELLATION_POLICY_HOURS[policy.data.mode] * 60 * 60 * 1000,
 				checkOut,
 				checkOutAt,
 				pricePerNightMinor: effectivePrice,

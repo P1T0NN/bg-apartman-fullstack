@@ -1,8 +1,10 @@
 <script lang="ts">
 	// LIBRARIES
-	import BoxesIcon from '@lucide/svelte/icons/boxes';
 	import * as Sheet from '@/components/ui/sheet/index.js';
 	import { IsMobile } from '@/hooks/is-mobile.svelte.js';
+
+	// COMPONENTS
+	import Logo from '@/components/ui/custom-components/logo/logo.svelte';
 
 	// UTILS
 	import { cn } from '@/utils/utils.js';
@@ -48,11 +50,7 @@
 			<div class="flex min-h-0 flex-1 flex-col [&_a]:py-2.5 [&_a]:text-sm [&_a_svg]:size-[18px]">
 				{#if sidebarHeader}
 					<header class="flex shrink-0 items-center gap-2 p-3 pr-14">
-						<span
-							class="flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-						>
-							<BoxesIcon class="size-[18px]" aria-hidden="true" />
-						</span>
+						<Logo showText={false} imageClass="size-7" />
 						<div class="min-w-0 overflow-hidden">{@render sidebarHeader()}</div>
 					</header>
 				{/if}
@@ -87,11 +85,7 @@
 					data-native-sidebar-header
 					class="flex min-h-14 shrink-0 items-center gap-2 overflow-hidden px-3 py-2"
 				>
-					<span
-						class="flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-					>
-						<BoxesIcon class="size-[18px]" aria-hidden="true" />
-					</span>
+					<Logo showText={false} imageClass="size-7" />
 					<div data-native-sidebar-header-label class="min-w-0 overflow-hidden">
 						{@render sidebarHeader()}
 					</div>

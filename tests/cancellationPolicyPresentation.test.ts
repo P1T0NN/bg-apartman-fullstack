@@ -56,11 +56,9 @@ test('guest periods merge equal outcomes while preserving exact policy boundarie
 				}
 });
 
-test('default and all-full custom policies both display one period ending before check-in', () => {
+test('previous full-refund schedules retain their original meaning', () => {
 	const expected = [{ percentage: 100, afterHours: null, untilHours: 0 }];
-	expect(
-		displayCancellationPolicyPeriods(ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY)
-	).toEqual(expected);
+	expect(displayCancellationPolicyPeriods({ version: 1, mode: 'full_refund' })).toEqual(expected);
 	expect(
 		displayCancellationPolicyPeriods({
 			version: 1,

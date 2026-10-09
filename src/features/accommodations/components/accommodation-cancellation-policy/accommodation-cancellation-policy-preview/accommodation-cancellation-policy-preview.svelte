@@ -2,12 +2,6 @@
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages';
 
-	// CONFIG
-	import { ACCOMMODATION_CONFIG } from '@/shared/features/accommodations/config.js';
-
-	// COMPONENTS
-	import AccommodationCancellationPolicyPreviewItem from './accommodation-cancellation-policy-preview-item.svelte';
-
 	// SCHEMAS
 	import { cancellationPolicySchema } from '@/shared/features/accommodations/schemas/cancellationPolicySchemas.js';
 
@@ -27,36 +21,22 @@
 	</h3>
 
 	{#if validation.success}
-		{#if validation.data.mode === 'full_refund'}
-			<p class="text-sm">
-				{m['AccommodationsFeature.AccommodationCancellationPolicyPreview.fullRefundPreview']()}
-			</p>
-		{:else}
-			<p class="text-sm text-muted-foreground">
-				{m['AccommodationsFeature.AccommodationCancellationPolicyCustom.timeBeforeCheckIn']()}
-			</p>
-
-			<dl class="flex flex-col gap-3 text-sm">
-				<div class="grid gap-1 sm:grid-cols-2">
-					<dt>
-						{m['AccommodationsFeature.AccommodationCancellationPolicyCustom.sevenDaysOrMore']()}
-					</dt>
-
-					<dd>{m['AccommodationsFeature.AccommodationCancellationPolicyItem.refund100']()}</dd>
-				</div>
-
-				{#each ACCOMMODATION_CONFIG.CANCELLATION_POLICY_RANGES as range (range)}
-					<AccommodationCancellationPolicyPreviewItem {range} percentage={validation.data[range]} />
-				{/each}
-			</dl>
-		{/if}
+		<p class="text-sm font-medium">
+			{m[`CancellationPolicies.${validation.data.mode}`]()}
+		</p>
+		<p class="text-sm">
+			{m[`CancellationPolicies.${validation.data.mode}Description`]()}
+		</p>
+		<p class="text-sm text-muted-foreground">
+			{m['CancellationPolicies.inclusiveDeadline']()}
+		</p>
 
 		<p class="text-sm text-muted-foreground">
 			{m['AccommodationsFeature.AccommodationCancellationPolicyPreview.cancellationAllowed']()}
 		</p>
 	{:else}
 		<p class="text-sm text-muted-foreground">
-			{m['AccommodationsFeature.AccommodationCancellationPolicyPreview.invalidPreview']()}
+			{m['CancellationPolicies.choosePreset']()}
 		</p>
 	{/if}
 

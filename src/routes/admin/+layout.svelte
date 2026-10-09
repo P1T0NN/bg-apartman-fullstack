@@ -7,6 +7,7 @@
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import StarIcon from '@lucide/svelte/icons/star';
 	import HousesIcon from '@lucide/svelte/icons/houses';
+	import CompassIcon from '@lucide/svelte/icons/compass';
 	import { m } from '@/lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { useCachedConvexQuery } from '@/hooks/useCachedConvexQuery.svelte.js';
@@ -15,10 +16,13 @@
 	import { api } from '@convex/_generated/api';
 
 	// CONFIG
-	import { COMPANY_DATA } from '@/shared/config';
-	import { ADMIN_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+	import {
+		ADMIN_PAGE_ENDPOINTS,
+		UNPROTECTED_PAGE_ENDPOINTS
+	} from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import Logo from '@/components/ui/custom-components/logo/logo.svelte';
 	import NativeSidebar from '@/components/ui/native-components/native-sidebar/native-sidebar.svelte';
 	import NativeSidebarContent from '@/components/ui/native-components/native-sidebar/native-sidebar-content.svelte';
 	import NativeSidebarLink from '@/components/ui/native-components/native-sidebar/native-sidebar-link.svelte';
@@ -45,14 +49,14 @@
 <div class="flex min-h-screen w-full bg-sidebar">
 	<NativeSidebar label="Admin navigation" bind:openMobile={mobileSidebarOpen}>
 		{#snippet sidebarHeader()}
-			<span class="truncate text-sm font-semibold">{COMPANY_DATA.NAME}</span>
+			<Logo showImage={false} class="text-sm font-semibold" />
 		{/snippet}
 
 		{#snippet sidebarFooter()}
 			<NativeSidebarUser />
 		{/snippet}
 
-		<div class="flex flex-col gap-4 p-3">
+		<div class="flex min-h-full flex-col gap-4 p-3">
 			<nav aria-label="Admin" class="flex flex-col gap-1">
 				<NativeSidebarSection title="General">
 					<NativeSidebarLink href={ADMIN_PAGE_ENDPOINTS.DASHBOARD}>
@@ -91,6 +95,12 @@
 					</NativeSidebarLink>
 				</NativeSidebarSection>
 			</nav>
+			<div class="mt-auto">
+				<NativeSidebarLink href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}>
+					<CompassIcon aria-hidden="true" />
+					<span>Back to Home Page</span>
+				</NativeSidebarLink>
+			</div>
 		</div>
 	</NativeSidebar>
 

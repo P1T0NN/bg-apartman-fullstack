@@ -3,86 +3,94 @@
 	import { m } from '@/lib/paraglide/messages';
 
 	// COMPONENTS
-	import * as Table from '@/components/ui/table/index.js';
 	import { Badge } from '@/components/ui/badge/index.js';
 
 	// TYPES
-	import type { LOYALTY_LEVELS } from '@/shared/features/loyalty/data/loyaltyData.js';
+	import type { LoyaltyTier } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 
 	let {
 		tier,
-		currentLevel,
-		desktop = false
+		currentLevel
 	}: {
-		tier: (typeof LOYALTY_LEVELS)[number];
+		tier: LoyaltyTier;
 		currentLevel: number;
-		desktop?: boolean;
 	} = $props();
-	const breakfast = $derived(
+
+	const isCurrent = $derived(currentLevel === tier.level);
+
+	const guests = $derived(
 		tier.breakfast === 'all'
 			? m['BenefitsPage.BenefitsLevelItem.allGuests']()
 			: tier.breakfast === 'up_to_two'
 				? m['BenefitsPage.BenefitsLevelItem.twoGuests']()
 				: m['BenefitsPage.BenefitsLevelItem.notIncluded']()
 	);
+
+	const hasBreakfast = $derived(tier.level >= 2);
+	const hasSpa = $derived(tier.level === 3);
 </script>
 
-{#if desktop}
-	<Table.Row>
-		<Table.Head scope="row" class="px-5 py-5">
-			<div class="flex flex-col items-start gap-2">
-				<span>{m['BenefitsPage.BenefitsLevelItem.level']({ level: tier.level })}</span>
-				{#if currentLevel === tier.level}<Badge>
-						{m['BenefitsPage.BenefitsLevelItem.current']()}
-					</Badge>{/if}
-			</div>
-		</Table.Head>
-		<Table.Cell>
-			<span class="text-lg font-semibold tabular-nums">{tier.discount}%</span>
-		</Table.Cell>
-		<Table.Cell>{m['BenefitsPage.BenefitsLevelItem.included']()}</Table.Cell>
-		<Table.Cell class="max-w-40 whitespace-normal">
-			{tier.level >= 2
-				? m['BenefitsPage.BenefitsLevelItem.breakfastIncluded']({ guests: breakfast })
-				: breakfast}
-		</Table.Cell>
-		<Table.Cell class="pr-5">
-			{tier.level === 3
-				? m['BenefitsPage.BenefitsLevelItem.included']()
-				: m['BenefitsPage.BenefitsLevelItem.notIncluded']()}
-		</Table.Cell>
-	</Table.Row>
-{:else}
-	<section class="flex flex-col gap-4 p-5 first:rounded-t-2xl last:rounded-b-2xl">
-		<div class="flex flex-wrap items-center justify-between gap-3">
+{#snippet included(text: string)}
+	<li class="flex items-center gap-2.5">
+		<span class="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+			<span class="icon-[lucide--check] size-3" aria-hidden="true"></span>
+		</span>
+		{text}
+	</li>
+{/snippet}
+
+{#snippet missing(label: string)}
+	<li class="flex items-center gap-2.5 text-muted-foreground">
+		<span class="grid size-5 shrink-0 place-items-center rounded-full bg-muted">
+			<span class="icon-[lucide--minus] size-3" aria-hidden="true"></span>
+		</span>
+		<span class="line-through decoration-muted-foreground/50">{label}</span>
+		<span class="sr-only">{m['BenefitsPage.BenefitsLevelItem.notIncluded']()}</span>
+	</li>
+{/snippet}
+
+<li
+	class="flex flex-col rounded-2xl border bg-card text-card-foreground transition-colors {isCurrent
+		? 'border-primary shadow-sm ring-1 ring-primary'
+		: ''}"
+	aria-current={isCurrent ? 'true' : undefined}
+>
+	<div class="flex flex-col gap-4 p-5 sm:p-6">
+		<div class="flex min-h-6 items-center justify-between gap-3">
 			<h3 class="font-semibold">
 				{m['BenefitsPage.BenefitsLevelItem.level']({ level: tier.level })}
 			</h3>
-			{#if currentLevel === tier.level}<Badge>
-					{m['BenefitsPage.BenefitsLevelItem.current']()}
-				</Badge>{/if}
+			{#if isCurrent}
+				<Badge>{m['BenefitsPage.BenefitsLevelItem.current']()}</Badge>
+			{/if}
 		</div>
-		<div class="flex items-baseline gap-3">
-			<p class="text-3xl font-semibold tracking-tight">{tier.discount}%</p>
+
+		<div class="flex flex-col gap-1">
+			<p class="flex items-start leading-none font-semibold tracking-tighter tabular-nums">
+				<span class="text-6xl">{tier.discount}</span>
+				<span class="mt-1 text-2xl">%</span>
+			</p>
 			<p class="text-sm text-muted-foreground">{m['BenefitsPage.BenefitsLevelItem.discount']()}</p>
 		</div>
-		<ul class="flex flex-col gap-2 text-sm">
-			<li class="flex items-center gap-2">
-				<span class="icon-[lucide--check] size-4 shrink-0" aria-hidden="true"></span>
-				{m['BenefitsPage.BenefitsLevelItem.parking']()}
-			</li>
-			{#if tier.level >= 2}
-				<li class="flex items-center gap-2">
-					<span class="icon-[lucide--check] size-4 shrink-0" aria-hidden="true"></span>
-					{m['BenefitsPage.BenefitsLevelItem.breakfast']({ guests: breakfast })}
-				</li>
-			{/if}
-			{#if tier.level === 3}
-				<li class="flex items-center gap-2">
-					<span class="icon-[lucide--check] size-4 shrink-0" aria-hidden="true"></span>
-					{m['BenefitsPage.BenefitsLevelItem.spa']()}
-				</li>
-			{/if}
-		</ul>
-	</section>
-{/if}
+
+		<p class="text-xs text-muted-foreground">
+			{m['BenefitsPage.BenefitsLevelItem.threshold']({ stays: tier.stays })}
+		</p>
+	</div>
+
+	<ul class="flex flex-1 flex-col gap-3 border-t border-dashed p-5 text-sm sm:p-6">
+		{@render included(m['BenefitsPage.BenefitsLevelItem.parking']())}
+
+		{#if hasBreakfast}
+			{@render included(m['BenefitsPage.BenefitsLevelItem.breakfast']({ guests }))}
+		{:else}
+			{@render missing(m['BenefitsPage.BenefitsLevels.breakfast']())}
+		{/if}
+
+		{#if hasSpa}
+			{@render included(m['BenefitsPage.BenefitsLevelItem.spa']())}
+		{:else}
+			{@render missing(m['BenefitsPage.BenefitsLevels.spa']())}
+		{/if}
+	</ul>
+</li>

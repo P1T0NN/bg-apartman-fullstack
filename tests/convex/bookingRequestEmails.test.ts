@@ -1122,10 +1122,7 @@ test('expiration batches and continuations process legacy requests once without 
 	await t.run(async (ctx) => {
 		await ctx.db.patch('bookings', _id, { requestExpiresAt: undefined });
 		for (let i = 1; i < count; i++)
-			await ctx.db.insert('bookings', {
-				...data,
-				requestExpiresAt: undefined
-			});
+			await ctx.db.insert('bookings', { ...data, requestExpiresAt: undefined });
 	});
 	vi.setSystemTime(original.requestExpiresAt + BOOKINGS_CONFIG.REQUEST_RESPONSE_WINDOW_MS);
 	expect(await t.mutation(expire, {})).toBe(BOOKINGS_CONFIG.REQUEST_EXPIRATION_BATCH_SIZE);

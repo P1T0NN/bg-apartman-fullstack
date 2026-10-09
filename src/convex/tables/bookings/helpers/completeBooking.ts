@@ -1,5 +1,6 @@
 // LIBRARIES
 import { ConvexError } from 'convex/values';
+import { awardLoyaltyStay } from '../../loyaltyMemberships/helpers/awardLoyaltyStay.js';
 
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
@@ -25,4 +26,5 @@ export async function completeBooking(
 		completedBy: actorId,
 		completionNote: reason
 	});
+	await awardLoyaltyStay(ctx, booking._id);
 }

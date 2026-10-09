@@ -3,13 +3,11 @@
 	import { getLocale } from '@/lib/paraglide/runtime';
 
 	// UTILS
-	import {
-		getNightlyPricing,
-		type NightlyPricing
-	} from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import { getNightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
 	import { formatCurrency } from '@/shared/utils/currency.js';
 
 	// TYPES
+	import type { NightlyPricing } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	import type { DateValue } from '@internationalized/date';
 
 	let { date, pricing }: { date: DateValue; pricing: NightlyPricing } = $props();

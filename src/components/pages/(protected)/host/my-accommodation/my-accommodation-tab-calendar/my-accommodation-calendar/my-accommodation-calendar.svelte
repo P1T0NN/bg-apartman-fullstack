@@ -9,7 +9,7 @@
 	import { RangeCalendar as RangeCalendarPrimitive, type DateRange } from 'bits-ui';
 
 	// TYPES
-	import type { NightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { NightlyPricing } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	import type { DateValue } from '@internationalized/date';
 
 	let {

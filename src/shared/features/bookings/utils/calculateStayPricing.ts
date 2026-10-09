@@ -2,12 +2,8 @@
 import { DAY_IN_MS, parseIsoDate } from '../../../utils/date.js';
 import { calculateDiscountedPrice } from '../../accommodations/utils/calculateAccommodationPricing.js';
 
-export type NightlyPricing = {
-	pricePerNightMinor: number;
-	discountBps: number;
-	loyaltyDiscountBps?: number;
-	weekendPricePerNightMinor?: number | null;
-};
+// TYPES
+import type { NightlyPricing } from '../../loyalty/types/loyaltyTypes.js';
 
 function discountedNightlyPrice(price: number, pricing: NightlyPricing): number {
 	return calculateDiscountedPrice(

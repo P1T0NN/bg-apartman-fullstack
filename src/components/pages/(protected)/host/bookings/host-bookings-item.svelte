@@ -5,6 +5,7 @@
 
 	// COMPONENTS
 	import NativeAvatar from '@/components/ui/native-components/native-avatar/native-avatar.svelte';
+	import NativePopover from '@/components/ui/native-components/native-popover/native-popover.svelte';
 	import Plural from '@/components/ui/custom-components/plural/plural.svelte';
 	import BookingStatusBadge from '@/features/bookings/components/booking-status-badge/booking-status-badge.svelte';
 	import { TableCell } from '@/components/ui/table';
@@ -23,6 +24,8 @@
 		$props();
 
 	let failedImageUrl = $state('');
+
+	let detailsDialog: HostBookingsDetailsDialog;
 
 	const guestName = $derived(formatFullName(booking.firstName, booking.lastName));
 	const nights = $derived(getBookingNights(booking.checkInDate, booking.checkOutDate));
@@ -149,12 +152,39 @@
 	</div>
 {/snippet}
 
+{#snippet actionsTrigger()}
+	<span class="icon-[lucide--ellipsis] size-5" aria-hidden="true"></span>
+{/snippet}
+
 {#snippet actions()}
 	<div
 		class="flex flex-wrap items-center gap-2 xl:justify-end [&_button]:min-h-10 xl:[&_button]:min-h-8"
 	>
 		<HostBookingsItemActions {booking} />
-		<HostBookingsDetailsDialog {booking} />
+
+		<NativePopover
+			id={`booking-actions-${booking._id}`}
+			trigger={actionsTrigger}
+			triggerLabel={m['HostBookingsPage.columns.actions']()}
+			triggerClass="size-10 justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground xl:size-8"
+		>
+			<button
+				type="button"
+				class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+				aria-label={m['HostBookingsPage.HostBookingsDetailsDialog.detailsLabel']({
+					name: guestName
+				})}
+				onclick={(event) => {
+					event.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover();
+					detailsDialog.open();
+				}}
+			>
+				<span class="icon-[lucide--eye] size-4" aria-hidden="true"></span>
+				{m['HostBookingsPage.HostBookingsDetailsDialog.details']()}
+			</button>
+		</NativePopover>
+
+		<HostBookingsDetailsDialog bind:this={detailsDialog} {booking} />
 	</div>
 {/snippet}
 

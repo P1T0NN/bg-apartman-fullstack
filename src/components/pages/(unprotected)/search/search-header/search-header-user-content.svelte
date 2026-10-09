@@ -115,6 +115,7 @@
 	{:else}
 		<Button
 			variant="outline"
+			class="border-header-foreground/25 bg-transparent text-header-foreground hover:bg-header-foreground/10 hover:text-header-foreground"
 			href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN}
 			onclick={(event) => {
 				event.preventDefault();

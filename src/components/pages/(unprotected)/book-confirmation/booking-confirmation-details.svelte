@@ -133,6 +133,9 @@
 					policy={confirmation.cancellationTerms.policy}
 					timeZone={confirmation.cancellationTerms.timeZone}
 					checkInAt={confirmation.cancellationTerms.checkInAt}
+					refundDeadlineAt={confirmation.cancellationTerms.refundDeadlineAt}
+					amountMinor={confirmation.cancellationTerms.stayPricing.totalMinor}
+					currency={confirmation.cancellationTerms.currency}
 					status={confirmation.status}
 					booked
 				/>

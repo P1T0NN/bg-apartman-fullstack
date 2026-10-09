@@ -8,7 +8,13 @@ const refundPercentageSchema = z.union(
 	ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES.map((percentage) => z.literal(percentage))
 );
 
-export const cancellationPolicySchema = z
+export const cancellationPolicySchema = z.object({
+	version: z.literal(1),
+	mode: z.enum(ACCOMMODATION_CONFIG.CANCELLATION_POLICY_MODES)
+});
+
+// Accepted booking schedules remain readable; hosts can only save a preset.
+const previousCancellationPolicySchema = z
 	.discriminatedUnion('mode', [
 		z.object({ version: z.literal(1), mode: z.literal('full_refund') }),
 		z.object({
@@ -30,6 +36,11 @@ export const cancellationPolicySchema = z
 			previousPercentage = policy[range];
 		}
 	});
+
+export const recordedCancellationPolicySchema = z.union([
+	cancellationPolicySchema,
+	previousCancellationPolicySchema
+]);
 
 export const accommodationCancellationPolicySchema = z.object({
 	cancellationPolicy: cancellationPolicySchema

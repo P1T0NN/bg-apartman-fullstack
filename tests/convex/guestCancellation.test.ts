@@ -27,6 +27,32 @@ const custom = {
 	under24Hours: 0
 } as const;
 
+test('preset cancellation rechecks the frozen inclusive deadline and records only full or zero refunds', async () => {
+	for (const mode of ACCOMMODATION_CONFIG.CANCELLATION_POLICY_MODES) {
+		vi.setSystemTime(now);
+		const hours = ACCOMMODATION_CONFIG.CANCELLATION_POLICY_HOURS[mode];
+		const { t, account, args, bookingId, terms, drain } = await setup(
+			'confirmed',
+			now + hours * 60 * 60 * 1000
+		);
+		await t.run((ctx) =>
+			ctx.db.patch('bookings', bookingId, {
+				cancellationTerms: { ...terms, policy: { version: 1, mode }, refundDeadlineAt: now }
+			})
+		);
+		vi.setSystemTime(now + 1);
+		await expect(
+			account.mutation(cancel, { ...args, expectedRefundPercentage: 100 })
+		).rejects.toThrow('BOOKING_CANCELLATION_CHANGED');
+		expect((await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.status).toBe('confirmed');
+		await account.mutation(cancel, { ...args, expectedRefundPercentage: 0 });
+		expect(
+			(await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.cancellation?.refundPercentage
+		).toBe(0);
+		await drain();
+	}
+});
+
 beforeEach(() => {
 	vi.useFakeTimers();
 	vi.setSystemTime(now);
@@ -117,6 +143,7 @@ async function setup(
 			updatedAt: now
 		});
 		const bookingId = await ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
 			platformFeeTerms: null,
 			paymentMethod: 'cash',
 			ownerId: 'guest-1',

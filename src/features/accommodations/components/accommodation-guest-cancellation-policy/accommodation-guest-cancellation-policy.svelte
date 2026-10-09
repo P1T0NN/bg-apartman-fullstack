@@ -11,12 +11,16 @@
 	let {
 		accommodation,
 		checkInDate = '',
+		amountMinor,
+		currency,
 		compact = false,
 		currentOnly = false,
 		timeline = false
 	}: {
 		accommodation: Pick<PublicAccommodation, 'cancellationPolicy' | 'timeZone' | 'checkInStart'>;
 		checkInDate?: string;
+		amountMinor?: number;
+		currency?: string;
 		compact?: boolean;
 		currentOnly?: boolean;
 		timeline?: boolean;
@@ -38,6 +42,8 @@
 	policy={accommodation.cancellationPolicy}
 	timeZone={accommodation.timeZone}
 	{checkInAt}
+	{amountMinor}
+	{currency}
 	{compact}
 	{currentOnly}
 	{timeline}

@@ -17,6 +17,6 @@ export function calculatePaidPeriodEnd(start: number, months: number): number {
 	const isValidDeadline = Number.isFinite(end.getTime());
 
 	if (!isValidDeadline) throw new Error('Invalid paid period');
-	
+
 	return end.getTime();
 }

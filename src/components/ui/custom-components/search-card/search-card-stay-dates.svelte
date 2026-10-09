@@ -25,7 +25,10 @@
 	const uid = $props.id();
 	const calendarId = `home-stay-dates-${uid}`;
 
-	let { value = $bindable<DateRange | undefined>() }: { value?: DateRange } = $props();
+	let {
+		value = $bindable<DateRange | undefined>(),
+		dark = false
+	}: { value?: DateRange; dark?: boolean } = $props();
 
 	const stayDatesLabel = $derived.by(() => {
 		const start = value?.start;
@@ -51,8 +54,20 @@
 </script>
 
 {#snippet datesTrigger()}
-	<span class="icon-[lucide--calendar] size-4 shrink-0 text-muted-foreground"></span>
-	<span class={cn('truncate', !value?.start && 'text-muted-foreground')}>{stayDatesLabel}</span>
+	<span
+		class={cn(
+			'icon-[lucide--calendar] size-4 shrink-0',
+			dark ? 'text-header-foreground/60' : 'text-muted-foreground'
+		)}
+	></span>
+	<span
+		class={cn(
+			'truncate',
+			!value?.start && (dark ? 'text-header-foreground/60' : 'text-muted-foreground')
+		)}
+	>
+		{stayDatesLabel}
+	</span>
 {/snippet}
 
 <Field.Field>
@@ -61,8 +76,11 @@
 		id={calendarId}
 		trigger={datesTrigger}
 		triggerLabel={m['Components.SearchCardStayDates.stayDates']()}
-		triggerClass="h-9 w-full justify-start gap-2 rounded-3xl border border-transparent bg-input/50 px-3 text-sm font-normal transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-		class="w-fit! p-0"
+		triggerClass={cn(
+			'h-9 w-full justify-start gap-2 rounded-3xl border border-transparent px-3 text-sm font-normal transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
+			dark ? 'bg-header-foreground/10 text-header-foreground' : 'bg-input/50'
+		)}
+		class={cn('w-fit! p-0', dark && 'dark')}
 	>
 		<RangeCalendar
 			bind:value
@@ -71,6 +89,9 @@
 			numberOfMonths={isMobile.current ? 1 : 2}
 			fixedWeeks
 			onValueChange={handleRangeChange}
+			class={dark
+				? 'bg-transparent dark:[&_[data-range-middle]]:text-accent-foreground'
+				: undefined}
 		/>
 	</NativePopover>
 </Field.Field>

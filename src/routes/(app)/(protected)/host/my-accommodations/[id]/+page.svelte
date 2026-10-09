@@ -10,6 +10,7 @@
 	import MyAccommodationLoading from '@/components/pages/(protected)/host/my-accommodation/loading/my-accommodation-loading.svelte';
 	import MyAccommodationTabListing from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-listing/my-accommodation-tab-listing.svelte';
 	import MyAccommodationTabCalendar from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-calendar/my-accommodation-tab-calendar.svelte';
+	import MyAccommodationTabBilling from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-billing/my-accommodation-tab-billing.svelte';
 	import MyAccommodationTabSettings from '@/components/pages/(protected)/host/my-accommodation/my-accommodation-tab-settings/my-accommodation-tab-settings.svelte';
 	import { TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -30,11 +31,11 @@
 		{#if accommodation}
 			<MyAccommodationHeader {accommodation} />
 
-			<TabsUrl param="tab" defaultValue="listing" class="gap-7">
-				<div class="border-b">
+			<TabsUrl param="tab" defaultValue="listing" class="min-w-0 gap-7">
+				<div class="min-w-0 overflow-x-auto border-b">
 					<TabsList
 						variant="line"
-						class="h-12 w-full justify-start gap-3 sm:w-fit sm:gap-8"
+						class="h-12 w-max min-w-full justify-start gap-3 sm:w-fit sm:min-w-0 sm:gap-8"
 						aria-label={m['MyAccommodationPage.MyAccommodationTabs.label']()}
 					>
 						<TabsTrigger value="listing">
@@ -43,6 +44,10 @@
 
 						<TabsTrigger value="calendar">
 							{m['MyAccommodationPage.MyAccommodationTabs.calendar']()}
+						</TabsTrigger>
+
+						<TabsTrigger value="billing">
+							{m['MyAccommodationPage.MyAccommodationTabs.billing']()}
 						</TabsTrigger>
 
 						<TabsTrigger value="settings">
@@ -57,6 +62,10 @@
 
 				<TabsContent value="calendar">
 					<MyAccommodationTabCalendar {accommodation} />
+				</TabsContent>
+
+				<TabsContent value="billing">
+					<MyAccommodationTabBilling />
 				</TabsContent>
 
 				<TabsContent value="settings">

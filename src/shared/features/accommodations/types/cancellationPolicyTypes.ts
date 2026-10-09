@@ -5,9 +5,13 @@ import type { z } from 'zod';
 import type { ACCOMMODATION_CONFIG } from '../config.js';
 
 // SCHEMAS
-import type { cancellationPolicySchema } from '../schemas/cancellationPolicySchemas.js';
+import type {
+	cancellationPolicySchema,
+	recordedCancellationPolicySchema
+} from '../schemas/cancellationPolicySchemas.js';
 
-export type CancellationPolicy = z.infer<typeof cancellationPolicySchema>;
+export type CancellationPolicy = z.infer<typeof recordedCancellationPolicySchema>;
+export type CancellationPolicyPreset = z.infer<typeof cancellationPolicySchema>;
 
 export type CancellationPolicyRange =
 	(typeof ACCOMMODATION_CONFIG.CANCELLATION_POLICY_RANGES)[number];

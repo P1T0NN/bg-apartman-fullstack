@@ -2,11 +2,11 @@
 	// COMPONENTS
 	import * as Field from '@/components/ui/field/index.js';
 	import AccommodationCancellationPolicyModeItem from './accommodation-cancellation-policy-mode-item.svelte';
-	import AccommodationCancellationPolicyCustom from './accommodation-cancellation-policy-custom/accommodation-cancellation-policy-custom.svelte';
 	import AccommodationCancellationPolicyPreview from './accommodation-cancellation-policy-preview/accommodation-cancellation-policy-preview.svelte';
 
 	// CONFIG
 	import { m } from '@/lib/paraglide/messages';
+	import { ACCOMMODATION_CONFIG } from '@/shared/features/accommodations/config.js';
 
 	// TYPES
 	import type {
@@ -17,7 +17,7 @@
 	let { context }: { context: FormFieldContext<FormValue> } = $props();
 
 	const uid = $props.id();
-	const modes = ['full_refund', 'custom'] as const;
+	const modes = ACCOMMODATION_CONFIG.CANCELLATION_POLICY_MODES;
 	const mode = $derived(context.inputValue('cancellationPolicy.mode'));
 </script>
 
@@ -42,8 +42,10 @@
 		</Field.Group>
 	</Field.Set>
 
-	{#if mode === 'custom'}
-		<AccommodationCancellationPolicyCustom {context} />
+	{#if mode === 'custom' || mode === 'full_refund'}
+		<p class="text-sm text-muted-foreground" role="status">
+			{m['CancellationPolicies.legacySelection']()}
+		</p>
 	{/if}
 
 	<AccommodationCancellationPolicyPreview policy={context.getValue('cancellationPolicy')} />

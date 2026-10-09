@@ -70,10 +70,6 @@
 	const checkOutDate = $derived(values.checkOutDate);
 	const loyalty = useLoyaltyQuote({
 		accommodation: () => accommodation,
-		paymentMethod: () =>
-			accommodation.supportedPaymentMethods === 'both'
-				? values.paymentMethod
-				: accommodation.supportedPaymentMethods,
 		checkInDate: () => checkInDate,
 		checkOutDate: () => checkOutDate,
 		guests: () => values.adults + values.children
@@ -125,6 +121,7 @@
 
 				createdBookingId = await createBooking({
 					...parsed.data,
+					expectedCancellationPolicy: accommodation.cancellationPolicy,
 					expectedLoyaltyBenefits: loyalty.quote.benefits,
 					accommodationId: accommodation._id,
 					guestId: guest.ensureGuestId()

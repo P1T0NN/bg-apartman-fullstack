@@ -55,6 +55,7 @@ export const createAccommodation = authenticatedUploadMutation({
 		if (invalidImages) throw new ConvexError<BackendErrorData>({ code: 'INVALID_RETAINED_IMAGE' });
 
 		const id = await ctx.db.insert('accommodations', {
+			loyaltyEligible: false,
 			...data,
 			...pricing,
 			recommendationSortKey: -ACCOMMODATION_CONFIG.recommendationBaselineAverage,

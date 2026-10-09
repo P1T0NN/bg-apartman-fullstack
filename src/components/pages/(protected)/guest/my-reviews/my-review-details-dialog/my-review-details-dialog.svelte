@@ -51,12 +51,7 @@
 		{#if customTrigger}
 			{@render customTrigger({ id })}
 		{:else}
-			<Button
-				commandfor={id}
-				command="show-modal"
-				variant="outline"
-				class="min-h-11 w-full sm:w-auto"
-			>
+			<Button commandfor={id} command="show-modal" class="min-h-11 w-full sm:w-auto">
 				{m['MyReviewsPage.MyReviewDetailsDialog.view']()}
 			</Button>
 		{/if}

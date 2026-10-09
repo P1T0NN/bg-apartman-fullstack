@@ -8,13 +8,16 @@
 	// TYPES
 	import type { Doc } from '@convex/_generated/dataModel';
 	let {
-		pricing
+		pricing,
+		loyaltyDiscountBps = 0
 	}: {
 		pricing: Pick<
 			Doc<'accommodations'>,
 			'pricePerNightMinor' | 'discountBps' | 'effectivePricePerNightMinor'
 		>;
+		loyaltyDiscountBps?: number;
 	} = $props();
+	const hasLoyaltyDiscount = $derived(loyaltyDiscountBps > 0);
 </script>
 
 <span class="inline-flex flex-wrap items-center gap-2 tabular-nums">
@@ -26,10 +29,19 @@
 	{/if}
 	<Price value={pricing.effectivePricePerNightMinor} />
 	{#if pricing.effectivePricePerNightMinor < pricing.pricePerNightMinor}
-		<Badge variant="secondary" class="bg-success/10 text-success">
-			{m['AccommodationsFeature.Pricing.discountLabel']({
-				percent: new Intl.NumberFormat(getLocale()).format(pricing.discountBps / 100)
-			})}
+		<Badge
+			variant="secondary"
+			class={hasLoyaltyDiscount ? 'bg-success text-success-foreground' : undefined}
+		>
+			{#if hasLoyaltyDiscount}
+				{m['AccommodationsFeature.Pricing.loyaltyDiscountLabel']({
+					percent: new Intl.NumberFormat(getLocale()).format(loyaltyDiscountBps / 100)
+				})}
+			{:else}
+				{m['AccommodationsFeature.Pricing.discountLabel']({
+					percent: new Intl.NumberFormat(getLocale()).format(pricing.discountBps / 100)
+				})}
+			{/if}
 		</Badge>
 	{/if}
 </span>

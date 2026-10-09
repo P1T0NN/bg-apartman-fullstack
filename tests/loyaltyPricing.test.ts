@@ -20,6 +20,22 @@ test('stacking applies loyalty to the property-discounted rate, rather than addi
 });
 
 test('the best offer chooses one discount and keeps the actual loyalty services', () => {
+	const equalDiscounts = calculateLoyaltyQuote(
+		pricing,
+		'2026-10-01',
+		'2026-10-02',
+		1,
+		services,
+		1,
+		'best'
+	);
+	expect(equalDiscounts.stayPricing.totalMinor).toBe(9000);
+	expect(equalDiscounts.benefits).toMatchObject({
+		propertySavingsMinor: 0,
+		loyaltySavingsMinor: 1000,
+		loyaltyDiscountBps: 1000,
+		parking: true
+	});
 	const loyaltyWins = calculateLoyaltyQuote(
 		pricing,
 		'2026-10-01',
@@ -159,4 +175,32 @@ test('stale-offer checks compare every accepted service and price term without r
 	expect(areLoyaltyBenefitsEqual({ ...benefits, breakfastGuests: 1 }, benefits)).toBe(false);
 	expect(areLoyaltyBenefitsEqual(undefined, benefits)).toBe(false);
 	expect(areLoyaltyBenefitsEqual(undefined, null)).toBe(true);
+});
+
+test('card quotes use the earned tier and better single discount without requiring stay dates', () => {
+	for (const [level, expectedPrice, expectedDiscount] of [
+		[0, 9000, 0],
+		[1, 9000, 1000],
+		[2, 8500, 1500],
+		[3, 8000, 2000]
+	] as const) {
+		const quote = calculateLoyaltyQuote(pricing, '', '', level, services, 1, 'best');
+		expect(quote.pricing.effectivePricePerNightMinor).toBe(expectedPrice);
+		expect(quote.benefits?.loyaltyDiscountBps ?? 0).toBe(expectedDiscount);
+		expect(quote.stayPricing.totalMinor).toBe(0);
+	}
+	const largerPropertyOffer = calculateLoyaltyQuote(
+		{ ...pricing, discountBps: 3000 },
+		'',
+		'',
+		3,
+		services,
+		1,
+		'best'
+	);
+	expect(largerPropertyOffer.pricing.effectivePricePerNightMinor).toBe(7000);
+	expect(largerPropertyOffer.benefits?.loyaltyDiscountBps).toBe(0);
+	const notParticipating = calculateLoyaltyQuote(pricing, '', '', 3, null, 1, 'best');
+	expect(notParticipating.pricing.effectivePricePerNightMinor).toBe(9000);
+	expect(notParticipating.benefits).toBeNull();
 });

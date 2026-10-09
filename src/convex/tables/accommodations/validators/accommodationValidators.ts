@@ -109,6 +109,7 @@ export const accommodationOwnerPage = accommodationPage.extend({
 /** Complete editable listing payload; server-owned fields cannot be submitted. */
 export const createAccommodationValidator = accommodations.validator
 	.omit(
+		'loyaltyEligible',
 		'loyaltyServices',
 		'ownerId',
 		'billingPlanId',
@@ -137,6 +138,7 @@ export const createAccommodationValidator = accommodations.validator
 /** Section-agnostic update payload: any subset of the editable listing fields plus the target id. */
 export const updateAccommodationValidator = accommodations.validator
 	.omit(
+		'loyaltyEligible',
 		'loyaltyServices',
 		'ownerId',
 		'billingPlanId',
@@ -168,6 +170,11 @@ export const accommodationSearchPage = accommodationPage.extend({
 	/** Ids from this page that the signed-in viewer has saved; empty when signed out. */
 	favoriteIds: v.array(v.id('accommodations'))
 });
+
+/** Homepage featured rows: bounded loyalty listings with their rating summaries. */
+export const featuredAccommodationItems = v.array(
+	accommodationListItem.extend({ reviews: reviewSummary })
+);
 
 export const accommodationMapMarker = accommodationDoc.pick(
 	'_id',

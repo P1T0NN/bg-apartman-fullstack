@@ -34,7 +34,7 @@
 		count: ratingSummary.count
 	})}
 	<div class="flex items-center gap-1 text-sm font-medium">
-		<Star class="size-3.5 fill-current" aria-hidden="true" />
+		<Star class="size-3.5 fill-current text-primary" aria-hidden="true" />
 		<span class="sr-only">
 			{m['AccommodationsFeature.AccommodationCardRating.ratingLabel']({ average })}
 		</span>

@@ -86,7 +86,7 @@
 				{#each REVIEWS_CONFIG.REVIEW_RATINGS as star, index (star)}
 					<button
 						type="button"
-						class="flex min-h-11 items-center gap-3 rounded-md px-2 text-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 aria-pressed:bg-accent"
+						class="flex min-h-11 items-center gap-3 rounded-md px-2 text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 aria-pressed:bg-muted"
 						aria-pressed={rating === star}
 						aria-label={m['ReviewsFeature.Reviews.filterRating']({
 							rating: star,
@@ -95,9 +95,9 @@
 						onclick={() => filter(star)}
 					>
 						<span class="flex w-8 shrink-0 items-center gap-1" aria-hidden="true">
-							{star}<Star class="size-3.5 fill-current" />
+							{star}<Star class="size-3.5 fill-current text-primary" />
 						</span>
-						<span class="h-2 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+						<span class="h-2 flex-1 overflow-hidden rounded-full bg-border" aria-hidden="true">
 							<span
 								class="block h-full rounded-full bg-primary"
 								style:width={`${(100 * reviewSummary.distribution[index]) / reviewSummary.count}%`}

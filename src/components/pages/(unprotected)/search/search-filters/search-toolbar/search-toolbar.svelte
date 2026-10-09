@@ -12,7 +12,7 @@
 	const search = getSearchContext();
 </script>
 
-<div class="flex flex-wrap items-center gap-2 pt-4">
+<div class="flex flex-wrap items-center gap-2">
 	<div class="min-[68.75rem]:hidden">
 		<SearchToolbarSortSelect />
 	</div>

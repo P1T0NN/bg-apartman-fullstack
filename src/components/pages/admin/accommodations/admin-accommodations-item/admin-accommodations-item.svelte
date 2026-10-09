@@ -2,13 +2,17 @@
 	// LIBRARIES
 	import { m } from '@/lib/paraglide/messages.js';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
+	import { api } from '@convex/_generated/api.js';
 
 	// COMPONENTS
 	import { Badge } from '@/components/ui/badge/index.js';
 	import { TableCell } from '@/components/ui/table/index.js';
+	import { Separator } from '@/components/ui/separator/index.js';
 	import CopyValue from '@/components/ui/custom-components/copy-value/copy-value.svelte';
-	import AdminAccommodationsFeeDialog from '../admin-accommodations-fee-dialog/admin-accommodations-fee-dialog.svelte';
-	import AdminAccommodationsRefundFeeDialog from '../admin-accommodations-refund-fee-dialog/admin-accommodations-refund-fee-dialog.svelte';
+	import NativePopover from '@/components/ui/native-components/native-popover/native-popover.svelte';
+	import AdminAccommodationsFeeDialog from './admin-accommodations-fee-dialog/admin-accommodations-fee-dialog.svelte';
+	import AdminAccommodationsLoyaltyDialog from './admin-accommodations-loyalty-dialog/admin-accommodations-loyalty-dialog.svelte';
+	import AdminAccommodationsRefundFeeDialog from './admin-accommodations-refund-fee-dialog/admin-accommodations-refund-fee-dialog.svelte';
 	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
 
 	// UTILS
@@ -17,7 +21,6 @@
 
 	// TYPES
 	import type { FunctionReturnType } from 'convex/server';
-	import type { api } from '@convex/_generated/api.js';
 
 	let {
 		accommodation
@@ -33,7 +36,14 @@
 			accommodation.billingPeriodEndsAt !== null &&
 			accommodation.billingPeriodEndsAt <= Date.now()
 	);
+
+	let feeDialog: AdminAccommodationsFeeDialog;
+	let loyaltyDialog: AdminAccommodationsLoyaltyDialog;
 </script>
+
+{#snippet actionsTrigger()}
+	<span class="icon-[lucide--ellipsis] size-5" aria-hidden="true"></span>
+{/snippet}
 
 <TableCell class="py-4 whitespace-normal">
 	<div class="flex flex-col gap-1">
@@ -145,8 +155,59 @@
 </TableCell>
 
 <TableCell>
-	<div class="flex flex-wrap justify-end gap-2">
-		<AdminAccommodationsFeeDialog {accommodation} />
-		<AdminAccommodationsRefundFeeDialog {accommodation} />
+	<div class="flex items-center justify-end gap-2">
+		<!-- Keep the modals outside the popover so closing the menu cannot hide the dialogs. -->
+		<AdminAccommodationsRefundFeeDialog {accommodation}>
+			{#snippet trigger({ id, eligible })}
+				<NativePopover
+					id={`accommodation-actions-${accommodation._id}`}
+					trigger={actionsTrigger}
+					triggerLabel={m['AdminAccommodationsPage.columns.actions']()}
+					triggerClass="size-9 justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+				>
+					<button
+						type="button"
+						class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+						disabled={accommodation.status === 'deleted'}
+						onclick={(event) => {
+							event.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover();
+							feeDialog.open();
+						}}
+					>
+						<span class="icon-[lucide--receipt-text] size-4" aria-hidden="true"></span>
+						{m['AdminAccommodationsPage.AdminAccommodationsFeeDialog.trigger']()}
+					</button>
+					<button
+						type="button"
+						class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+						disabled={accommodation.status === 'deleted'}
+						onclick={(event) => {
+							event.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover();
+							loyaltyDialog.open();
+						}}
+					>
+						<span class="icon-[lucide--gift] size-4" aria-hidden="true"></span>
+						{m['AdminAccommodationsPage.AdminAccommodationsLoyaltyDialog.trigger']()}
+					</button>
+					{#if eligible}
+						<Separator class="my-1" />
+						<button
+							type="button"
+							class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive/30 focus-visible:outline-none"
+							commandfor={id}
+							command="show-modal"
+							onclick={(event) =>
+								event.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover()}
+						>
+							<span class="icon-[lucide--undo-2] size-4" aria-hidden="true"></span>
+							{m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.trigger']()}
+						</button>
+					{/if}
+				</NativePopover>
+			{/snippet}
+		</AdminAccommodationsRefundFeeDialog>
+
+		<AdminAccommodationsFeeDialog bind:this={feeDialog} {accommodation} />
+		<AdminAccommodationsLoyaltyDialog bind:this={loyaltyDialog} {accommodation} />
 	</div>
 </TableCell>

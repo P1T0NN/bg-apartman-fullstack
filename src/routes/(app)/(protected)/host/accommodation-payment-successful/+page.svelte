@@ -163,7 +163,12 @@
 			<span class="icon-[lucide--arrow-right]" aria-hidden="true"></span>
 		</Button>
 		{#if payment && !confirmed}
-			<Button variant="outline" size="lg" disabled={checking} onclick={() => void verifyPaymentStatus()}>
+			<Button
+				variant="outline"
+				size="lg"
+				disabled={checking}
+				onclick={() => void verifyPaymentStatus()}
+			>
 				{m['AccommodationPaymentResult.refresh']()}
 			</Button>
 		{/if}

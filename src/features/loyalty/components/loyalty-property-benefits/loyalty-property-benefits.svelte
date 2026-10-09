@@ -6,14 +6,13 @@
 	let { accommodation }: { accommodation: PublicAccommodation } = $props();
 	const loyalty = useLoyaltyQuote({
 		accommodation: () => accommodation,
-		paymentMethod: () => 'cash',
 		checkInDate: () => '',
 		checkOutDate: () => '',
 		guests: () => 1
 	});
 </script>
 
-{#if accommodation.supportedPaymentMethods !== 'online' && loyalty.quote.benefits}
+{#if loyalty.quote.benefits}
 	<div class="flex flex-col gap-3 py-8">
 		<p class="font-semibold">{m['LoyaltyFeature.PropertyBenefits.title']()}</p>
 		{#if loyalty.quote.benefits.loyaltyDiscountBps > 0}
@@ -25,7 +24,7 @@
 		{/if}
 		<LoyaltyBookingBenefits benefits={loyalty.quote.benefits} showGuestCount={false} />
 		<p class="text-xs leading-5 text-muted-foreground">
-			{m['LoyaltyFeature.PropertyBenefits.cash']()}
+			{m['LoyaltyFeature.PropertyBenefits.payment']()}
 		</p>
 	</div>
 {/if}

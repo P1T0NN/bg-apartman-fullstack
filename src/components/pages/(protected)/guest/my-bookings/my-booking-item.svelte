@@ -91,7 +91,10 @@
 		policyPeriods.find((period) => period.percentage === currentRefund)
 	);
 	const currentPolicyDeadline = $derived(
-		booking.cancellationTerms.checkInAt - ((currentPolicyPeriod?.untilHours ?? 0) * DAY_IN_MS) / 24
+		currentRefund === 100 && booking.cancellationTerms.refundDeadlineAt !== undefined
+			? booking.cancellationTerms.refundDeadlineAt
+			: booking.cancellationTerms.checkInAt -
+					((currentPolicyPeriod?.untilHours ?? 0) * DAY_IN_MS) / 24
 	);
 	const cancellationDeadlineLabel = $derived(
 		formatZonedDateTime(currentPolicyDeadline, getLocale(), booking.cancellationTerms.timeZone)

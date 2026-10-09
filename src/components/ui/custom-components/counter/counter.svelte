@@ -36,7 +36,7 @@
 
 	<div class="flex items-center gap-1.5">
 		<Button
-			variant="outline"
+			variant="default"
 			size="icon-sm"
 			onclick={decrease}
 			disabled={disabled || value <= min}
@@ -48,7 +48,7 @@
 		<output class="w-6 text-center text-sm font-medium tabular-nums">{value}</output>
 
 		<Button
-			variant="outline"
+			variant="default"
 			size="icon-sm"
 			onclick={increase}
 			disabled={disabled || value >= max}

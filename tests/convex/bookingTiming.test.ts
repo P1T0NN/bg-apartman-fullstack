@@ -10,7 +10,6 @@ import {
 	bookingCancellationTerms as termsValidator
 } from '../../src/convex/tables/bookings/schema.js';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
-import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config.js';
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
@@ -107,17 +106,20 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 		};
 		return {
 			legacy: await ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...base
 			}),
 			partial: await ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...base,
 				cancellationTerms: partial
 			}),
 			complete: await ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...base,
@@ -148,7 +150,7 @@ test('booking timing backfill is idempotent, preserves snapshots, and gives pre-
 		complete: await ctx.db.get('bookings', ids.complete)
 	}));
 	expect(saved.legacy?.cancellationTerms).toMatchObject({
-		policy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
+		policy: { version: 1, mode: 'full_refund' },
 		timeZone: 'Europe/Belgrade',
 		checkOut: '11:00',
 		checkOutAt: bookingCancellationTerms('2027-03-27', '2027-03-29').checkOutAt

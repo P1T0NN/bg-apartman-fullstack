@@ -10,10 +10,8 @@
 	// UTILS
 	import { formatCurrency } from '@/shared/utils/currency.js';
 	// TYPES
-	import type {
-		calculateStayPricing,
-		NightlyPricing
-	} from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { calculateStayPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { NightlyPricing } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	let {
 		pricing,
 		stayPricing,

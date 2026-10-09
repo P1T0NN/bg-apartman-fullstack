@@ -49,7 +49,9 @@
 					>
 						<span class="flex items-center gap-0.5" aria-hidden="true">
 							{#each [1, 2, 3, 4, 5] as star (star)}
-								<Star class={star <= review.rating ? 'size-4 fill-current' : 'size-4'} />
+								<Star
+									class={star <= review.rating ? 'size-4 fill-current text-primary' : 'size-4'}
+								/>
 							{/each}
 						</span>
 					</span>
@@ -72,7 +74,6 @@
 			<Button
 				commandfor={id}
 				command="show-modal"
-				variant="outline"
 				class="min-h-11 w-full after:absolute after:inset-0 after:content-[''] sm:w-auto"
 			>
 				{m['MyReviewsPage.MyReviewItem.view']()}

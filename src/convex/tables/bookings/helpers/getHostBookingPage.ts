@@ -37,8 +37,11 @@ export async function getHostBookingPage({
 			paginationOpts,
 			buildQuery: ({ ctx, search: term }) =>
 				ctx.db.query('bookings').withSearchIndex('search_guest', (q) => {
-					if (status) return q.search('searchText', term).eq('hostId', hostId).eq('status', status);
-					return q.search('searchText', term).eq('hostId', hostId);
+					const visibleBookings = q
+						.search('searchText', term)
+						.eq('hostId', hostId)
+						.eq('hostArchivedAt', undefined);
+					return status ? visibleBookings.eq('status', status) : visibleBookings;
 				})
 		});
 	}
@@ -46,8 +49,14 @@ export async function getHostBookingPage({
 	const bookings = status
 		? ctx.db
 				.query('bookings')
-				.withIndex('by_host_id_status', (q) => q.eq('hostId', hostId).eq('status', status))
-		: ctx.db.query('bookings').withIndex('by_host_id', (q) => q.eq('hostId', hostId));
+				.withIndex('by_host_id_host_archived_at_status', (q) =>
+					q.eq('hostId', hostId).eq('hostArchivedAt', undefined).eq('status', status)
+				)
+		: ctx.db
+				.query('bookings')
+				.withIndex('by_host_id_host_archived_at', (q) =>
+					q.eq('hostId', hostId).eq('hostArchivedAt', undefined)
+				);
 
 	// Pending requests default to the longest wait; every other list defaults to newest.
 	const effectiveSort = sort ?? (status === 'pending' ? 'oldest' : 'newest');

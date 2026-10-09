@@ -8,7 +8,10 @@ import { STORAGE_CONFIG } from '../../storage/config.js';
 import { ACCOMMODATION_TYPES, AMENITY_KEYS } from '../data/accommodationsData.js';
 
 // SCHEMAS
-import { accommodationCancellationPolicySchema } from './cancellationPolicySchemas.js';
+import {
+	accommodationCancellationPolicySchema,
+	recordedCancellationPolicySchema
+} from './cancellationPolicySchemas.js';
 import { supportedPaymentMethodsSchema } from '../../payments/schemas/paymentSchemas.js';
 import {
 	timeZoneSchema,
@@ -184,13 +187,23 @@ export const accommodationSectionSchemas = [
 	accommodationCancellationPolicySchema
 ];
 
-export const saveAccommodationSchema = accommodationBasicInfoSchema
+const accommodationDetailsSchema = accommodationBasicInfoSchema
 	.and(accommodationLocationSchema)
 	.and(accommodationAmenitiesStepSchema)
 	.and(accommodationPhotosSchema)
 	.and(accommodationPricingSchema)
-	.and(accommodationCancellationPolicySchema)
 	.and(accommodationRulesSchema);
+
+export const saveAccommodationSchema = accommodationDetailsSchema.and(
+	accommodationCancellationPolicySchema
+);
+
+// Ordinary section edits preserve an existing policy until a host explicitly replaces it.
+export const storedAccommodationSchema = accommodationDetailsSchema.and(
+	z.object({
+		cancellationPolicy: recordedCancellationPolicySchema
+	})
+);
 
 export type AccommodationDetails = z.infer<typeof saveAccommodationSchema>;
 

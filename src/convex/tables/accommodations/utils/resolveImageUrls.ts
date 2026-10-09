@@ -27,6 +27,7 @@ export async function resolveImageUrls(
 		bedrooms: item.bedrooms,
 		beds: item.beds,
 		bathrooms: item.bathrooms,
+		loyaltyEligible: item.loyaltyEligible,
 		pricePerNightMinor: item.pricePerNightMinor,
 		discountBps: item.discountBps,
 		weekendPricePerNightMinor: item.weekendPricePerNightMinor,

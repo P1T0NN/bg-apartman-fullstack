@@ -10,16 +10,34 @@ Increase direct bookings and reward returning guests.
 
 ## Who can become a member?
 
-- Guests who have stayed with us at least once.
-- Guests who make a direct booking with us in advance and pay in cash.
+- Guests who reach a loyalty level through completed qualifying stays.
+- The booking that reaches a threshold earns progress; benefits apply to bookings
+  made after reaching that level, never retroactively to the qualifying booking.
+
+## Confirmed program rules
+
+- Cash and card payments are equally eligible; cash is not a requirement.
+- Membership lasts forever and cannot expire or be lost through inactivity.
+- Level 1 unlocks after 2 completed qualifying stays, Level 2 after 5, and Level 3 after 8.
+- Apply the better single property or loyalty discount, never add percentages.
+  Equal discounts apply once; the guest keeps the level's available services.
+- Count stays from loyalty launch onward; do not award historical stay credit.
+- Only selected accommodations participate. Only admins may enable or disable
+  an accommodation's required `loyaltyEligible` flag; false means ineligible.
+- Only finished stays earn progress, one credit per booking regardless of nights
+  or guests. Repeated bookings at the same property each count separately.
+- The system awards progress automatically, without host/admin eligibility or
+  payment confirmation. Selecting cash or card does not affect qualification.
+- Participation is separate from service commitments: parking, breakfast and spa
+  are offered only where explicitly provided by the accommodation.
 
 ## Levels and benefits
 
-| LEVEL   | CRITERIA      | BENEFITS                                                                                             |
-| ------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| LEVEL 1 | Up to 2 stays | 10% discount<br>Free parking                                                                         |
-| LEVEL 2 | Up to 5 stays | 15% discount<br>Free breakfast for up to 2 people<br>All Level 1 benefits                            |
-| LEVEL 3 | 5+ stays      | 20% discount<br>Free breakfast for all guests<br>Free spa access<br>All Level 1 and Level 2 benefits |
+| LEVEL   | CRITERIA                     | BENEFITS                                                                                             |
+| ------- | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| LEVEL 1 | Unlocks at 2 completed stays | 10% discount<br>Free parking                                                                         |
+| LEVEL 2 | Unlocks at 5 completed stays | 15% discount<br>Free breakfast for up to 2 people<br>All Level 1 benefits                            |
+| LEVEL 3 | Unlocks at 8 completed stays | 20% discount<br>Free breakfast for all guests<br>Free spa access<br>All Level 1 and Level 2 benefits |
 
 > **Note:** Higher levels include all benefits from the previous levels.
 
@@ -27,39 +45,32 @@ Increase direct bookings and reward returning guests.
 
 BGAPARTMAN | LOYALTY PROGRAM
 
-### QUESTIONS
+### Implementation rules
 
-These decisions remain unresolved. The suggestions below are not approved rules;
-automatic qualification and live booking rewards must remain disabled until the
-relevant decisions are confirmed.
-
-1. **When does membership start?** After the first completed qualifying stay,
-   or immediately after an eligible advance booking?
-2. **What are the exact level thresholds?** Proposed: Level 1 at 1–2 completed
-   qualifying stays, Level 2 at 3–4, Level 3 at 5+. The original table overlaps at five.
-3. **What is an advance direct booking?** Is a booking on this site before the
-   property's check-in time sufficient, including same-day bookings, or must it
-   be made at least one calendar day before arrival?
-4. **How is cash verified?** Is cash mandatory both to earn and use rewards?
-   Must the host/admin confirm receipt before the stay receives credit?
-5. **Which properties participate?** All properties, or explicitly enabled
-   properties? Which services can each property fulfil?
-6. **How do property and loyalty discounts combine?** Apply the better single
-   discount, or apply loyalty after the property discount? For a €100 rate with a
-   10% property discount and 20% loyalty discount, these produce €80 and €72
-   respectively; adding the percentages to produce €70 is a different rule.
-7. **Does progress expire?** Proposed: lifetime progress without requalification.
-8. **Do historical bookings count?** Proposed: no automatic historical credit;
-   selecting cash historically does not prove payment was received.
-9. **What earns a stay credit?** Proposed: each completed, qualifying, verified
-   booking counts once; cancellations and no-shows do not count.
+- Confirmed bookings finish automatically after the frozen property-local checkout
+  time. A cron processes bounded batches every minute; hosts/admins do not need
+  to mark stays completed for loyalty. Cancelled, pending, declined and expired
+  bookings do not earn credit.
+- A booking freezes participation in required `loyaltyStatus`: pending for a
+  participating property, ineligible otherwise. Credited records prevent duplicate
+  awards under retries or concurrent cron/manual completion. Later property edits
+  never revoke earned credit or change an accepted booking's rewards.
+- Anonymous bookings retain pending credit until the guest securely links the
+  completed booking to an account. A credit can never be claimed by two accounts.
+- Required membership levels follow lifetime totals at 2/5/8. Progress can exist
+  before membership: `joinedAt` is null until Level 1 unlocks, then remains fixed.
+- Existing bookings were backfilled to ineligible (394 development records), with
+  no historical credit. New bookings snapshot participation when created.
+- Admins control participation and commitments to parking, breakfast and spa.
+  Missing service commitments grant no services; discounts still apply at enabled
+  properties. Guest prices use the better single discount, including equal-rate
+  ties, and keep all available services for the guest's level.
 
 ### RESEARCH
 
 The recommendations below supplement the original program description. They are
 proposals for implementation and presentation, not changes to the agreed program
-rules. Resolve the open business decisions before implementing eligibility or
-promising benefits to guests.
+rules. The program rules above are approved; the research below explains presentation choices.
 
 #### Research and its practical implications
 
@@ -97,8 +108,8 @@ navigation. Present its content in this order:
    discount percentages replace the lower percentage, rather than adding to it.
 5. **How the program works.** Explain qualifying bookings, when stays count,
    payment requirements, participating properties, expiration, and discount
-   combination rules. Add a small qualifying-stay history when guests need to
-   verify their progress.
+   combination rules. Booking history belongs in My bookings; do not duplicate
+   it on the benefits page.
 
 Keep current benefits and the next milestone visually prominent. Include text
 labels alongside progress and status colors so color alone never conveys a level
@@ -117,18 +128,47 @@ or eligibility. Ensure comparison content remains readable on mobile.
   show the first milestone. Do not label benefits as available unless the
   confirmed first-booking policy grants them.
 
-#### Business decisions to resolve before implementation
+#### Public loyalty discovery
 
-| Decision                  | Recommendation or clarification needed                                                                                                                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Overlapping thresholds    | The original "up to 5 stays" and "5+ stays" overlap at five. Proposed ranges: Level 1 at 1-2 completed qualifying stays, Level 2 at 3-4, and Level 3 at 5+. These ranges need approval and do not replace the original table. |
-| What earns progress       | Count each completed qualifying booking once. Exclude cancelled bookings and no-shows. State clearly that progress counts stays, not nights or guests.                                                                        |
-| First-booking eligibility | Decide whether an advance direct booking grants Level 1 immediately, or whether the first qualifying stay must be completed. The current membership criteria leave this unclear.                                              |
-| Property participation    | Decide whether the program covers all accommodations or only participating properties. Promise each perk only where the property offers it.                                                                                   |
-| Discount combination      | Higher loyalty percentages replace lower ones. Define how loyalty discounts interact with the existing accommodation discount and which price they apply to.                                                                  |
-| Progress expiration       | Start with lifetime progress unless there is a business reason for annual qualification. Publish any expiry or requalification rules explicitly.                                                                              |
-| Cash eligibility          | Confirm whether cash payment is mandatory, define what counts as a direct booking, and decide whether the host must verify payment before awarding stay credit.                                                               |
+- Participating accommodation cards show an outlined star with a green "Loyalty
+  rewards" label below the property name and rating. The label identifies
+  participation; it does not promise an unearned discount.
+- Cards calculate the signed-in guest's actual earned discount using the same
+  quote helper as checkout. An applicable loyalty discount replaces the property
+  percentage with a green "X% off · Loyalty" label and updates the nightly price.
+  A larger property discount still wins; equal discounts apply once and are
+  attributed to loyalty. Property discounts use a neutral label.
+- Search price filters, ordering and map pin prices continue to use the public
+  property rate, before personalized loyalty discounts.
+- A compact, non-sticky loyalty announcement sits above the header on public
+  browsing pages. It scrolls away while the existing header remains sticky.
+  `HeaderAnnouncement` lives alongside `Header` in
+  `src/components/ui/custom-components/header/header-announcement.svelte`;
+  translations use `Components.HeaderAnnouncement`.
+- "See the benefits" uses the localized homepage `#loyalty` anchor. It scrolls
+  within the homepage and navigates to that section from other public pages.
+- Account-access, booking checkout, confirmation, dashboard and admin pages do
+  not show the announcement.
+- The homepage section sits between the search hero and newsletter. It explains
+  the first qualifying-stay milestone, all three levels, participating properties,
+  service availability, future-booking benefits and non-stacking discounts.
+- Thresholds and discount percentages come from shared `LOYALTY_LEVELS` data.
+  `LOYALTY_CONFIG.BOOKING_ENABLED` controls public promotion visibility. The section
+  has a scroll offset so the sticky header does not obscure its heading.
+- Public copy is discovery material, not a promise of benefits at every property
+  or immediate membership. Booking-specific eligibility remains authoritative.
 
-These policy choices are product recommendations and open decisions, not findings
-established by the cited research. Do not infer that an existing confirmed booking
-or selected cash payment method proves a completed, paid qualifying stay.
+#### Decision status
+
+| Decision               | Status                                                                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Membership starts      | Confirmed: benefits apply to new bookings after unlocking a level.                                                                     |
+| Level thresholds       | Confirmed: Level 1 at 2, Level 2 at 5, and Level 3 at 8 completed qualifying stays.                                                    |
+| What earns progress    | Confirmed: one automatic credit per finished eligible booking, including repeat visits. No manual eligibility or payment confirmation. |
+| Property participation | Confirmed: only accommodations enabled by admins. Services depend on explicit property commitments.                                    |
+| Discount combination   | Confirmed: the better single discount; equal discounts apply once and preserve available loyalty services.                             |
+| Membership expiration  | Confirmed: permanent membership, with no expiry or requalification.                                                                    |
+| Payment eligibility    | Confirmed: cash and card qualify equally.                                                                                              |
+| Historical credit      | Confirmed: count from loyalty launch onward, without historical stay credit.                                                           |
+
+All business decisions are confirmed. Automatic credits and live rewards are enabled.

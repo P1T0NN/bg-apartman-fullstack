@@ -7,6 +7,12 @@ import { STRIPE_CONFIG } from '../shared/features/stripe/config.js';
 const crons = cronJobs();
 
 crons.interval(
+	'complete finished stays and award loyalty credit',
+	{ minutes: 1 },
+	internal.tables.bookings.crons.completeBookingsCron.completeBookingsCron
+);
+
+crons.interval(
 	'reconcile and clean up listing fee payments',
 	{ minutes: STRIPE_CONFIG.maintenanceIntervalMinutes },
 	internal.tables.accommodationFeePayments.crons.maintainFeePaymentsCron.maintainFeePaymentsCron

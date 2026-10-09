@@ -24,6 +24,8 @@
 		dropdownLabel?: string;
 		/** Called after the clear button empties the value. */
 		onClear?: () => void;
+		/** Renders the input for a dark surface (light text, translucent field). */
+		dark?: boolean;
 	};
 
 	let {
@@ -38,6 +40,7 @@
 		onClear,
 		class: className,
 		disabled = false,
+		dark = false,
 		...restProps
 	}: Props = $props();
 
@@ -51,7 +54,7 @@
 </script>
 
 <div class={cn('relative w-full', className)}>
-	<InputGroup.Root class="group">
+	<InputGroup.Root class={cn('group', dark && 'dark bg-header-foreground/10')}>
 		<InputGroup.Addon
 			align="inline-start"
 			class="transition-colors group-focus-within:text-foreground"
@@ -96,7 +99,10 @@
 			id={dropdownId}
 			role="listbox"
 			aria-label={dropdownLabel}
-			class="absolute top-full right-0 left-0 z-10 mt-2 overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg"
+			class={cn(
+				'absolute top-full right-0 left-0 z-10 mt-2 overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg',
+				dark && 'dark'
+			)}
 		>
 			{@render dropdown()}
 		</div>

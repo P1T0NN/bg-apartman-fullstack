@@ -40,7 +40,7 @@
 
 		<span class="flex items-center gap-0.5 text-xl" aria-hidden="true">
 			{#each [1, 2, 3, 4, 5] as star (star)}
-				<Star class={star <= review.rating ? 'size-5 fill-current' : 'size-5'} />
+				<Star class={star <= review.rating ? 'size-5 fill-current text-primary' : 'size-5'} />
 			{/each}
 		</span>
 	</div>

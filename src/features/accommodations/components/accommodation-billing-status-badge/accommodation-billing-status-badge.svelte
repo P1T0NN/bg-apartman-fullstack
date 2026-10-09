@@ -18,4 +18,4 @@
 	};
 </script>
 
-<Badge variant="secondary">{STATUS_LABELS[status]()}</Badge>
+<Badge variant={status === 'active' ? 'default' : 'secondary'}>{STATUS_LABELS[status]()}</Badge>

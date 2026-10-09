@@ -49,10 +49,6 @@ export const POPULAR_AMENITY_KEYS = [
 ] as const satisfies readonly (typeof AMENITIES)[number]['key'][];
 
 export const DEFAULT_CANCELLATION_POLICY_DRAFT = {
-	fiveToSevenDays: 100,
-	threeToFiveDays: 100,
-	oneToThreeDays: 100,
-	under24Hours: 100,
 	...ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY
 };
 

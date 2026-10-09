@@ -13,7 +13,7 @@
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
-	import type { NightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { NightlyPricing } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	import type { DateValue } from '@internationalized/date';
 
 	let {

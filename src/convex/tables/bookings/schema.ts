@@ -18,6 +18,8 @@ export const bookingCancellationTerms = v.object({
 	timeZone: v.string(),
 	checkInStart: v.string(),
 	checkInAt: v.number(),
+	// Fixed-policy deadlines are frozen; previous multi-window receipts have no single cutoff.
+	refundDeadlineAt: v.optional(v.number()),
 	checkOut: v.string(),
 	checkOutAt: v.number(),
 	pricePerNightMinor: v.number(),
@@ -61,6 +63,8 @@ export const bookingCancellation = v.object({
 });
 
 export const bookings = defineTable({
+	// Participation frozen at booking creation; credited marks an exactly-once award.
+	loyaltyStatus: literals('ineligible', 'pending', 'credited'),
 	/** Immutable commission snapshot. Null identifies historical bookings with unknown terms. */
 	platformFeeTerms: v.union(
 		v.null(),
@@ -84,6 +88,8 @@ export const bookings = defineTable({
 	ownerId: v.optional(v.string()),
 	// Owner of the booked accommodation, copied at creation; powers the host bookings page.
 	hostId: v.optional(v.string()),
+	/** Set by the host when archived; absent means visible in the host workspace. */
+	hostArchivedAt: v.optional(v.number()),
 	// Requests start pending; instant bookings start confirmed.
 	status: literals(...BOOKING_STATUSES),
 	/** Immutable property-local terms for every booking, backfilled before becoming required. */
@@ -110,6 +116,7 @@ export const bookings = defineTable({
 	.index('by_email_check_out_date', ['email', 'checkOutDate'])
 	.index('by_email_status', ['email', 'status'])
 	.index('by_status_request_expires_at', ['status', 'requestExpiresAt'])
+	.index('by_status_check_out_at', ['status', 'cancellationTerms.checkOutAt'])
 	.index('by_accommodation_id_status_check_out_at', [
 		'accommodationId',
 		'status',
@@ -126,11 +133,12 @@ export const bookings = defineTable({
 		'reviewId',
 		'cancellationTerms.checkOutAt'
 	])
-	// Retained for _creationTime ordering; host list queries sort newest first.
+	// Equality on the archive timestamp leaves _creationTime as the host list ordering.
 	// eslint-disable-next-line @convex-dev/no-duplicate-indexes
-	.index('by_host_id', ['hostId'])
+	.index('by_host_id_host_archived_at', ['hostId', 'hostArchivedAt'])
+	.index('by_host_id_host_archived_at_status', ['hostId', 'hostArchivedAt', 'status'])
 	.index('by_host_id_status', ['hostId', 'status'])
 	.searchIndex('search_guest', {
 		searchField: 'searchText',
-		filterFields: ['ownerId', 'hostId', 'status']
+		filterFields: ['ownerId', 'hostId', 'status', 'hostArchivedAt']
 	});

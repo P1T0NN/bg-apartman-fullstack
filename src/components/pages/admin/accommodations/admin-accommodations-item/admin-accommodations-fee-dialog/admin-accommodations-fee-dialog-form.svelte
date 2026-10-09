@@ -1,3 +1,24 @@
+<script lang="ts" module>
+	// TYPES
+	import type { FunctionReturnType } from 'convex/server';
+	import type { api } from '@convex/_generated/api.js';
+
+	export type AdminAccommodationsFeeDialogAccommodation = FunctionReturnType<
+		typeof api.tables.accommodations.queries.fetchAccommodationsAdmin.fetchAccommodationsAdmin
+	>['items'][number];
+
+	export type AdminAccommodationsFeeDialogDraft = {
+		id: AdminAccommodationsFeeDialogAccommodation['_id'];
+		plan: string;
+		status: string;
+		amount: number | undefined;
+		months: number | undefined;
+		commission: number | undefined;
+		deadline: string;
+		forever: boolean;
+	};
+</script>
+
 <script lang="ts">
 	// LIBRARIES
 	import { untrack } from 'svelte';
@@ -14,12 +35,6 @@
 
 	// CONFIG
 	import { ACCOMMODATION_BILLING_PLANS } from '@/shared/features/accommodations/config.js';
-
-	// TYPES
-	import type {
-		AdminAccommodationsFeeDialogDraft,
-		AdminAccommodationsFeeDialogAccommodation
-	} from './adminAccommodationsFeeDialogTypes.js';
 
 	let {
 		accommodation,

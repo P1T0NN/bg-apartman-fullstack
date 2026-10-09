@@ -8,7 +8,15 @@ and [`InfiniteScrollingSystemDesign.md`](./InfiniteScrollingSystemDesign.md).
 
 ## Routes
 
-- `/` is the public home page (search card and newsletter section).
+- `/` is the public home page (search hero, public loyalty section at `#loyalty`,
+  and newsletter). The `(app)` layout composes a non-sticky loyalty announcement
+  above public browsing headers, linking to the localized homepage section.
+  Its component is `components/ui/custom-components/header/header-announcement.svelte`
+  (`HeaderAnnouncement`), with copy under `Components.HeaderAnnouncement`.
+  It excludes account-access, booking checkout and confirmation pages; protected
+  and admin layouts do not inherit it. Public loyalty copy reads shared
+  `LOYALTY_LEVELS`, explains qualifying stays and property-specific availability,
+  and is shown only while `LOYALTY_CONFIG.BOOKING_ENABLED` is true.
 - `(app)/(unprotected)` contains the map search, accommodation detail, booking
   checkout and confirmation, feedback, sign-in, sign-up, verify-email, and
   forgot-password screens. `/find-booking` composes a static header and the shared
@@ -31,54 +39,49 @@ and [`InfiniteScrollingSystemDesign.md`](./InfiniteScrollingSystemDesign.md).
 
 ## Domain feature pieces
 
-- `/guest/benefits` is linked from the guest sidebar and reads the authenticated
-  guest's recorded loyalty total through `fetchMyBenefits`.
-  Its presentational components live under `components/pages/(protected)/guest/benefits`;
-  completed-stay history reuses the owner-scoped `fetchMyBookings` query with the
-  completed status filter and bounded pagination. Completed bookings are labelled
-  separately from earned loyalty credit. There are no preview controls or dummy
-  memberships, stays, or prices. Static program rewards live in
-  `shared/features/loyalty/data/loyaltyData.ts`; eligibility, level thresholds and
-  real booking discounts await the open policies in `LoyaltySystem.md`. Explicitly
-  assigned levels show their defined rewards without inferring stay thresholds. The page
-  labels rewards as coming soon and handles loading, empty, and error states.
-
-- `convex/tables/loyaltyMemberships` owns the loyalty membership table, indexed
-  by authenticated owner ID, and the private-to-the-guest `fetchMyBenefits` query.
-  Missing membership returns zero qualifying stays and no join date. Account
-  deletion removes that account's membership. There is no client-facing write
-  operation, historical backfill, or stay-credit award until program rules are
-  confirmed. The guest page displays real recorded data without awarding benefits.
-
-- Loyalty reward definitions and pricing live under `shared/features/loyalty`;
-  reactive quotes and reusable benefits displays live under `features/loyalty`.
-  `LOYALTY_CONFIG` keeps live booking application disabled with no selected
-  discount-combination mode until the open policies are approved. The engine
-  supports the better single discount and sequential property-then-loyalty
-  discounts, rounding each step per night in integer cents for regular and
-  weekend rates. Percentages are never added. A membership's optional `level`
-  is explicit; `qualifyingStays` never automatically determines it.
-- A property's optional server-owned `loyaltyServices` records which services
-  it commits to providing. Missing settings grant no booking benefits; ordinary
-  host create/update validators exclude this field. Level 2 breakfast covers
-  at most two booked guests; Level 3 covers all booked guests. Unavailable
-  parking, breakfast and spa services are never promised.
-- `fetchBookingBenefits` reads the authenticated viewer's own level and a
-  visible property's booking context. Anonymous and online bookings receive no
-  loyalty benefits. `createBooking` recomputes the quote and checks the reviewed
-  rate, total and included benefits; stale or forged offers are rejected.
-  Accepted rewards are frozen in optional `cancellationTerms.loyaltyBenefits`,
-  preserving legacy bookings without backfills. Commission uses the final
-  accepted stay total. The booking price breakdown renders separate property
-  and loyalty savings and included services at checkout, public confirmation,
-  guest trips, recovered booking details and host booking details. Property
-  details show the viewer's offer with its cash condition. Guest and host
-  request/confirmation emails use the same saved rewards and final price.
+- `/guest/benefits` reads the authenticated guest's lifetime progress via
+  `fetchMyBenefits`. It shows real levels, next-milestone progress and thresholds
+  at 2, 5 and 8 completed qualifying stays. Booking history stays in My bookings.
+- `shared/features/loyalty` owns thresholds, rewards and integer-cent pricing.
+  `getLoyaltyLevel` maps lifetime counts to levels. `LOYALTY_CONFIG` enables live
+  rewards with the approved `best` mode: apply one discount, preserving available
+  services even when property and loyalty rates tie. Existing sequential-pricing
+  support is retained for frozen receipts; new quotes use the best discount.
+- `loyaltyMemberships` stores owner-scoped counts, required level and nullable
+  join date. The join date is set only when Level 1 is reached and never expires.
+  `awardLoyaltyStay` updates membership and the booking's credit marker together,
+  so retries and concurrent completion cannot duplicate credit.
+- Required `bookings.loyaltyStatus` freezes participation at creation: pending,
+  ineligible or credited. Benefits apply to new bookings after a level is earned.
+  Existing prices and reward receipts never change when progress increases.
+- `completeBookingsCron` finishes confirmed stays after frozen checkout time,
+  every minute in batches of 25 with scheduled continuation. Shared
+  `completeBooking` also covers manual host/admin completion. Neither payment
+  verification nor manual completion is required for automatic loyalty credit.
+  Pending, cancelled, declined and expired bookings earn no credit.
+- Anonymous bookings earn credit only after verified account linking;
+  `claimBooking` invokes the same exactly-once award helper for completed stays.
+  Account deletion removes membership. No public membership-write endpoint exists.
+- Required admin-owned `accommodations.loyaltyEligible` controls participation.
+  New listings/seed listings default to false; host create/update inputs exclude
+  it and `loyaltyServices`. Admin rows expose participation and service controls
+  through `updateAccommodationLoyaltyForAdmin`. Missing service commitments grant
+  no parking/breakfast/spa. Level 2 breakfast covers at most two booked guests;
+  Level 3 covers all.
+- `backfillLoyalty` initialized eligibility across 101 development properties and
+  ineligible status across 394 bookings, then the fields were made required. No
+  historical stays were credited. Membership-level migration is also registered.
+- Reactive booking quotes and reusable service displays live under
+  `features/loyalty`. Anonymous bookings get no discounts; cash/card use the same
+  rules. `createBooking` recomputes and validates price and services, freezes
+  accepted rewards in `cancellationTerms.loyaltyBenefits`, and bases commission on
+  the final total. Checkout, receipts, guest/host details and emails reuse that
+  snapshot rather than current listing or membership terms.
 
 | Area                  | Existing pieces and intended use                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Accommodation form    | `add-accommodation-form.svelte` composes seven editing steps plus Review, including the shared Cancellation Policy editor after House Rules. `useAccommodationForm.svelte.ts` owns values, step, `furthestStep`, and per-step `validate`, shared through `accommodationFormContext.ts`; the Continue button calls `validate`, which selects the step schema and calls `safeParse`. `saveAccommodationSchema` validates listing details; `createAccommodationSchema` additionally requires the billing plan for creation. The location step uses `google-street-input.svelte` (Places proxy, `kind: 'street'`, two characters and a 300 ms debounce) and loads `google-map.svelte` with the authenticated `/api/geocode` proxy. `accommodation-amenities` and `useAmenityDialog.svelte.ts` commit only on Save. The upload field stays mounted to keep previews; the final Create/Publish action uploads photos and calls `createAccommodation` (no drafts).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| My-accommodation work | `my-accommodation-header.svelte` renders the owner summary from a one-shot browser HTTP query in `[id]/+page.ts` (`ssr = false`, Better Auth browser token, `fetchMyAccommodation`). The load returns the query promise so the page shows `loading/my-accommodation-loading.svelte` while browser authentication and the summary query are pending. Convex validates IDs and ownership; invalid, missing or inaccessible records render the existing not-found view. The listing tab retains its live query. The listing tab (`fetchMyAccommodationListing`) renders sections from `myAccommodationTabListingForm.ts` and saves through `updateAccommodation`; the calendar composes shadcn-svelte RangeCalendar parts with the Bits UI root for month navigation, Today and range selection. It opens on the current property-local month with no preselected range; `minValue` is today in the accommodation timezone. `fetchMyAccommodationCalendar` supplies real confirmed reservations and manual blocked nights for the visible month. Confirmed nights cannot be selected or crossed; manual blocks remain selectable for unblocking. The selected-dates panel performs explicit Block/Unblock actions with at most 30 inclusive nights and explains pending-request behavior. Loading or failed reads disable date selection while month navigation remains available. Settings owns accommodation fees and the visibility toggle; payment collection remains deferred.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| My-accommodation work | `my-accommodation-header.svelte` renders the owner summary from a one-shot browser HTTP query in `[id]/+page.ts` (`ssr = false`, Better Auth browser token, `fetchMyAccommodation`). The load returns the query promise so the page shows `loading/my-accommodation-loading.svelte` while browser authentication and the summary query are pending. Convex validates IDs and ownership; invalid, missing or inaccessible records render the existing not-found view. The listing tab retains its live query. The listing tab (`fetchMyAccommodationListing`) renders sections from `myAccommodationTabListingForm.ts` and saves through `updateAccommodation`; the calendar composes shadcn-svelte RangeCalendar parts with the Bits UI root for month navigation, Today and range selection. It opens on the current property-local month with no preselected range; `minValue` is today in the accommodation timezone. `fetchMyAccommodationCalendar` supplies real confirmed reservations and manual blocked nights for the visible month. Confirmed nights cannot be selected or crossed; manual blocks remain selectable for unblocking. The selected-dates panel performs explicit Block/Unblock actions with at most 30 inclusive nights and explains pending-request behavior. Loading or failed reads disable date selection while month navigation remains available. Settings owns accommodation fee changes and visibility controls. Billing owns the current billing summary and paginated fee payment history; checkout cancellation returns to `?tab=billing`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Map search            | `useSearchAccommodations.svelte.ts` is one-shot cursor pagination (plain `client.query`, no live subscription, no `$effect`), loaded by an attachment when location, bounds, guests/rooms, applied stay filters, or sign-in state change. Both list and map queries use `buildAccommodationSearchQuery` and the validated `stayFilters`: inclusive decimal price range converted to minor units, exact property type, bedroom/bed/bathroom minimums, and all selected amenities (additional amenities are allowed). Applying or clearing filters resets list pagination and clears map pins; viewport changes retain those filters. `search-map.svelte` reports viewport bounds and moving state; `accommodation-card.svelte` renders rows and highlights hovered pins. `features/accommodations/hooks/useSortAccommodations.svelte.ts` and `searchContext.ts` share criteria and map state; selected-filter labels live in `search-filters-selected.svelte`; `search-toolbar/search-toolbar-sort-select.svelte` declares sort options and is reused by the desktop page and mobile toolbar; `search-filters.svelte` owns the filter button and `NativeDialog` trigger, composes `search-filters-price.svelte`, `search-filters-type.svelte`, `search-filters-room-count.svelte`, `search-filters-amenities.svelte`, and the clear/apply button components. Price and type edit bound draft fields; clear replaces only the draft. Apply owns its handler, uses native form validity plus the price-range guard, and closes only after applying. Type options come from `ACCOMMODATION_FILTER_DEFS`; translations follow each component name. `search-filters-amenities.svelte` owns the bound amenity draft, popular options and additional count, and reuses the eight `POPULAR_AMENITY_KEYS`, `AccommodationAmenityItem`, and the nested `AccommodationAmenitiesDialog`; editor Save changes only the filter draft, Cancel discards editor changes, and only Show results applies search criteria. Cancellation, pets, and guest ratings are omitted; `search-toolbar/search-toolbar.svelte` owns mobile sorting and the map toggle. |
 | Favorites             | `useFavorites.svelte.ts` (shared through `favoritesContext.ts`) overlays optimistic per-viewer overrides on the server `seedIds`, rolls back with a toast on failure, and calls `updateFavoriteStatus`. `favorite-button.svelte` sends visitors to `onAuthRequired` instead of a mutation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Booking checkout      | `book-checkout.svelte` owns typed checkout values and `handleBookAccommodation`; both Book buttons call it directly without Form or an HTML form. `book-checkout-form.svelte` binds controls, inline errors and `booking-stay-dates.svelte`. The handler validates with current property-local time, retains guest identity and prevents repeated creation after navigation failure; `createBookingSchema(limits)` re-validates dates, stay limits, and capacity against the stored listing. The confirmation page reads `fetchBookingConfirmation` by booking id; `/guest/my-bookings` uses `fetchMyBookings`. There is no availability hold or payment yet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -97,6 +100,15 @@ Pay now/Manage actions. Its shared skeleton lives in `loading/my-accommodation-i
 The host bookings page renders a desktop `DataTable` at 1280px and above and
 a stacked `DataList` below that width. Both compose `host-bookings-item.svelte`
 and share one query and pagination state.
+Search and newest/oldest sort sit together. Hosts can archive only cancelled,
+declined, expired or completed bookings, after confirmation. `archiveBooking` verifies the
+authenticated host and allowed status, then sets `hostArchivedAt` once without
+changing the booking status or receipt. Archiving hides the booking from host
+lists, status filters and search; guest records and admin access are retained.
+The timestamp is absent on unarchived bookings, including existing records, so
+no data backfill is necessary. Host compound indexes and the guest-search index
+exclude archived rows before pagination. No separate archive table, archive view
+or restore action is provided.
 
 The guest bookings list uses `my-booking-item.svelte` and
 `loading/my-booking-item-loading.svelte`, with translations under
@@ -599,18 +611,21 @@ Current app-facing functions are:
   [AccommodationBillingSystemDesign.md](./AccommodationBillingSystemDesign.md).
 
 - Accommodation cancellation terms live in the required `cancellationPolicy`
-  field. Existing listings were backfilled with
-  `ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY` (version 1, `full_refund`);
-  creation drafts start with that default and all custom ranges at 100%. The dedicated
+  field. New host choices are Flexible (24 elapsed hours), Moderate (120 hours),
+  or Firm (168 hours); the default is Flexible. Each gives a full refund through
+  its inclusive cutoff and zero afterward. Previously recorded full-refund and
+  custom schedules remain readable to preserve accepted booking terms. The dedicated
   Cancellation Policy creation step validates on Continue; Publish revalidates all
   seven sections and `createAccommodation` persists the chosen policy. Review
   reuses the policy preview and links back to the policy step. The
   owner listing editor has a Cancellation Policy section, validated by
   `accommodationCancellationPolicySchema`; `updateAccommodation` also validates
-  the policy server-side and preserves it when saving other sections. Custom
-  policies use four fixed ranges with only 100%, 50%, or 0% refund, staying equal
-  or decreasing toward check-in. See `CancellationPolicySystemDesign.md` for the
-  agreed chunks. Property `timeZone` is required in the database and validated
+  the new preset server-side and preserves the stored policy when saving other
+  sections. Hosts cannot create or save a custom schedule. Exact-equivalence
+  backfills convert only identical outcomes; unmatched schedules require a reviewed
+  mapping. The approved listing-only `backfillFullRefundListingsToFlexible` migrated
+  all 101 development listings to Flexible for future bookings while preserving
+  all 394 accepted booking snapshots. See `CancellationPolicySystemDesign.md`. Property `timeZone` is required in the database and validated
   as a named IANA timezone on creation and merged section updates through
   `saveAccommodationSchema`. All 101 existing development properties were
   backfilled from their stored locations in four single-timezone countries;
@@ -630,18 +645,22 @@ Current app-facing functions are:
   booking creation require a validated timezone. No browser/country timezone
   default is used for new properties.
   Required booking `cancellationTerms` snapshot the stored policy/version, timezone,
-  check-in start/instant, checkout time/instant, nightly price and currency. Request dates use property
+  check-in start/instant, checkout time/instant, nightly price and currency. New
+  preset bookings also freeze `refundDeadlineAt`; later config/listing changes cannot
+  shift it. `createBooking` requires the reviewed `expectedCancellationPolicy` and
+  rejects a changed policy before writing the booking. Request dates use property
   local time, and check-in must still be in the future. DST gaps/folds reject
   rather than silently shifting check-in or checkout. Later status/claim/listing writes do
   not replace terms. All 392 development bookings were migrated before requiring
   these fields; existing snapshots were preserved, and pre-policy bookings were
   assigned full-refund terms with timing from their linked property. Reads have
-  no missing-snapshot fallback. Pure cancellation schedule helpers
-  use the configured 168/120/72/24 elapsed-hour thresholds, with exact thresholds
-  included. Accommodation details show the full static policy in relative hours/days,
+  no missing-snapshot fallback. `checkBookingCancellationRefund` uses the frozen
+  deadline for presets; previous multi-window receipts retain their old thresholds.
+  `calculateBookingRefundAmount` rounds once in integer cents, including previous
+  half-refund receipts. Accommodation details show the full static policy in relative hours/days,
   without date-query calculations, a date-selection prompt or live highlighting;
   the sidebar links to that section. Checkout shows only the live current refund
-  period above submission and links to the full policy while retaining trip parameters.
+  period and refundable amount above submission and links to the full policy while retaining trip parameters.
   Confirmation, My bookings and recovery details show the booked terms.
   Guest periods merge equal outcomes; selected checkout dates and booked stays use
   property-local absolute deadlines with each instant's offset.
@@ -796,6 +815,11 @@ Current app-facing functions are:
   sum discounted rates for the actual nights.
   The feature `AccommodationPrice` composes the existing Price primitive to
   show the original crossed out, effective rate, and percentage discount.
+  Guest accommodation cards expose `loyaltyEligible`, show the participation
+  star badge and reuse `useLoyaltyQuote` for personalized nightly prices. Earned
+  loyalty discounts use a green, explicitly labeled percentage; property offers
+  use a neutral label. Equal discounts are attributed to loyalty without stacking.
+  Search filters, ordering and map pins still use the public property rate.
 - Booking requests require `expectedPricePerNightMinor`; stale rates fail with
   `BOOKING_PRICE_CHANGED`. Frozen `cancellationTerms` stores the effective
   `pricePerNightMinor`, original `basePricePerNightMinor`, and `discountBps`.

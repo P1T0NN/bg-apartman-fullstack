@@ -10,9 +10,7 @@
 	import * as Card from '@/components/ui/card/index.js';
 	import AccommodationFlatFeePaymentButton from '@/features/accommodations/components/accommodation-flat-fee-payment-button/accommodation-flat-fee-payment-button.svelte';
 	import MyAccommodationTabSettingsFeesHeader from './my-accommodation-tab-settings-fees-header.svelte';
-	import AccommodationFeePaymentHistory from '@/features/payments/components/accommodation-fee-payment-history/accommodation-fee-payment-history.svelte';
 	import MyAccommodationTabSettingsFeesSwitchToFlatDialog from './my-accommodation-tab-settings-fees-switch-to-flat-dialog.svelte';
-	import AccommodationBillingStatusBadge from '@/features/accommodations/components/accommodation-billing-status-badge/accommodation-billing-status-badge.svelte';
 	import MyAccommodationTabSettingsFeesSwitchToBookingButton from './my-accommodation-tab-settings-fees-switch-to-booking-button.svelte';
 
 	// HOOKS
@@ -46,7 +44,6 @@
 		isFlatFee && data.billingPeriodEndsAt != null && data.billingPeriodEndsAt <= clock.now
 	);
 	const isLocked = $derived(isFlatFee && data.billingStatus === 'active' && !isExpired);
-	const requiresPayment = $derived(isFlatFee && !isLocked);
 
 	const paidUntil = $derived(
 		data.billingPeriodEndsAt == null
@@ -100,31 +97,15 @@
 						</p>
 					{/if}
 				</div>
-
-				<AccommodationBillingStatusBadge status={isExpired ? 'expired' : data.billingStatus} />
 			</div>
 
-			{#if paidUntil}
+			{#if data.billingPlanId === 'free'}
 				<p class="text-sm">
-					{data.billingPlanId === 'free'
+					{paidUntil
 						? m['MyAccommodationPage.MyAccommodationTabSettingsFees.freeUntil']({ date: paidUntil })
-						: m['MyAccommodationPage.MyAccommodationTabSettingsFees.paidUntil']({
-								date: paidUntil
-							})}
-				</p>
-			{:else if data.billingPlanId === 'free'}
-				<p class="text-sm">
-					{m['MyAccommodationPage.MyAccommodationTabSettingsFees.freeForever']()}
+						: m['MyAccommodationPage.MyAccommodationTabSettingsFees.freeForever']()}
 				</p>
 			{/if}
-
-			<p class="text-sm text-muted-foreground">
-				{requiresPayment
-					? m['MyAccommodationPage.MyAccommodationTabSettingsFees.hidden']()
-					: data.status === 'published'
-						? m['MyAccommodationPage.MyAccommodationTabSettingsFees.visible']()
-						: m['MyAccommodationPage.MyAccommodationTabSettingsFees.paused']()}
-			</p>
 
 			<div class="flex flex-wrap gap-3">
 				{#if isFlatFee}
@@ -149,9 +130,6 @@
 						: m['MyAccommodationPage.MyAccommodationTabSettingsFees.paidLocked']()}
 				</p>
 			{/if}
-		</Card.Content>
-		<Card.Content>
-			<AccommodationFeePaymentHistory {accommodationId} />
 		</Card.Content>
 	</Card.Root>
 </section>

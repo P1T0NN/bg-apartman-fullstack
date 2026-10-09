@@ -8,12 +8,14 @@
 
 	// COMPONENTS
 	import BookingCancellationPolicyItem from './booking-cancellation-policy-item.svelte';
+	import Price from '@/components/ui/custom-components/price/price.svelte';
 
 	// UTILS
 	import { cn } from '@/utils/utils.js';
 	import { DAY_IN_MS } from '@/shared/utils/date.js';
 	import { formatZonedDateTime } from '@/shared/features/timezone/utils/formatZonedDateTime.js';
 	import { checkBookingCancellationRefund } from '@/shared/features/bookings/utils/checkBookingCancellationRefund.js';
+	import { calculateBookingRefundAmount } from '@/shared/features/bookings/utils/calculateBookingRefundAmount.js';
 	import { displayCancellationPolicyPeriods } from '@/shared/features/accommodations/utils/displayCancellationPolicyPeriods.js';
 
 	// TYPES
@@ -24,6 +26,9 @@
 		policy,
 		timeZone,
 		checkInAt,
+		refundDeadlineAt,
+		amountMinor,
+		currency,
 		booked = false,
 		status,
 		compact = false,
@@ -35,6 +40,9 @@
 		policy: CancellationPolicy;
 		timeZone: string;
 		checkInAt?: number;
+		refundDeadlineAt?: number;
+		amountMinor?: number;
+		currency?: string;
 		booked?: boolean;
 		status?: BookingStatus;
 		compact?: boolean;
@@ -49,12 +57,18 @@
 	let now = $state<number>();
 
 	const periods = $derived(displayCancellationPolicyPeriods(policy));
+	const preset = $derived(
+		policy.mode === 'flexible' || policy.mode === 'moderate' || policy.mode === 'firm'
+			? policy.mode
+			: null
+	);
+	const frozenDeadline = $derived(preset ? refundDeadlineAt : undefined);
 
 	const active = $derived(status === undefined || status === 'pending' || status === 'confirmed');
 
 	const currentRefund = $derived(
 		checkInAt !== undefined && now !== undefined && active
-			? checkBookingCancellationRefund({ policy, checkInAt }, now)
+			? checkBookingCancellationRefund({ policy, checkInAt, refundDeadlineAt }, now)
 			: null
 	);
 
@@ -62,9 +76,17 @@
 
 	const currentDeadline = $derived(
 		checkInAt !== undefined && currentPeriod
-			? checkInAt - (currentPeriod.untilHours * DAY_IN_MS) / 24
+			? currentPeriod.percentage === 100 && frozenDeadline !== undefined
+				? frozenDeadline
+				: checkInAt - (currentPeriod.untilHours * DAY_IN_MS) / 24
 			: undefined
 	);
+	const refundableAmountMinor = $derived.by(() => {
+		const hasValidAmount =
+			amountMinor !== undefined && Number.isSafeInteger(amountMinor) && amountMinor >= 0;
+		if (!hasValidAmount || currentRefund === null) return null;
+		return calculateBookingRefundAmount(amountMinor, currentRefund);
+	});
 
 	onMount(() => {
 		if (staticPolicy) return;
@@ -107,6 +129,11 @@
 		{/if}
 		{m['BookingsFeature.BookingCancellationPolicy.title']()}
 	</h3>
+	{#if preset}
+		<p class="font-medium">
+			{m[`CancellationPolicies.${preset}`]()}
+		</p>
+	{/if}
 
 	{#if currentOnly}
 		{#if invalidDate}
@@ -125,6 +152,7 @@
 					{timeZone}
 					current
 					{now}
+					refundDeadlineAt={frozenDeadline}
 				/>
 			</ul>
 		{/if}
@@ -151,9 +179,11 @@
 			</p>
 		{:else}
 			<p class="font-medium">
-				{periods.length === 1
-					? m['BookingsFeature.BookingCancellationPolicy.fullRefund']()
-					: m['BookingsFeature.BookingCancellationPolicy.customRefund']()}
+				{preset
+					? m[`CancellationPolicies.${preset}Description`]()
+					: periods.length === 1
+						? m['BookingsFeature.BookingCancellationPolicy.fullRefund']()
+						: m['BookingsFeature.BookingCancellationPolicy.customRefund']()}
 			</p>
 		{/if}
 
@@ -207,6 +237,7 @@
 						{checkInAt}
 						{timeZone}
 						{timeline}
+						refundDeadlineAt={frozenDeadline}
 						current={currentRefund === period.percentage}
 						now={active ? now : undefined}
 					/>
@@ -234,5 +265,16 @@
 				</p>
 			</div>
 		{/if}
+	{/if}
+	{#if refundableAmountMinor !== null}
+		<p class="font-medium" aria-live="polite" aria-atomic="true">
+			{m['CancellationPolicies.refundableNow']()}
+			<Price value={refundableAmountMinor} {currency} />
+		</p>
+	{/if}
+	{#if preset && !currentOnly}
+		<p class="text-xs text-muted-foreground">
+			{m['CancellationPolicies.inclusiveDeadline']()}
+		</p>
 	{/if}
 </section>

@@ -60,12 +60,12 @@
 					),
 					nights: Number(values.minimumStay)
 				});
-			case 'cancellation-policy':
-				return getFormValue(values, 'cancellationPolicy.mode') === 'custom'
-					? m['MyAccommodationPage.MyAccommodationTabListingSection.customCancellationPolicy']()
-					: m[
-							'MyAccommodationPage.MyAccommodationTabListingSection.fullRefundCancellationPolicy'
-						]();
+			case 'cancellation-policy': {
+				const mode = getFormValue(values, 'cancellationPolicy.mode');
+				return mode === 'flexible' || mode === 'moderate' || mode === 'firm'
+					? m[`CancellationPolicies.${mode}`]()
+					: m['CancellationPolicies.legacy']();
+			}
 			default:
 				return m['MyAccommodationPage.MyAccommodationTabListingSection.rulesSummary']({
 					start: String(values.checkInStart),

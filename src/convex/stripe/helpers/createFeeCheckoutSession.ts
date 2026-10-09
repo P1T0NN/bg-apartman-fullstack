@@ -15,7 +15,7 @@ export function createFeeCheckoutSession(payment: Doc<'accommodationFeePayments'
 	if (!origin) throw new Error('Missing PUBLIC_ORIGIN');
 
 	const returnUrl = new URL(
-		`/host/my-accommodations/${payment.accommodationId}?tab=settings`,
+		`/host/my-accommodations/${payment.accommodationId}?tab=billing`,
 		origin
 	);
 	const successUrl = new URL('/host/accommodation-payment-successful', origin);

@@ -1,12 +1,12 @@
 <script lang="ts">
 	// CONFIG
-	import { COMPANY_DATA } from '@/shared/config';
 	import {
 		PROTECTED_PAGE_ENDPOINTS,
 		UNPROTECTED_PAGE_ENDPOINTS
 	} from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import Logo from '@/components/ui/custom-components/logo/logo.svelte';
 	import NativeSidebar from '@/components/ui/native-components/native-sidebar/native-sidebar.svelte';
 	import NativeSidebarContent from '@/components/ui/native-components/native-sidebar/native-sidebar-content.svelte';
 	import NativeSidebarCta from '@/components/ui/native-components/native-sidebar/native-sidebar-cta.svelte';
@@ -26,7 +26,7 @@
 		bind:openMobile={mobileSidebarOpen}
 	>
 		{#snippet sidebarHeader()}
-			<span class="truncate text-sm font-semibold">{COMPANY_DATA.NAME}</span>
+			<Logo showImage={false} class="text-sm font-semibold" />
 		{/snippet}
 
 		{#snippet sidebarFooter()}

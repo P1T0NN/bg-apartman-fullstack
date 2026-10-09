@@ -27,38 +27,38 @@
 	let { accommodation }: { accommodation: PublicAccommodation } = $props();
 </script>
 
-<header class="flex flex-col gap-5 pb-6">
-	<Link
-		href={UNPROTECTED_PAGE_ENDPOINTS.SEARCH + page.url.search}
-		class="flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4"
-	>
-		<span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>
-		{m['AccommodationPage.AccommodationHeader.back']()}
-	</Link>
+<header class="flex flex-col gap-2 pb-6">
+	<div class="flex items-center justify-between gap-4">
+		<Link
+			href={UNPROTECTED_PAGE_ENDPOINTS.SEARCH + page.url.search}
+			class="flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4"
+		>
+			<span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>
+			{m['AccommodationPage.AccommodationHeader.back']()}
+		</Link>
 
-	<div class="flex flex-wrap items-end justify-between gap-4">
-		<div class="min-w-0">
-			<p class="mb-2 text-sm text-muted-foreground">
-				{m[`AccommodationPage.AccommodationHeader.${accommodation.spaceType}`]()}
-			</p>
+		<ShareValue
+			label={m['AccommodationPage.AccommodationHeader.share']()}
+			value={page.url.origin + page.url.pathname}
+		/>
+	</div>
 
-			<h1 class="max-w-4xl text-3xl font-semibold tracking-tight wrap-break-word sm:text-4xl">
-				{accommodation.name}
-			</h1>
+	<div class="min-w-0">
+		<p class="mb-3 w-fit rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+			{m[`AccommodationPage.AccommodationHeader.${accommodation.spaceType}`]()}
+		</p>
 
-			<a
-				href="#location"
-				class="mt-3 flex min-h-8 w-fit items-center gap-2 text-sm underline decoration-border underline-offset-4 hover:decoration-current"
-			>
-				<span class="icon-[lucide--map-pin] size-4 shrink-0" aria-hidden="true"></span>
-				{accommodation.address.city}, {accommodation.address.country}
-			</a>
+		<h1 class="max-w-4xl text-3xl font-semibold tracking-tight wrap-break-word sm:text-4xl">
+			{accommodation.name}
+		</h1>
+
+		<div class="mt-2 flex flex-wrap items-center gap-x-6">
 			{#if accommodation.reviews.count}
 				<a
 					href="#reviews"
-					class="mt-2 flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+					class="flex min-h-11 items-center gap-2 rounded-sm text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
 				>
-					<Star class="size-4 fill-current" aria-hidden="true" />
+					<Star class="size-4 fill-current text-primary" aria-hidden="true" />
 					{m['AccommodationPage.AccommodationHeader.reviewSummary']({
 						average: formatRatingAverage(accommodation.reviews.average ?? 0, getLocale()),
 						count: accommodation.reviews.count
@@ -67,16 +67,19 @@
 			{:else}
 				<a
 					href="#reviews"
-					class="mt-2 flex min-h-11 w-fit items-center rounded-sm text-sm text-muted-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+					class="flex min-h-11 items-center rounded-sm text-sm text-muted-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
 				>
 					{m['ReviewsFeature.Reviews.noReviews']()}
 				</a>
 			{/if}
-		</div>
 
-		<ShareValue
-			label={m['AccommodationPage.AccommodationHeader.share']()}
-			value={page.url.origin + page.url.pathname}
-		/>
+			<a
+				href="#location"
+				class="flex min-h-11 items-center gap-2 rounded-sm text-sm underline decoration-border underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2"
+			>
+				<span class="icon-[lucide--map-pin] size-4 shrink-0" aria-hidden="true"></span>
+				{accommodation.address.city}, {accommodation.address.country}
+			</a>
+		</div>
 	</div>
 </header>

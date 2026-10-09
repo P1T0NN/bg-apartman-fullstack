@@ -1,6 +1,5 @@
 import { calculateStayPricing } from '../../shared/features/bookings/utils/calculateStayPricing.js';
 import { migrations } from './migrations.js';
-import { ACCOMMODATION_CONFIG } from '../../shared/features/accommodations/config.js';
 import { COMPANY_DATA } from '../../shared/config.js';
 import { getZonedTimestamp } from '../../shared/features/timezone/utils/getZonedTimestamp.js';
 import { timeZoneSchema } from '../../shared/features/timezone/schemas/timezoneSchemas.js';
@@ -16,7 +15,7 @@ export const backfillBookingTiming = migrations.define({
 		const timeZone = timeZoneSchema.parse(terms?.timeZone ?? accommodation.timeZone);
 		const checkOut = terms?.checkOut ?? accommodation.checkOut;
 		const original = terms ?? {
-			policy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
+			policy: { version: 1, mode: 'full_refund' } as const,
 			timeZone,
 			checkInStart: accommodation.checkInStart,
 			checkInAt: getZonedTimestamp(booking.checkInDate, accommodation.checkInStart, timeZone),

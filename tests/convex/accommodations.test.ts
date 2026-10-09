@@ -44,7 +44,10 @@ import {
 	type AccommodationDetails,
 	type AccommodationSearchFilters
 } from '../../src/shared/features/accommodations/schemas/accommodationSchemas.js';
-import { cancellationPolicySchema } from '../../src/shared/features/accommodations/schemas/cancellationPolicySchemas.js';
+import {
+	cancellationPolicySchema,
+	recordedCancellationPolicySchema
+} from '../../src/shared/features/accommodations/schemas/cancellationPolicySchemas.js';
 
 // HELPERS
 import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData.js';
@@ -126,15 +129,15 @@ test('admin fee drafts validate the selected plan, money precision and required 
 	).toBe(false);
 });
 
-test('cancellation policies allow only fixed percentages and every decreasing or equal schedule', () => {
-	expect(cancellationPolicySchema.parse(ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY)).toEqual(
-		ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY
-	);
+test('previously recorded schedules remain valid without changing accepted terms', () => {
+	expect(
+		recordedCancellationPolicySchema.parse(ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY)
+	).toEqual(ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY);
 	for (const fiveToSevenDays of ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES)
 		for (const threeToFiveDays of ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES)
 			for (const oneToThreeDays of ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES)
 				for (const under24Hours of ACCOMMODATION_CONFIG.CANCELLATION_REFUND_PERCENTAGES) {
-					const result = cancellationPolicySchema.safeParse({
+					const result = recordedCancellationPolicySchema.safeParse({
 						version: 1,
 						mode: 'custom',
 						fiveToSevenDays,
@@ -158,7 +161,9 @@ test('cancellation policies allow only fixed percentages and every decreasing or
 	};
 	for (const range of ACCOMMODATION_CONFIG.CANCELLATION_POLICY_RANGES) {
 		for (const value of [25, 75, -1, 101, 50.5, '50', null, undefined, Number.NaN]) {
-			expect(cancellationPolicySchema.safeParse({ ...custom, [range]: value }).success).toBe(false);
+			expect(
+				recordedCancellationPolicySchema.safeParse({ ...custom, [range]: value }).success
+			).toBe(false);
 		}
 	}
 	for (const policy of [
@@ -168,14 +173,15 @@ test('cancellation policies allow only fixed percentages and every decreasing or
 		{ ...custom, version: 2 },
 		{ ...custom, mode: 'unknown' }
 	]) {
-		expect(cancellationPolicySchema.safeParse(policy).success).toBe(false);
+		expect(recordedCancellationPolicySchema.safeParse(policy).success).toBe(false);
 	}
-	const increasing = cancellationPolicySchema.safeParse({ ...custom, threeToFiveDays: 0 });
+	const increasing = recordedCancellationPolicySchema.safeParse({ ...custom, threeToFiveDays: 0 });
 	expect(increasing.success).toBe(false);
 	if (!increasing.success) expect(increasing.error.issues[0].path).toEqual(['oneToThreeDays']);
-	expect(cancellationPolicySchema.parse({ ...custom, mode: 'full_refund' })).toEqual(
-		ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY
-	);
+	expect(recordedCancellationPolicySchema.parse({ ...custom, mode: 'full_refund' })).toEqual({
+		version: 1,
+		mode: 'full_refund'
+	});
 });
 
 const emptyListing: AccommodationDetails = {
@@ -300,12 +306,15 @@ test('billing plans control initial visibility and cannot be bypassed through li
 	};
 	await expect(host.mutation(create, forgedCreation)).rejects.toThrow();
 	const args = { location: { country: 'Serbia' }, paginationOpts: { cursor: null, numItems: 10 } };
+	await t.run((ctx) => ctx.db.patch('accommodations', bookingId, { loyaltyEligible: true }));
 	const search = await t.query(
 		api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch,
 		args
 	);
 	expect(search.items.map((item) => item._id)).toEqual([bookingId]);
 	expect(search.items[0]).not.toHaveProperty('billingTerms');
+	expect(search.items[0].loyaltyEligible).toBe(true);
+	expect(search.items[0]).not.toHaveProperty('loyaltyServices');
 	const map = await t.query(
 		api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap,
 		args
@@ -316,6 +325,7 @@ test('billing plans control initial visibility and cannot be bypassed through li
 		{ paginationOpts: args.paginationOpts }
 	);
 	expect(ownerList.items).toHaveLength(2);
+	expect(ownerList.items.find((item) => item._id === bookingId)?.loyaltyEligible).toBe(true);
 	expect(ownerList.items.find((item) => item._id === flatId)).toMatchObject({
 		billingStatus: 'pending_payment',
 		billingTerms: unpaid?.billingTerms
@@ -473,6 +483,7 @@ test('fee settings enforce ownership, hide unpaid switches, preserve pauses and 
 			accommodationId: id,
 			paymentMethod: 'cash',
 			expectedPricePerNightMinor: 8025,
+			expectedCancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 			expectedTotalMinor: 8025,
 			checkInDate: '2099-01-01',
 			checkOutDate: '2099-01-02',
@@ -706,6 +717,7 @@ test('billing backfill fills legacy listings across pages and preserves existing
 	const base = {
 		...details,
 		ownerId: 'seed-owner',
+		loyaltyEligible: false,
 		billingPeriodEndsAt: null,
 		pricePerNightMinor: 8025,
 		discountBps: 0,
@@ -888,12 +900,14 @@ test('single-day cleanup preserves arrival-today choices and frozen fees across 
 		};
 		return [
 			await ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...booking,
 				cancellationTerms: legacyTerms
 			}),
 			await ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...booking,
@@ -1131,6 +1145,61 @@ test('policy migration fills missing policies in bounded pages and preserves exi
 		ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY
 	]);
 	expect(saved.every((doc) => doc?.updatedAt === 1)).toBe(true);
+
+	const exact = {
+		...custom,
+		threeToFiveDays: 0,
+		oneToThreeDays: 0
+	} as const;
+	await t.run(async (ctx) => {
+		await ctx.db.patch('accommodations', ids[0], {
+			cancellationPolicy: { version: 1, mode: 'full_refund' }
+		});
+		await ctx.db.patch('accommodations', ids[1], { cancellationPolicy: exact });
+		await ctx.db.patch('accommodations', ids[2], { cancellationPolicy: custom });
+	});
+	const presetMigration =
+		internal.migrations.backfillCancellationPresets.backfillAccommodationCancellationPresets;
+	for (let run = 0; run < 2; run++) {
+		await t.mutation(presetMigration, { ...args, batchSize: 10 });
+	}
+	const converted = await t.run(async (ctx) =>
+		Promise.all(ids.map((id) => ctx.db.get('accommodations', id)))
+	);
+	expect(converted.map((doc) => doc?.cancellationPolicy)).toEqual([
+		{ version: 1, mode: 'full_refund' },
+		{ version: 1, mode: 'moderate' },
+		custom
+	]);
+	expect(converted.every((doc) => doc?.updatedAt === 1)).toBe(true);
+	const allFullRefund = {
+		...custom,
+		threeToFiveDays: 100,
+		oneToThreeDays: 100,
+		under24Hours: 100
+	} as const;
+	const allFullRefundId = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...bookingFeeBilling,
+			...base,
+			cancellationPolicy: allFullRefund
+		})
+	);
+	const approvedMigration =
+		internal.migrations.backfillCancellationPresets.backfillFullRefundListingsToFlexible;
+	for (let run = 0; run < 2; run++) {
+		await t.mutation(approvedMigration, { ...args, batchSize: 10 });
+	}
+	const approved = await t.run(async (ctx) =>
+		Promise.all([...ids, allFullRefundId].map((id) => ctx.db.get('accommodations', id)))
+	);
+	expect(approved.map((doc) => doc?.cancellationPolicy)).toEqual([
+		{ version: 1, mode: 'flexible' },
+		{ version: 1, mode: 'moderate' },
+		custom,
+		{ version: 1, mode: 'flexible' }
+	]);
+	expect(approved.every((doc) => doc?.updatedAt === 1)).toBe(true);
 });
 
 function setup() {
@@ -1847,14 +1916,7 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.cancellationPolicy).toEqual(
 		ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY
 	);
-	const policy = {
-		version: 1,
-		mode: 'custom',
-		fiveToSevenDays: 100,
-		threeToFiveDays: 50,
-		oneToThreeDays: 50,
-		under24Hours: 0
-	} as const;
+	const policy = { version: 1, mode: 'moderate' } as const;
 	await expect(t.mutation(update, { id, cancellationPolicy: policy })).rejects.toMatchObject({
 		data: { code: 'UNAUTHENTICATED' }
 	});
@@ -1862,7 +1924,7 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 		{ data: { code: 'FORBIDDEN' } }
 	);
 	await expect(
-		owner.mutation(update, { id, cancellationPolicy: { ...policy, under24Hours: 100 } })
+		owner.mutation(update, { id, cancellationPolicy: { version: 1, mode: 'full_refund' } })
 	).rejects.toMatchObject({ data: { code: 'INVALID_CANCELLATION_POLICY' } });
 	const afterFailure = await t.run((ctx) => ctx.db.get('accommodations', id));
 	expect(afterFailure?.cancellationPolicy).toEqual(
@@ -1871,7 +1933,7 @@ test('owner policy saves preserve other sections and stored full-refund defaults
 	expect(afterFailure?.updatedAt).toBe(1);
 	// SAFETY: Deliberately invalid input verifies the generated runtime literal validator.
 	await expect(
-		owner.mutation(update, { id, cancellationPolicy: { ...policy, under24Hours: 25 as 0 } })
+		owner.mutation(update, { id, cancellationPolicy: { ...policy, version: 2 as 1 } })
 	).rejects.toThrow();
 	await owner.mutation(update, { id, cancellationPolicy: policy });
 	expect((await owner.query(query, { id }))?.cancellationPolicy).toEqual(policy);
@@ -1945,17 +2007,10 @@ test('publishing creates one complete accommodation and claims ordered photos at
 	).rejects.toMatchObject({ data: { code: 'UPLOAD_NOT_FOUND' } });
 });
 
-test('publishing persists the custom cancellation policy and owner reload returns the same terms', async () => {
+test('publishing persists the fixed cancellation policy and owner reload returns the same terms', async () => {
 	const t = setup();
 	const owner = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
-	const cancellationPolicy = {
-		version: 1,
-		mode: 'custom',
-		fiveToSevenDays: 100,
-		threeToFiveDays: 50,
-		oneToThreeDays: 50,
-		under24Hours: 0
-	} as const;
+	const cancellationPolicy = { version: 1, mode: 'firm' } as const;
 	await t.run(async (ctx) => {
 		for (const key of imageKeys)
 			await ctx.db.insert('storageUploads', {
@@ -2169,37 +2224,29 @@ test('save schema preserves every step validation and returns normalized values'
 	expect(saved.address.country).toBe('Serbia');
 });
 
-test('policy step and publication require a complete valid policy and strip inactive custom values', () => {
+test('policy step and publication accept only the three presets', () => {
 	const policyStep = accommodationSectionSchemas[6];
-	const custom = {
-		version: 1,
-		mode: 'custom',
-		fiveToSevenDays: 100,
-		threeToFiveDays: 50,
-		oneToThreeDays: 50,
-		under24Hours: 0
-	} as const;
-	expect(policyStep.safeParse({ cancellationPolicy: custom }).success).toBe(true);
-	expect(
-		saveAccommodationSchema.parse({ ...listing, cancellationPolicy: custom }).cancellationPolicy
-	).toEqual(custom);
-	for (const cancellationPolicy of [
-		undefined,
-		{ ...custom, under24Hours: undefined },
-		{ ...custom, under24Hours: 25 },
-		{ ...custom, under24Hours: 100 },
-		{ ...custom, version: 2 }
-	]) {
-		expect(policyStep.safeParse({ cancellationPolicy }).success).toBe(false);
-		expect(saveAccommodationSchema.safeParse({ ...listing, cancellationPolicy }).success).toBe(
-			false
-		);
+	for (const mode of ACCOMMODATION_CONFIG.CANCELLATION_POLICY_MODES) {
+		const policy = { version: 1, mode };
+		expect(cancellationPolicySchema.parse(policy)).toEqual(policy);
+		expect(policyStep.safeParse({ cancellationPolicy: policy }).success).toBe(true);
+		expect(
+			saveAccommodationSchema.parse({ ...listing, cancellationPolicy: policy }).cancellationPolicy
+		).toEqual(policy);
 	}
-	const fullRefundDraft = { ...custom, mode: 'full_refund' };
-	expect(
-		saveAccommodationSchema.parse({ ...listing, cancellationPolicy: fullRefundDraft })
-			.cancellationPolicy
-	).toEqual(ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY);
+	for (const policy of [
+		undefined,
+		{},
+		{ version: 1, mode: 'custom' },
+		{ version: 1, mode: 'full_refund' },
+		{ version: 2, mode: 'flexible' },
+		{ version: 1, mode: 'unknown' }
+	]) {
+		expect(policyStep.safeParse({ cancellationPolicy: policy }).success).toBe(false);
+		expect(
+			saveAccommodationSchema.safeParse({ ...listing, cancellationPolicy: policy }).success
+		).toBe(false);
+	}
 });
 
 test('search filters by location, total guests, and rooms', async () => {
@@ -2472,6 +2519,7 @@ test('owner deletion soft-deletes the listing, cleans references, and active boo
 		});
 		const insertBooking = (status: 'completed' | 'pending' | 'cancelled') =>
 			ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				accommodationId: docId,
@@ -2600,6 +2648,75 @@ test('search returns only published listings while the owner list hides deleted 
 		{ paginationOpts: { cursor: null, numItems: 10 } }
 	);
 	expect(list.items.map((item) => item._id).sort()).toEqual([ids[0], ids[1]].sort());
+});
+
+test('only admins can opt accommodations into loyalty and deleted listings cannot be changed', async () => {
+	const t = setup();
+	const admin = t.withIdentity({
+		subject: 'admin',
+		role: 'admin',
+		tokenIdentifier: 'issuer|admin'
+	});
+	const host = t.withIdentity({ subject: 'host', tokenIdentifier: 'issuer|host' });
+	const {
+		nightlyPrice: _price,
+		discountPercent: _discount,
+		weekendPrice: _weekend,
+		...details
+	} = listing;
+	const id = await t.run((ctx) =>
+		ctx.db.insert('accommodations', {
+			...details,
+			...bookingFeeBilling,
+			ownerId: 'host',
+			status: 'unpublished',
+			pricePerNightMinor: 10000,
+			effectivePricePerNightMinor: 10000,
+			discountBps: 0,
+			weekendPricePerNightMinor: null,
+			recommendationSortKey: -3,
+			guestRatingAverage: 0,
+			guestReviewCount: 0,
+			updatedAt: 1
+		})
+	);
+	const update =
+		api.tables.accommodations.mutations.updateAccommodationLoyaltyForAdmin
+			.updateAccommodationLoyaltyForAdmin;
+	await expect(t.mutation(update, { id, loyaltyEligible: true })).rejects.toThrow(
+		'UNAUTHENTICATED'
+	);
+	await expect(host.mutation(update, { id, loyaltyEligible: true })).rejects.toThrow('FORBIDDEN');
+	const forgedUpdate = { id, loyaltyEligible: true };
+	await expect(
+		host.mutation(
+			api.tables.accommodations.mutations.updateAccommodation.updateAccommodation,
+			forgedUpdate
+		)
+	).rejects.toThrow();
+	const forgedCreate = { ...listing, loyaltyEligible: true, uploadedFiles: [] };
+	await expect(
+		host.mutation(
+			api.tables.accommodations.mutations.createAccommodation.createAccommodation,
+			forgedCreate
+		)
+	).rejects.toThrow();
+	expect((await t.run((ctx) => ctx.db.get('accommodations', id)))!.loyaltyEligible).toBe(false);
+	const loyaltyServices = { parking: true, breakfast: false, spa: false };
+	await admin.mutation(update, { id, loyaltyEligible: true, loyaltyServices });
+	for (const loyaltyEligible of [true, false]) {
+		await admin.mutation(update, { id, loyaltyEligible });
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))!.loyaltyEligible).toBe(
+			loyaltyEligible
+		);
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))!.loyaltyServices).toEqual(
+			loyaltyServices
+		);
+	}
+	await t.run((ctx) => ctx.db.patch('accommodations', id, { status: 'deleted' }));
+	await expect(admin.mutation(update, { id, loyaltyEligible: true })).rejects.toThrow(
+		'ACCOMMODATION_NOT_FOUND'
+	);
 });
 
 test('admin fee overrides bypass host locks, validate terms, and reject non-admin callers', async () => {

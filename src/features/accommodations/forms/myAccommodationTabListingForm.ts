@@ -336,13 +336,7 @@ export function createMyAccommodationTabListingForm(
 			group: 'booking',
 			schema: accommodationCancellationPolicySchema.extend({ id: z.string() }),
 			values: {
-				cancellationPolicy: {
-					fiveToSevenDays: 100,
-					threeToFiveDays: 100,
-					oneToThreeDays: 100,
-					under24Hours: 100,
-					...accommodation.cancellationPolicy
-				}
+				cancellationPolicy: accommodation.cancellationPolicy
 			},
 			fields: []
 		}

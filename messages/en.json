@@ -1,6 +1,22 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"example_message": "Hello world {username}",
+	"CancellationPolicies": {
+		"flexible": "Flexible",
+		"moderate": "Moderate",
+		"firm": "Firm",
+		"flexibleDescription": "Full refund until 24 hours before scheduled check-in; no refund after that deadline.",
+		"moderateDescription": "Full refund until 5 days (120 hours) before scheduled check-in; no refund after that deadline.",
+		"firmDescription": "Full refund until 7 days (168 hours) before scheduled check-in; no refund after that deadline.",
+		"legacySelection": "This listing uses previously saved cancellation terms. They remain unchanged until you explicitly select and save Flexible, Moderate or Firm. Existing bookings always keep their original terms.",
+		"choosePreset": "Select Flexible, Moderate or Firm to preview and save the policy.",
+		"inclusiveDeadline": "Cancellation exactly at the deadline receives a full refund. After the deadline, the refund is zero.",
+		"refundableNow": "Refundable amount if you cancel now, under this policy:",
+		"legacy": "Previously agreed cancellation terms",
+		"flexibleDeadline": "24 hours before check-in",
+		"moderateDeadline": "5 days (120 hours) before check-in",
+		"firmDeadline": "7 days (168 hours) before check-in"
+	},
 	"AnalyticsFeature": {
 		"AnalyticsData": {
 			"revenue": "Revenue",
@@ -41,26 +57,29 @@
 		},
 		"BenefitsSummary": {
 			"title": "Your benefits",
-			"comingSoon": "Rewards coming soon",
 			"startTitle": "Something to look forward to.",
 			"returningTitle": "Your return visits matter.",
-			"startDescription": "Discover the rewards planned for guests who book directly and return to stay.",
+			"startDescription": "Complete 2 qualifying stays to unlock Level 1. Your benefits apply to bookings made after reaching a level.",
 			"recordedStays": "Qualifying stays recorded",
-			"staysDescription": "This is your recorded loyalty total. Completed bookings are shown separately below.",
+			"staysDescription": "This is your recorded qualifying-stay total at participating properties.",
 			"joined": "Member since {date}",
-			"availability": "Loyalty rewards are not available for bookings yet. Included services will depend on the property and will be confirmed in your booking summary.",
+			"availability": "Available at participating properties. Included services depend on the property and are confirmed in your booking summary.",
 			"findStay": "Find a stay",
-			"levelRewards": "Your level rewards"
+			"levelRewards": "Your level rewards",
+			"notMember": "Working toward Level 1",
+			"nextLevel": "Complete {stays} more to unlock Level {level} and {percent}% off.",
+			"progress": "Progress toward Level {level}",
+			"highestLevel": "Highest level reached"
 		},
 		"BenefitsLevels": {
 			"title": "Explore the rewards",
-			"description": "The planned program has three levels. Each higher level replaces the previous discount.",
+			"description": "Unlock Level 1 after 2 qualifying stays, Level 2 after 5, and Level 3 after 8. Higher levels replace the previous discount.",
 			"level": "Level",
 			"discount": "Discount",
 			"parking": "Parking",
 			"breakfast": "Breakfast",
 			"spa": "Spa access",
-			"availabilityNote": "Rewards are coming soon. Included services will depend on the property's participation and facilities."
+			"availabilityNote": "Discounts apply at participating properties. Parking, breakfast and spa access are included only where the property offers them."
 		},
 		"BenefitsLevelItem": {
 			"level": "Level {level}",
@@ -73,28 +92,19 @@
 			"breakfast": "Free breakfast for {guests}",
 			"breakfastIncluded": "Free for {guests}",
 			"spa": "Free spa access",
-			"current": "Your level"
-		},
-		"BenefitsHistory": {
-			"title": "Your completed stays",
-			"description": "Your completed bookings on BGAPARTMAN. A completed stay does not automatically earn loyalty credit.",
-			"emptyTitle": "Your story starts with a stay",
-			"emptyDescription": "Once a host marks your booking as completed, it will appear here."
-		},
-		"BenefitsStayItem": {
-			"completed": "Completed",
-			"unavailable": "Accommodation no longer available"
+			"current": "Your level",
+			"threshold": "Unlocks after {stays} completed stays"
 		},
 		"BenefitsGuide": {
 			"title": "How it works",
 			"qualifyTitle": "Which bookings qualify?",
-			"qualifyDescription": "The program is designed for advance direct bookings paid in cash. Full eligibility details will be available when rewards launch.",
+			"qualifyDescription": "Each finished booking made at a participating property earns one stay credit automatically. Cash and card both count, including repeat visits. Cancelled bookings do not count. Link guest bookings to your account to receive credit. Membership lasts forever.",
 			"availabilityTitle": "Where can I use my benefits?",
 			"availabilityDescription": "Included rewards will depend on each property's services and participation. Parking, breakfast and spa access will only be offered where available.",
 			"discountsTitle": "How do the levels work?",
-			"discountsDescription": "The planned levels offer 10%, 15% and 20% discounts. Higher levels include the previous level's services and replace its discount.",
+			"discountsDescription": "Unlock 10% after 2 qualifying stays, 15% after 5, and 20% after 8. Benefits apply to new bookings after reaching a level. We apply the better single property or loyalty discount; percentages are never added.",
 			"progressTitle": "Where can I see my progress?",
-			"progressDescription": "Your recorded qualifying-stay total appears above. Your completed bookings are listed separately, so you can keep track of your trips."
+			"progressDescription": "Your recorded qualifying-stay total appears above. You can view your stays in My bookings."
 		}
 	},
 	"LoyaltyFeature": {
@@ -115,17 +125,54 @@
 		"PropertyBenefits": {
 			"title": "Your benefits at this property",
 			"discount": "{percent}% loyalty discount",
-			"cash": "Available with cash payment. Your checkout summary confirms the final price and included services."
+			"payment": "Available with cash or card payment. Your checkout summary confirms the final price and included services."
 		}
 	},
 	"HomePage": {
 		"title": "Apartments and stays in Serbia",
 		"description": "Find apartments, holiday homes and rooms across Serbia and the Balkans, real guest reviews and clear cancellation terms.",
+		"LoyaltySection": {
+			"title": "Your stays unlock more.",
+			"description": "Rewards start after {stays} completed qualifying stays.",
+			"faqTitle": "Good to know",
+			"accountQuestion": "Who can earn loyalty benefits?",
+			"account": "Loyalty benefits apply only to guests signed in with a BGApartman account. Sign in or create an account before booking, and claim any guest bookings, to earn stay credits and unlock levels.",
+			"availabilityQuestion": "Where do the benefits apply?",
+			"availability": "Benefits are available at participating properties. Parking, breakfast and spa access are included only when the property offers them.",
+			"qualifyingQuestion": "How do I earn stay credits?",
+			"qualifying": "Each completed qualifying booking earns one stay credit. Link guest bookings to your account to receive credit; cancelled bookings do not count.",
+			"futureBookingsQuestion": "Do my benefits expire?",
+			"futureBookings": "Unlocked benefits apply to future bookings. Your level never expires.",
+			"discountsQuestion": "Can I combine discounts?",
+			"discounts": "We apply the better property or loyalty discount. Discounts are never stacked."
+		},
+		"LoyaltyTierItem": {
+			"level": "Level {level}",
+			"threshold": "After {stays} completed qualifying stays",
+			"discount": "loyalty discount"
+		},
+		"FeaturedAccommodationsSection": {
+			"title": "Featured loyalty stays",
+			"description": "Handpicked places that reward every completed stay with loyalty benefits.",
+			"loading": "Loading featured stays",
+			"emptyTitle": "No featured stays yet",
+			"emptyDescription": "Loyalty stays will appear here as soon as hosts join the program."
+		},
+		"TestimonialsSection": {
+			"aroundTheWorld": "around the world",
+			"bestPrice": "Best Price",
+			"eyebrow": "Testimonials",
+			"lovedByGuests": "Loved by guests",
+			"secureBooking": "Secure Booking",
+			"verifiedReviews": "Verified Reviews",
+			"watchReview": "Watch Review",
+			"watchReviewAlt": "Watch {name}'s review"
+		},
 		"HeroSection": {
 			"imageAlt": "Belgrade at sunset, Serbia",
 			"eyebrow": "Serbia and the Balkans",
-			"title": "Book apartments and holiday homes across Serbia",
-			"description": "From Belgrade city breaks to Zlatibor and Kopaonik, compare real guest reviews and book directly with clear cancellation terms.",
+			"title": "The best stays in Serbia. At the best prices.",
+			"subtitle": "Quality places to stay across Serbia, priced fairly.",
 			"verifiedReviews": "Reviews from real stays",
 			"noAccount": "No account needed to book",
 			"cancellation": "Clear cancellation terms"
@@ -317,7 +364,7 @@
 		"createStepRules": "Guest rules",
 		"createStepRulesBody": "Choose Request booking or Instant Booking, then set check-in, checkout and house rules. We strongly recommend Request booking so you can verify availability and prepare before accepting. Instant Booking confirms even before you see the notification.",
 		"createStepCancellation": "Cancellation policy",
-		"createStepCancellationBody": "Keep the default full refund or set refund percentages for cancellations closer to check-in.",
+		"createStepCancellationBody": "Choose Flexible (24 hours), Moderate (5 days) or Firm (7 days). Guests receive a full refund through the deadline and no refund after it.",
 		"createStepReview": "Review and publish",
 		"createStepReviewBody": "Check the preview, then publish. Listings go live immediately; leaving the form before publishing discards your entries.",
 		"manageTitle": "Manage your accommodation",
@@ -583,20 +630,20 @@
 	},
 	"HelpCancellationPolicyPage": {
 		"pageTitle": "Cancellation policy",
-		"metaDescription": "How cancellation works on BGApartman: the standard full-refund policy, host-set refund windows before check-in, locked-in booking terms, and what happens when a host cancels.",
+		"metaDescription": "Flexible, Moderate and Firm cancellation policies, exact refund deadlines, locked-in booking terms, and what happens when a host cancels.",
 		"lead": "Every stay on BGApartman has a cancellation policy, and you see it before you book. It sets the refund you are entitled to if you cancel, based on how much time remains before check-in.",
 		"summaryTitle": "The short version",
-		"summaryDefault": "By default, cancelling before check-in entitles you to a full refund.",
-		"summaryHosts": "Hosts can set refunds for later cancellations, down to no refund in the final 24 hours.",
+		"summaryDefault": "The default Flexible policy gives a full refund through 24 hours before check-in, then no refund.",
+		"summaryHosts": "Hosts choose Flexible (24 hours), Moderate (5 days) or Firm (7 days). Every preset gives a full refund through its deadline and zero after.",
 		"summaryPermission": "Cancelling is always allowed before check-in. The policy decides the refund, not whether you may cancel.",
 		"summaryLocked": "The terms you book under are locked in. Later listing changes do not affect your booking.",
-		"standardTitle": "The standard policy: a full refund",
-		"standardBody1": "Unless a host sets custom terms, cancelling before check-in entitles you to a full refund of any amount collected for the stay. This is the default for every listing, because changing your plans early should not cost you the stay.",
-		"standardBody2": "A host can only replace this default by choosing custom cancellation terms explicitly when creating or editing a listing.",
-		"customTitle": "Custom policies: refunds by cancellation time",
-		"customIntro": "For cancellations closer to arrival, hosts can set refunds that reflect how difficult the dates are to re-book. Custom policies use four windows before check-in.",
-		"customTableTime": "When you cancel",
-		"customTableRefund": "Refund",
+		"standardTitle": "The default: Flexible",
+		"standardBody1": "New listings start with Flexible: cancel through 24 elapsed hours before scheduled check-in for a full refund under the policy. After that exact deadline, the refund is zero.",
+		"standardBody2": "A host can choose Moderate or Firm when creating or editing the listing. Existing bookings retain their recorded policy, including previously agreed schedules.",
+		"customTitle": "Three clear policy choices",
+		"customIntro": "Every preset has one deadline. Cancel on or before it for a full refund; cancel after it for no refund. Partial refunds are not part of these three presets.",
+		"customTableTime": "Policy",
+		"customTableRefund": "Full-refund deadline",
 		"rangeSeven": "7 or more days before check-in",
 		"rangeSevenRefund": "Full refund (100%)",
 		"rangeFive": "5–7 days before check-in",
@@ -605,11 +652,11 @@
 		"rangeFinal": "Final 24 hours before check-in",
 		"hostSets": "The host sets 100%, 50%, or 0%",
 		"boundaryTitle": "Where the boundaries sit",
-		"boundaryBody": "At exactly 7 days before check-in, the full-refund window applies. At exactly 5 days, 3 days, or 24 hours before check-in, the window that starts at that moment applies.",
-		"decreasingBody": "Refunds can only stay the same or decrease as check-in approaches, so cancelling later can never earn a higher refund than cancelling earlier.",
+		"boundaryBody": "Cancellation exactly at the Flexible 24-hour, Moderate 120-hour or Firm 168-hour deadline receives a full refund. Any cancellation after the applicable deadline receives no refund under that preset.",
+		"decreasingBody": "The deadline is frozen when you book. A later listing or policy edit never changes the terms for your booking.",
 		"timingTitle": "How the timing is counted",
 		"timingBody1": "A day means 24 consecutive hours before your scheduled check-in time, not a calendar day.",
-		"timingBody2": "Deadlines follow the property's local timezone, including daylight saving changes, and we show the exact deadline and zone. For example: cancel before 12 October, 14:00, property local time in Belgrade.",
+		"timingBody2": "We subtract 24, 120 or 168 elapsed hours from scheduled check-in, then display the exact deadline in the property's timezone. Daylight saving can change the displayed clock time. For example: cancellation on or before the shown local deadline qualifies for a full refund.",
 		"lockedTitle": "Your terms are locked in when you book",
 		"lockedBody": "When you send a booking request, we record the policy, the property's timezone and the exact check-in time for that booking. If the host later edits the listing or its policy, your booking keeps the terms you booked under.",
 		"cancellingTitle": "Cancelling a booking",
@@ -648,7 +695,10 @@
 			"submit": "Send booking link",
 			"submitting": "Sending link…",
 			"checkInbox": "Check your inbox",
-			"inboxHint": "Open the link in your email to view your bookings. If it doesn't arrive, check your spam folder and the email address above."
+			"inboxHint": "Open the link in your email to view your bookings. If it doesn't arrive, check your spam folder and the email address above.",
+			"stepEmail": "Enter the email you booked with",
+			"stepLink": "Open the link we send you",
+			"stepBooking": "See your booking details"
 		},
 		"FindBookingDetails": {
 			"invalidTitle": "This link is no longer valid",
@@ -945,7 +995,9 @@
 			"rules": "House rules"
 		},
 		"AccommodationDetailsOverview": {
-			"overview": "Your stay at a glance"
+			"overview": "Your stay at a glance",
+			"showMore": "Show more",
+			"showLess": "Show less"
 		},
 		"AccommodationReviewBookings": {
 			"chooseStay": "Review a completed stay:"
@@ -953,6 +1005,7 @@
 		"AccommodationDetailsAmenities": {
 			"amenities": "What this place offers",
 			"moreAmenities": "Show {count} more amenities",
+			"showLess": "Show less",
 			"noAmenities": "The host has not listed any amenities yet."
 		},
 		"AccommodationDetailsLocation": {
@@ -1085,11 +1138,13 @@
 	},
 	"NewslettersFeature": {
 		"NewslettersSection": {
+			"eyebrow": "Newsletter",
 			"title": "Join our newsletter",
 			"description": "Be first to hear about new places to stay, exclusive offers, and news.",
 			"emailLabel": "Email address",
 			"emailPlaceholder": "you@example.com",
 			"subscribe": "Subscribe",
+			"subscribing": "Subscribing…",
 			"subscribed": "If this email exists, we've subscribed it to our newsletter.",
 			"subscribeError": "We couldn't subscribe you right now. Please try again.",
 			"privacyHint": "No spam. Unsubscribe at any time."
@@ -1149,7 +1204,7 @@
 	"AccommodationsFeature": {
 		"AccommodationCancellationPolicy": {
 			"chooseMode": "Guest cancellation terms",
-			"modeHint": "Choose the refund terms for guests who cancel before check-in. Changes are saved only when you select Save."
+			"modeHint": "Choose Flexible, Moderate or Firm. Each gives a full refund through its deadline and no refund afterward. Changes apply to future bookings only and are saved when you select Save."
 		},
 		"AccommodationAmenities": {
 			"wifi": "Wi-Fi",
@@ -1197,6 +1252,7 @@
 			"save": "Save amenities"
 		},
 		"AccommodationCard": {
+			"loyaltyRewards": "Loyalty rewards",
 			"guest": "guest",
 			"guests": "guests",
 			"bedroom": "bedroom",
@@ -1246,7 +1302,7 @@
 			"fullRefundPreview": "Guests who cancel before check-in are entitled to a full refund.",
 			"cancellationAllowed": "Guests can cancel before check-in without host approval, including when no refund applies.",
 			"invalidPreview": "Fix the highlighted refund amounts to preview this policy.",
-			"noPayment": "The platform does not collect payments yet. These terms do not calculate or issue a refund."
+			"noPayment": "These are the stay's cancellation terms. The platform does not collect payments or issue refunds yet."
 		},
 		"AccommodationCancellationPolicyModeItem": {
 			"full_refund": "Full refund before check-in",
@@ -1303,6 +1359,7 @@
 			"original": "Original nightly price",
 			"current": "Discounted nightly price",
 			"discountLabel": "{percent}% off",
+			"loyaltyDiscountLabel": "{percent}% off · Loyalty",
 			"preview": "Guest nightly price",
 			"weekend": "Weekend nightly price",
 			"weekendHint": "Friday and Saturday nights, in local property time. Leave empty to use the normal rate. Discounts apply to both rates.",
@@ -1829,6 +1886,12 @@
 			"uploadingFiles": "Uploading files",
 			"uploadProgress": "File upload progress"
 		},
+		"HeaderAnnouncement": {
+			"title": "Your stays unlock more.",
+			"description": "Discover loyalty savings of up to {discount}% at participating properties.",
+			"mobileDescription": "Up to {discount}% on select stays.",
+			"benefits": "See the benefits"
+		},
 		"Header": {
 			"home": "Home",
 			"navigation": "Main navigation",
@@ -1852,7 +1915,7 @@
 			"general": "General",
 			"accommodations": "Accommodations",
 			"bookings": "Bookings",
-			"backToAccount": "Back to Account",
+			"backToHome": "Back to Home Page",
 			"dashboard": "Dashboard",
 			"addAccommodation": "Add accommodation",
 			"myAccommodations": "My accommodations",
@@ -1911,7 +1974,7 @@
 	},
 	"BackendMessages": {
 		"bookingRequestExpired": "The response deadline has passed. This request can no longer be changed. You can submit a new request.",
-		"invalidCancellationPolicy": "Choose only full refund (100%), 50% refund, or no refund (0%). Refunds must stay the same or decrease as check-in approaches.",
+		"invalidCancellationPolicy": "Choose Flexible, Moderate or Firm as the cancellation policy.",
 		"rateLimitSingle": "You hit the rate limit. Try again in 1 second.",
 		"rateLimitMultiple": "You hit the rate limit. Try again in {seconds} seconds.",
 		"unauthenticated": "Please sign in and try again.",
@@ -1979,7 +2042,7 @@
 			"reviewTitle": "Take a final look",
 			"reviewHint": "Check the details and your payment plan before creating this accommodation.",
 			"cancellationPolicyTitle": "Cancellation Policy",
-			"cancellationPolicyHint": "Choose what guests receive back if they cancel before check-in. Keep full refund or set amounts by cancellation time."
+			"cancellationPolicyHint": "Choose Flexible, Moderate or Firm. Each gives a full refund through its deadline and no refund after it."
 		},
 		"AccommodationProgress": {
 			"position": "{current} of {total}",
@@ -2187,7 +2250,8 @@
 			"label": "Accommodation sections",
 			"listing": "Listing",
 			"calendar": "Calendar",
-			"settings": "Settings"
+			"settings": "Settings",
+			"billing": "Billing"
 		},
 		"MyAccommodationHeader": {
 			"back": "My accommodations",
@@ -2221,7 +2285,7 @@
 		},
 		"MyAccommodationTabListingSections": {
 			"cancellationPolicy": "Cancellation Policy",
-			"cancellationPolicyHint": "Set the guest refund terms for cancellation before check-in. The default is a full refund. These terms apply to guest cancellations; host cancellation always entitles the guest to a full refund.",
+			"cancellationPolicyHint": "Choose Flexible (24 hours), Moderate (5 days) or Firm (7 days). Flexible is the default for new listings. These deadlines apply to guest cancellations; host cancellation always entitles the guest to a full refund.",
 			"basics": "Property basics",
 			"basicsHint": "Set the property type, guest capacity, and sleeping arrangements.",
 			"location": "Location",
@@ -2358,7 +2422,16 @@
 			"bookingWindow": "Booking window",
 			"windowValue": "6 months ahead"
 		},
-		"MyAccommodationTabSettingsFees": {
+		"MyAccommodationTabBilling": {
+			"loading": "Loading billing information...",
+			"loadError": "Billing information could not be loaded. Please try again."
+		},
+		"MyAccommodationTabBillingHeader": {
+			"title": "Billing",
+			"description": "Review your current plan, payment status and fee payment history.",
+			"manageFees": "Manage accommodation fees in Settings"
+		},
+		"MyAccommodationTabBillingSummary": {
 			"currentPlan": "Current plan",
 			"bookingFee": "Booking fee",
 			"flatFee": "Flat fee",
@@ -2367,7 +2440,18 @@
 			"paidUntil": "Paid until {date}",
 			"visible": "Your accommodation is visible in search.",
 			"paused": "Your accommodation is paused.",
-			"hidden": "Your accommodation is hidden until you pay or switch to booking fees.",
+			"hidden": "Your accommodation is hidden until you pay or switch to booking fees in Settings.",
+			"free": "Free",
+			"noFees": "No flat fee or booking commission. This plan is managed by an administrator.",
+			"freeUntil": "Free until {date}. Afterwards, the booking-fee plan applies.",
+			"freeForever": "Free forever."
+		},
+		"MyAccommodationTabSettingsFees": {
+			"currentPlan": "Current plan",
+			"bookingFee": "Booking fee",
+			"flatFee": "Flat fee",
+			"flatPrice": "{amount} for {months} months",
+			"bookingRate": "{percent}% of each booking",
 			"locked": "You can switch to booking fees after {date}.",
 			"paidLocked": "You can switch to booking fees when your paid period ends.",
 			"free": "Free",
@@ -2495,6 +2579,13 @@
 			"confirmSubmit": "Confirm booking",
 			"keep": "Keep booking",
 			"toastConfirmed": "Booking confirmed"
+		},
+		"HostBookingsArchiveButton": {
+			"archive": "Archive",
+			"title": "Archive this booking?",
+			"description": "This hides the booking from your host workspace. The booking record is kept for the guest and administrators.",
+			"keep": "Keep booking",
+			"toastArchived": "Booking archived"
 		},
 		"HostBookingsCancelButton": {
 			"decline": "Decline",
@@ -2715,7 +2806,7 @@
 			"partiallyRefunded": "Partially refunded",
 			"refundAmount": "Refunded: {amount}",
 			"refresh": "Check status",
-			"checkoutCancelled": "Checkout was cancelled. You can resume payment using Pay now."
+			"checkoutCancelled": "Checkout was cancelled. To try again, open Settings and use Pay now under Accommodation fees."
 		}
 	},
 	"AdminAccommodationsPage": {
@@ -2769,6 +2860,18 @@
 			"free": "Free",
 			"noFees": "No platform fees",
 			"forever": "Forever"
+		},
+		"AdminAccommodationsLoyaltyDialog": {
+			"trigger": "Loyalty status",
+			"title": "Loyalty for {name}",
+			"hint": "Control whether this property participates in the loyalty benefits program and which level of benefits is included with a stay.",
+			"status": "Loyalty status",
+			"statusEnabled": "Loyalty enabled.",
+			"statusDisabled": "Loyalty disabled. Levels are now inactive.",
+			"levelTitle": "Enable Level {level} loyalty benefits",
+			"levelEnabled": "Level {level} benefits enabled.",
+			"levelDisabled": "Level {level} benefits disabled.",
+			"close": "Close"
 		},
 		"AdminAccommodationsFeeDialog": {
 			"trigger": "Edit fees"

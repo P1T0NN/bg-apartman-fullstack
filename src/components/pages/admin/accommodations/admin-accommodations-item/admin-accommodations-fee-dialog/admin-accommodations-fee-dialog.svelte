@@ -1,27 +1,39 @@
 <script lang="ts">
 	// LIBRARIES
 	import { flushSync } from 'svelte';
-	import { m } from '@/lib/paraglide/messages.js';
+
+	// CONVEX
+	import { api } from '@convex/_generated/api.js';
 
 	// COMPONENTS
 	import NativeDialog from '@/components/ui/native-components/native-dialog/native-dialog.svelte';
-	import { Button } from '@/components/ui/button/index.js';
 	import AdminAccommodationsFeeDialogHeader from './admin-accommodations-fee-dialog-header.svelte';
 	import AdminAccommodationsFeeDialogForm from './admin-accommodations-fee-dialog-form.svelte';
 
 	// TYPES
-	import type { AdminAccommodationsFeeDialogAccommodation } from './adminAccommodationsFeeDialogTypes.js';
+	import type { FunctionReturnType } from 'convex/server';
 
-	let { accommodation }: { accommodation: AdminAccommodationsFeeDialogAccommodation } = $props();
+	type Accommodation = FunctionReturnType<
+		typeof api.tables.accommodations.queries.fetchAccommodationsAdmin.fetchAccommodationsAdmin
+	>['items'][number];
+
+	let { accommodation }: { accommodation: Accommodation } = $props();
 
 	const titleId = $props.id();
 
 	let pending = $state(false);
 
 	let opening = $state(0);
+
+	let dialog: NativeDialog;
+
+	export function open() {
+		dialog?.open();
+	}
 </script>
 
 <NativeDialog
+	bind:this={dialog}
 	aria-labelledby={titleId}
 	onbeforetoggle={(event) => {
 		if (event.newState === 'open')
@@ -30,22 +42,10 @@
 			});
 	}}
 >
-	{#snippet trigger({ id })}
-		<Button
-			variant="outline"
-			size="sm"
-			disabled={pending || accommodation.status === 'deleted'}
-			commandfor={id}
-			command="show-modal"
-		>
-			{m['AdminAccommodationsPage.AdminAccommodationsFeeDialog.trigger']()}
-		</Button>
-	{/snippet}
-
 	{#snippet children({ id, close })}
 		<div class="flex flex-col gap-5 p-6">
 			<AdminAccommodationsFeeDialogHeader id={titleId} name={accommodation.name} />
-			
+
 			{#key opening}
 				<AdminAccommodationsFeeDialogForm {accommodation} dialogId={id} {close} bind:pending />
 			{/key}

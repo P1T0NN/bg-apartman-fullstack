@@ -56,6 +56,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			input: parsedRequest.data.input,
 			includedPrimaryTypes:
 				parsedRequest.data.kind === 'street' ? ['route'] : ['locality', 'country'],
+			includedRegionCodes: parsedRequest.data.kind === 'location' ? ['rs'] : undefined,
 			languageCode: parsedRequest.data.languageCode,
 			sessionToken: parsedRequest.data.sessionToken
 		}),

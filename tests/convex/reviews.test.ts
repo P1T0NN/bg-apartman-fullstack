@@ -92,7 +92,12 @@ async function setup() {
 		children: 0
 	};
 	const bookingId = await t.run((ctx) =>
-		ctx.db.insert('bookings', { platformFeeTerms: null, paymentMethod: 'cash', ...booking })
+		ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
+			platformFeeTerms: null,
+			paymentMethod: 'cash',
+			...booking
+		})
 	);
 	const guest = t.withIdentity({
 		subject: 'guest',
@@ -117,7 +122,12 @@ test('author review history is paginated, private and retains hidden or removed-
 	});
 	vi.setSystemTime(new Date('2026-09-30T12:01:00Z'));
 	const secondBookingId = await t.run((ctx) =>
-		ctx.db.insert('bookings', { platformFeeTerms: null, paymentMethod: 'cash', ...booking })
+		ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
+			platformFeeTerms: null,
+			paymentMethod: 'cash',
+			...booking
+		})
 	);
 	const secondId = await guest.mutation(createReview, {
 		bookingId: secondBookingId,
@@ -126,6 +136,7 @@ test('author review history is paginated, private and retains hidden or removed-
 	});
 	const foreignBookingId = await t.run((ctx) =>
 		ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
 			platformFeeTerms: null,
 			paymentMethod: 'cash',
 			...booking,
@@ -193,6 +204,7 @@ test('one immutable review per booking, and another completed stay earns another
 	).rejects.toMatchObject({ data: { code: 'REVIEW_ALREADY_EXISTS' } });
 	const secondBookingId = await t.run((ctx) =>
 		ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
 			platformFeeTerms: null,
 			paymentMethod: 'cash',
 			...booking,
@@ -314,7 +326,12 @@ test('public pagination and star filters expose no booking, account or moderatio
 	});
 	vi.setSystemTime(new Date('2026-09-30T12:01:00Z'));
 	const second = await t.run((ctx) =>
-		ctx.db.insert('bookings', { platformFeeTerms: null, paymentMethod: 'cash', ...booking })
+		ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
+			platformFeeTerms: null,
+			paymentMethod: 'cash',
+			...booking
+		})
 	);
 	await guest.mutation(createReview, { bookingId: second, rating: 5, comment: 'A better stay.' });
 	const base = { accommodationId, paginationOpts: { cursor: null, numItems: 1 } };
@@ -395,7 +412,12 @@ test('guest rating sort fields follow the public threshold and review moderation
 	});
 	for (const rating of [4, 3]) {
 		const id = await t.run((ctx) =>
-			ctx.db.insert('bookings', { platformFeeTerms: null, paymentMethod: 'cash', ...booking })
+			ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
+				platformFeeTerms: null,
+				paymentMethod: 'cash',
+				...booking
+			})
 		);
 		await guest.mutation(createReview, { bookingId: id, rating, comment: 'A real stay.' });
 	}
@@ -429,6 +451,7 @@ test('eligible booking pages exclude reviewed, expired, future, foreign and uncl
 	])
 		await t.run((ctx) =>
 			ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				...booking,

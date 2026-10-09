@@ -1,12 +1,12 @@
 <script lang="ts">
 	// CONFIG
-	import { COMPANY_DATA } from '@/shared/config';
 	import {
 		PROTECTED_PAGE_ENDPOINTS,
 		UNPROTECTED_PAGE_ENDPOINTS
 	} from '@/shared/constants/pageEndpoints.js';
 
 	// COMPONENTS
+	import Logo from '@/components/ui/custom-components/logo/logo.svelte';
 	import NativeSidebar from '@/components/ui/native-components/native-sidebar/native-sidebar.svelte';
 	import NativeSidebarContent from '@/components/ui/native-components/native-sidebar/native-sidebar-content.svelte';
 	import NativeSidebarCta from '@/components/ui/native-components/native-sidebar/native-sidebar-cta.svelte';
@@ -26,13 +26,13 @@
 		bind:openMobile={mobileSidebarOpen}
 	>
 		{#snippet sidebarHeader()}
-			<span class="truncate text-sm font-semibold">{COMPANY_DATA.NAME}</span>
+			<Logo showImage={false} class="text-sm font-semibold" />
 		{/snippet}
 
 		{#snippet sidebarFooter()}
 			<div class="flex flex-col gap-2">
 				<NativeSidebarCta
-					href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}
+					href={PROTECTED_PAGE_ENDPOINTS.MY_BOOKINGS}
 					icon="icon-[lucide--plane]"
 					label={m['Components.HostSidebar.switchToTravelling']()}
 				/>
@@ -66,9 +66,9 @@
 				</NativeSidebarSection>
 			</nav>
 			<div class="mt-auto">
-				<NativeSidebarLink href={PROTECTED_PAGE_ENDPOINTS.MY_BOOKINGS}>
-					<span class="icon-[lucide--circle-user]" aria-hidden="true"></span>
-					<span>{m['Components.HostSidebar.backToAccount']()}</span>
+				<NativeSidebarLink href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}>
+					<span class="icon-[lucide--compass]" aria-hidden="true"></span>
+					<span>{m['Components.HostSidebar.backToHome']()}</span>
 				</NativeSidebarLink>
 			</div>
 		</div>

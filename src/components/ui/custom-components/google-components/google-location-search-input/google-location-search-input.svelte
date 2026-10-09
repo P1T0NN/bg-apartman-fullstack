@@ -25,6 +25,7 @@
 		value = $bindable(''),
 		place = $bindable<PlaceSelection | null>(null),
 		disabled = false,
+		dark = false,
 		class: className,
 		oninput,
 		...restProps
@@ -65,6 +66,7 @@
 	<SuggestionInput
 		bind:value
 		{disabled}
+		{dark}
 		class={className}
 		icon="icon-[lucide--map-pin]"
 		clearLabel={m['Components.GoogleLocationSearchInput.clear']()}

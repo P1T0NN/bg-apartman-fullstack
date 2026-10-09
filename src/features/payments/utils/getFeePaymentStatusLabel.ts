@@ -30,6 +30,6 @@ export function getFeePaymentStatusLabel(
 		refund_pending: m['PaymentsFeature.FeePayments.refundPending'],
 		refunded: m['PaymentsFeature.FeePayments.refunded']
 	};
-	
+
 	return labels[payment.status]();
 }

@@ -87,7 +87,7 @@
 <div class="flex min-h-full min-w-0 flex-1 flex-col gap-6">
 	<HostBookingsHeader />
 
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 		<SearchInput
 			bind:value={search.value}
 			placeholder={m['HostBookingsPage.searchPlaceholder']()}

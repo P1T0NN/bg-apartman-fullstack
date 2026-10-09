@@ -34,12 +34,14 @@
 	let {
 		compact = false,
 		inlineSearch = false,
+		dark = false,
 		initialLocation = '',
 		onopen,
 		onsearch
 	}: {
 		compact?: boolean;
 		inlineSearch?: boolean;
+		dark?: boolean;
 		initialLocation?: string;
 		onopen?: () => void;
 		onsearch?: () => void;
@@ -129,16 +131,29 @@
 	<button
 		type="button"
 		onclick={onopen}
-		class="flex w-full min-w-0 cursor-pointer items-center rounded-full border bg-background text-left shadow-sm min-[68.75rem]:max-w-2xl"
+		class={cn(
+			'flex w-full min-w-0 cursor-pointer items-center rounded-full border text-left shadow-sm transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none min-[68.75rem]:max-w-2xl',
+			dark
+				? 'border-header-foreground/20 bg-header-foreground/10 text-header-foreground hover:bg-header-foreground/15'
+				: 'bg-background text-foreground hover:bg-muted'
+		)}
 	>
 		<span class="min-w-0 flex-1 truncate px-4 py-2 text-sm font-medium">
 			{location || m['Components.SearchCard.locationPlaceholder']()}
 		</span>
-		<span class="hidden shrink-0 border-s px-4 py-2 text-sm text-muted-foreground sm:block">
+		<span
+			class={cn(
+				'hidden shrink-0 border-s px-4 py-2 text-sm sm:block',
+				dark ? 'border-header-foreground/20 text-header-foreground/75' : 'text-muted-foreground'
+			)}
+		>
 			{compactDatesLabel}
 		</span>
 		<span
-			class="hidden shrink-0 items-center gap-1.5 border-s px-4 py-2 text-sm text-muted-foreground sm:flex"
+			class={cn(
+				'hidden shrink-0 items-center gap-1.5 border-s px-4 py-2 text-sm sm:flex',
+				dark ? 'border-header-foreground/20 text-header-foreground/75' : 'text-muted-foreground'
+			)}
 		>
 			<Plural
 				count={guests.adults}
@@ -176,7 +191,12 @@
 		<span class="sr-only">{m['Components.SearchCard.openSearch']()}</span>
 	</button>
 {:else}
-	<Card.Root class="overflow-visible">
+	<Card.Root
+		class={cn(
+			'overflow-visible',
+			dark && 'bg-header text-header-foreground ring-header-foreground/10'
+		)}
+	>
 		<Card.Content>
 			<div
 				class={cn(
@@ -193,14 +213,15 @@
 						placeholder={m['Components.SearchCard.locationPlaceholder']()}
 						aria-invalid={Boolean(locationError)}
 						aria-describedby={locationError ? locationErrorId : undefined}
+						{dark}
 					/>
 					{#if locationError}
 						<Field.Error id={locationErrorId}>{locationError}</Field.Error>
 					{/if}
 				</Field.Field>
 
-				<SearchCardStayDates bind:value={dateRange} />
-				<SearchCardGuests bind:value={guests} />
+				<SearchCardStayDates bind:value={dateRange} {dark} />
+				<SearchCardGuests bind:value={guests} {dark} />
 				{#if inlineSearch}
 					<Button class="w-full lg:w-auto" onclick={handleSearch}>
 						{m['Components.SearchCard.search']()}

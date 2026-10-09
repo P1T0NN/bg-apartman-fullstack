@@ -8,9 +8,9 @@
 		PROTECTED_PAGE_ENDPOINTS,
 		UNPROTECTED_PAGE_ENDPOINTS
 	} from '@/shared/constants/pageEndpoints';
-	import { COMPANY_DATA } from '@/shared/config';
 
 	// COMPONENTS
+	import Logo from '@/components/ui/custom-components/logo/logo.svelte';
 	import Link from '@/components/ui/custom-components/link/link.svelte';
 	import AuthDialog from '@/features/auth/components/auth-dialog/auth-dialog.svelte';
 	import LogoutButton from '@/features/auth/components/logout-button/logout-button.svelte';
@@ -21,15 +21,26 @@
 	import Spinner from '@/components/ui/spinner/spinner.svelte';
 	import { m } from '@/lib/paraglide/messages';
 
+	// HOOKS
+	import { usePathname } from '@/hooks/usePathname.svelte';
+
+	// UTILS
+	import { cn } from '@/utils/utils.js';
+
 	// useSession() returns a nanostores atom — read it reactively with `$`.
 	const session = authClient.useSession();
 	const user = $derived($session.data?.user);
 	const isAdmin = $derived(user?.role === 'admin');
 
+	const pathname = usePathname();
+
 	let authDialog: AuthDialog;
 
 	const menuItemClass =
 		'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none';
+
+	const activeNavClass =
+		'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground';
 </script>
 
 {#snippet avatar()}
@@ -44,7 +55,8 @@
 	<!-- eslint-disable svelte/no-navigation-without-resolve -->
 	<a
 		{href}
-		class={menuItemClass}
+		class={cn(menuItemClass, pathname.isActive(href) && activeNavClass)}
+		aria-current={pathname.isActive(href) ? 'page' : undefined}
 		onclick={(event) => event.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover()}
 	>
 		<span class={icon} aria-hidden="true"></span>
@@ -53,25 +65,43 @@
 	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 {/snippet}
 
-<header class="sticky top-0 z-40 border-b bg-background">
+<header
+	class="sticky top-0 z-40 border-b border-header-foreground/10 bg-header text-header-foreground"
+>
 	<div
 		class="mx-auto grid h-16 w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
 	>
 		<Link
 			href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}
-			class="max-w-full min-w-0 justify-self-start truncate text-lg font-semibold tracking-tight"
+			class="flex max-w-full min-w-0 items-center justify-self-start truncate text-lg font-semibold tracking-tight"
 		>
-			{COMPANY_DATA.NAME}
+			<Logo />
 		</Link>
 
 		<nav
 			aria-label={m['Components.Header.navigation']()}
 			class="hidden items-center justify-center gap-1 lg:flex"
 		>
-			<Button variant="ghost" href={UNPROTECTED_PAGE_ENDPOINTS.CONTACT}>
+			<Button
+				variant="ghost"
+				href={UNPROTECTED_PAGE_ENDPOINTS.CONTACT}
+				aria-current={pathname.isActive(UNPROTECTED_PAGE_ENDPOINTS.CONTACT) ? 'page' : undefined}
+				class={cn(
+					'text-header-foreground hover:bg-header-foreground/10 hover:text-header-foreground',
+					pathname.isActive(UNPROTECTED_PAGE_ENDPOINTS.CONTACT) && activeNavClass
+				)}
+			>
 				{m['Components.Header.contact']()}
 			</Button>
-			<Button variant="ghost" href={UNPROTECTED_PAGE_ENDPOINTS.FEEDBACK}>
+			<Button
+				variant="ghost"
+				href={UNPROTECTED_PAGE_ENDPOINTS.FEEDBACK}
+				aria-current={pathname.isActive(UNPROTECTED_PAGE_ENDPOINTS.FEEDBACK) ? 'page' : undefined}
+				class={cn(
+					'text-header-foreground hover:bg-header-foreground/10 hover:text-header-foreground',
+					pathname.isActive(UNPROTECTED_PAGE_ENDPOINTS.FEEDBACK) && activeNavClass
+				)}
+			>
 				{m['Components.Header.feedback']()}
 			</Button>
 		</nav>
@@ -149,6 +179,7 @@
 				<Button
 					variant="outline"
 					href={UNPROTECTED_PAGE_ENDPOINTS.SIGN_IN}
+					class="border-header-foreground/25 bg-transparent text-header-foreground hover:bg-header-foreground/10 hover:text-header-foreground"
 					onclick={(event) => {
 						event.preventDefault();
 						authDialog.open('sign-in');

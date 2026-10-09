@@ -5,11 +5,12 @@ import { ACCOMMODATION_BILLING_PLANS } from '../../src/shared/features/accommoda
 import type { Doc } from '../../src/convex/_generated/dataModel.js';
 
 export const bookingFeeBilling = {
+	loyaltyEligible: false,
 	billingPlanId: 'booking_fee',
 	billingTerms: ACCOMMODATION_BILLING_PLANS.booking_fee,
 	billingStatus: 'active',
 	billingPeriodEndsAt: null
 } satisfies Pick<
 	Doc<'accommodations'>,
-	'billingPlanId' | 'billingTerms' | 'billingStatus' | 'billingPeriodEndsAt'
+	'billingPlanId' | 'billingTerms' | 'billingStatus' | 'billingPeriodEndsAt' | 'loyaltyEligible'
 >;

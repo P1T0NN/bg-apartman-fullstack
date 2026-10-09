@@ -1,6 +1,6 @@
 <script lang="ts">
 	// COMPONENTS
-	import StaticImage from '@/components/ui/custom-components/static-image/static-image.svelte';
+	import Logo from '@/components/ui/custom-components/logo/logo.svelte';
 
 	// CONFIG
 	import { COMPANY_DATA } from '@/shared/config.js';
@@ -52,5 +52,5 @@
 		)}
 	</div>
 
-	<StaticImage src="/logo/logo-transparent.png" alt={COMPANY_DATA.NAME} class="mt-2 w-40 sm:w-48" />
+	<Logo showText={false} class="mt-2" imageClass="h-auto w-40 sm:w-48" />
 </div>

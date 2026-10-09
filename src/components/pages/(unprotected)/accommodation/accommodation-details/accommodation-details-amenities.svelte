@@ -1,6 +1,7 @@
 <script lang="ts">
 	// COMPONENTS
 	import AccommodationDetailsAmenityItem from './accommodation-details-amenity-item.svelte';
+	import { Button } from '@/components/ui/button/index.js';
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
@@ -11,38 +12,41 @@
 
 	let { accommodation }: { accommodation: PublicAccommodation } = $props();
 
+	const COLLAPSED_COUNT = 8;
+
 	const amenities = $derived(
 		getAmenities().filter((item) => accommodation.amenities.includes(item.key))
 	);
+
+	let isExpanded = $state(false);
+	const visibleAmenities = $derived(isExpanded ? amenities : amenities.slice(0, COLLAPSED_COUNT));
 </script>
 
-<section id="amenities" class="scroll-mt-24 py-9" aria-labelledby="amenities-title">
-	<h2 id="amenities-title" class="mb-5 text-2xl font-semibold tracking-tight">
+<section id="amenities" class="scroll-mt-32 py-9" aria-labelledby="amenities-title">
+	<h2 id="amenities-title" class="mb-6 text-2xl font-semibold tracking-tight">
 		{m['AccommodationPage.AccommodationDetailsAmenities.amenities']()}
 	</h2>
 
 	{#if amenities.length}
-		<ul class="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-			{#each amenities.slice(0, 6) as amenity (amenity.key)}
+		<ul class="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+			{#each visibleAmenities as amenity (amenity.key)}
 				<AccommodationDetailsAmenityItem label={amenity.label} icon={amenity.icon} />
 			{/each}
 		</ul>
 
-		{#if amenities.length > 6}
-			<details class="mt-4">
-				<summary
-					class="w-fit cursor-pointer rounded-lg border px-4 py-3 text-sm font-medium hover:bg-accent"
-				>
-					{m['AccommodationPage.AccommodationDetailsAmenities.moreAmenities']({
-						count: amenities.length - 6
-					})}
-				</summary>
-				<ul class="mt-4 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-					{#each amenities.slice(6) as amenity (amenity.key)}
-						<AccommodationDetailsAmenityItem label={amenity.label} icon={amenity.icon} />
-					{/each}
-				</ul>
-			</details>
+		{#if amenities.length > COLLAPSED_COUNT}
+			<Button
+				variant="outline"
+				class="mt-6"
+				aria-expanded={isExpanded}
+				onclick={() => (isExpanded = !isExpanded)}
+			>
+				{isExpanded
+					? m['AccommodationPage.AccommodationDetailsAmenities.showLess']()
+					: m['AccommodationPage.AccommodationDetailsAmenities.moreAmenities']({
+							count: amenities.length - COLLAPSED_COUNT
+						})}
+			</Button>
 		{/if}
 	{:else}
 		<p class="text-sm text-muted-foreground">

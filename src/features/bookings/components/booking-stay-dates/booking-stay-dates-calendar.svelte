@@ -16,7 +16,7 @@
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
-	import type { NightlyPricing } from '@/shared/features/bookings/utils/calculateStayPricing.js';
+	import type { NightlyPricing } from '@/shared/features/loyalty/types/loyaltyTypes.js';
 	import type { DateRange } from 'bits-ui';
 	import type { CalendarDate, DateValue } from '@internationalized/date';
 	import type { PublicAccommodation } from '@/shared/features/accommodations/types/accommodationTypes.js';

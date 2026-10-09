@@ -26,21 +26,15 @@
 
 	const dialogId = $derived(`booking-details-${booking._id}`);
 	const guestName = $derived(formatFullName(booking.firstName, booking.lastName));
+
+	let dialog: NativeDialog;
+
+	export function open() {
+		dialog?.open();
+	}
 </script>
 
-<NativeDialog aria-labelledby={dialogId}>
-	{#snippet trigger({ id })}
-		<Button
-			variant="outline"
-			size="sm"
-			commandfor={id}
-			command="show-modal"
-			aria-label={m['HostBookingsPage.HostBookingsDetailsDialog.detailsLabel']({ name: guestName })}
-		>
-			{m['HostBookingsPage.HostBookingsDetailsDialog.details']()}
-		</Button>
-	{/snippet}
-
+<NativeDialog bind:this={dialog} aria-labelledby={dialogId}>
 	{#snippet children({ id })}
 		<div class="flex min-w-0 flex-col gap-5 p-4 sm:p-6">
 			<div class="flex items-start gap-3">

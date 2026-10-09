@@ -102,6 +102,7 @@ async function setup(email = 'alex+stay@example.com') {
 			updatedAt: Date.now()
 		});
 		return ctx.db.insert('bookings', {
+			loyaltyStatus: 'ineligible',
 			platformFeeTerms: null,
 			paymentMethod: 'cash',
 			cancellationTerms: bookingCancellationTerms('2026-09-01', '2026-09-05'),
@@ -469,15 +470,8 @@ test('reusable token reads are scoped, bounded and read-only, including concurre
 	const before = (await t.run((ctx) => ctx.db.get('bookings', bookingId)))!;
 	await t.run(async (ctx) => {
 		const { _id, _creationTime, ...fields } = before;
-		await ctx.db.insert('bookings', {
-			...fields,
-			email: 'other@example.com'
-		});
-		await ctx.db.insert('bookings', {
-			...fields,
-			checkOutDate: '2026-09-06',
-			status: 'cancelled'
-		});
+		await ctx.db.insert('bookings', { ...fields, email: 'other@example.com' });
+		await ctx.db.insert('bookings', { ...fields, checkOutDate: '2026-09-06', status: 'cancelled' });
 	});
 	const token = (await t.action(issueBookingRecoveryToken, { email: before.email }))!;
 	const args = { token: token.token, paginationOpts: { cursor: null, numItems: 1 } };
@@ -583,10 +577,7 @@ test('bounded backfill resumes and can rerun without changing booking ownership 
 	const before = (await t.run((ctx) => ctx.db.get('bookings', bookingId)))!;
 	await t.run(async (ctx) => {
 		const { _id, _creationTime, ...fields } = before;
-		await ctx.db.insert('bookings', {
-			...fields,
-			email: ' Other@Example.COM '
-		});
+		await ctx.db.insert('bookings', { ...fields, email: ' Other@Example.COM ' });
 	});
 	await expect(
 		t.mutation(backfill, {

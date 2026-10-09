@@ -6,10 +6,15 @@ export const ACCOMMODATION_CONFIG = {
 	mapSearchPageSize: 500,
 	MAX_BLOCKED_DATES_PER_OPERATION: 30,
 	searchMaximumRowsRead: 1000,
+	/** Homepage loyalty carousel: rows shown and the bounded candidate scan before visibility filtering. */
+	featuredLimit: 3,
+	featuredCandidateLimit: 30,
 	/** Initial recommendation prior: neutral 3/5, with the weight of five reviews. */
 	recommendationBaselineAverage: 3,
 	recommendationBaselineWeight: 5,
 	CANCELLATION_REFUND_PERCENTAGES: [100, 50, 0],
+	CANCELLATION_POLICY_MODES: ['flexible', 'moderate', 'firm'],
+	CANCELLATION_POLICY_HOURS: { flexible: 24, moderate: 120, firm: 168 },
 	CANCELLATION_POLICY_DEADLINE_HOURS: {
 		sevenDaysOrMore: 168,
 		fiveToSevenDays: 120,
@@ -24,7 +29,7 @@ export const ACCOMMODATION_CONFIG = {
 	],
 	CANCELLATION_DEFAULT_POLICY: {
 		version: 1,
-		mode: 'full_refund'
+		mode: 'flexible'
 	}
 } as const;
 

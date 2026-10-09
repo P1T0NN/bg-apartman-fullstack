@@ -2,6 +2,7 @@ import { calculateStayPricing } from '../../src/shared/features/bookings/utils/c
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config.js';
 import { COMPANY_DATA } from '../../src/shared/config.js';
 import { getZonedTimestamp } from '../../src/shared/features/timezone/utils/getZonedTimestamp.js';
+import type { CancellationPolicy } from '../../src/shared/features/accommodations/types/cancellationPolicyTypes.js';
 
 export function bookingCancellationTerms(
 	checkInDate: string,
@@ -36,10 +37,13 @@ export function withExpectedTotal<
 		checkOutDate: string;
 		expectedPricePerNightMinor: number;
 		expectedTotalMinor?: number;
+		expectedCancellationPolicy?: CancellationPolicy;
 	}
 >(args: T) {
 	return {
 		...args,
+		expectedCancellationPolicy:
+			args.expectedCancellationPolicy ?? ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
 		expectedTotalMinor:
 			args.expectedTotalMinor ??
 			Math.max(

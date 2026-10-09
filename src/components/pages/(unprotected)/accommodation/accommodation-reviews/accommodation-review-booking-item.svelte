@@ -33,7 +33,6 @@
 		<Button
 			commandfor={id}
 			command="show-modal"
-			variant="outline"
 			class="min-h-11 w-full flex-wrap justify-between gap-3 sm:w-auto"
 		>
 			{m['AccommodationPage.AccommodationReviewBookingItem.leaveReview']()}

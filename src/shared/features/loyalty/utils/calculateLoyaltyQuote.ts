@@ -1,9 +1,7 @@
 // UTILS
 import { calculateDiscountedPrice } from '../../accommodations/utils/calculateAccommodationPricing.js';
-import {
-	calculateStayPricing,
-	type NightlyPricing
-} from '../../bookings/utils/calculateStayPricing.js';
+import { calculateStayPricing } from '../../bookings/utils/calculateStayPricing.js';
+
 // DATA
 import { LOYALTY_LEVELS } from '../data/loyaltyData.js';
 
@@ -12,7 +10,8 @@ import type {
 	LoyaltyBookingBenefits,
 	LoyaltyDiscountMode,
 	LoyaltyLevel,
-	LoyaltyServices
+	LoyaltyServices,
+	NightlyPricing
 } from '../types/loyaltyTypes.js';
 
 export function calculateLoyaltyQuote(
@@ -27,7 +26,7 @@ export function calculateLoyaltyQuote(
 	const reward = LOYALTY_LEVELS.find((tier) => tier.level === level);
 	const eligible = reward !== undefined && services !== null && discountMode !== null;
 	const loyaltyBps = reward ? reward.discount * 100 : 0;
-	const loyaltyWins = eligible && loyaltyBps > pricing.discountBps;
+	const loyaltyWins = eligible && loyaltyBps >= pricing.discountBps;
 
 	const finalPricing: NightlyPricing = eligible
 		? {
@@ -75,6 +74,6 @@ export function calculateLoyaltyQuote(
 			spa: services.spa && reward.spa
 		};
 	}
-	
+
 	return { pricing: { ...finalPricing, effectivePricePerNightMinor }, stayPricing, benefits };
 }

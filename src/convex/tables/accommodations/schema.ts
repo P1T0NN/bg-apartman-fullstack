@@ -38,6 +38,8 @@ export const accommodations = defineTable({
 	guestRatingAverage: v.number(),
 	guestReviewCount: v.number(),
 	amenities: v.array(v.string()),
+	// Only admins opt properties in; backfilled to false on existing listings.
+	loyaltyEligible: v.boolean(),
 	// Explicit service commitments; ordinary listing edits cannot grant loyalty rewards.
 	loyaltyServices: v.optional(loyaltyServicesValidator),
 	// Ordered R2 keys; the first image is the cover.
@@ -59,6 +61,7 @@ export const accommodations = defineTable({
 	// Required arrival-today setting, backfilled on legacy listings.
 	sameDayReservation: v.boolean(),
 	cancellationPolicy: v.union(
+		v.object({ version: v.literal(1), mode: literals('flexible', 'moderate', 'firm') }),
 		v.object({ version: v.literal(1), mode: v.literal('full_refund') }),
 		v.object({
 			version: v.literal(1),
@@ -122,6 +125,11 @@ export const accommodations = defineTable({
 		'effectivePricePerNightMinor'
 	])
 	.index('by_recommendation_sort_key_price', [
+		'recommendationSortKey',
+		'effectivePricePerNightMinor'
+	])
+	.index('by_loyalty_eligible_recommendation_sort_key_price', [
+		'loyaltyEligible',
 		'recommendationSortKey',
 		'effectivePricePerNightMinor'
 	])

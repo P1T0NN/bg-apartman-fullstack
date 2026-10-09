@@ -12,6 +12,13 @@ export function displayCancellationPolicyPeriods(
 	policy: CancellationPolicy
 ): CancellationPolicyPeriod[] {
 	if (policy.mode === 'full_refund') return [{ percentage: 100, afterHours: null, untilHours: 0 }];
+	if (policy.mode !== 'custom') {
+		const hours = ACCOMMODATION_CONFIG.CANCELLATION_POLICY_HOURS[policy.mode];
+		return [
+			{ percentage: 100, afterHours: null, untilHours: hours },
+			{ percentage: 0, afterHours: hours, untilHours: 0 }
+		];
+	}
 	const hours = ACCOMMODATION_CONFIG.CANCELLATION_POLICY_DEADLINE_HOURS;
 
 	const percentages = [

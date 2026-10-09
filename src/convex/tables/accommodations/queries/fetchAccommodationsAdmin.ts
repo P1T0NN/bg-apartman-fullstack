@@ -21,6 +21,8 @@ const ADMIN_FIELDS = [
 	'_id',
 	'name',
 	'ownerId',
+	'loyaltyEligible',
+	'loyaltyServices',
 	'status',
 	'billingPlanId',
 	'billingTerms',

@@ -8,6 +8,7 @@
 
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
+	import { cn } from '@/utils/utils.js';
 
 	type GuestCounts = { adults: number; children: number; rooms: number };
 
@@ -15,8 +16,9 @@
 	const popoverId = `home-guests-${uid}`;
 
 	let {
-		value = $bindable<GuestCounts>({ adults: 2, children: 0, rooms: 1 })
-	}: { value?: GuestCounts } = $props();
+		value = $bindable<GuestCounts>({ adults: 2, children: 0, rooms: 1 }),
+		dark = false
+	}: { value?: GuestCounts; dark?: boolean } = $props();
 
 	function closeGuests(): void {
 		const popover = document.getElementById(popoverId);
@@ -25,7 +27,12 @@
 </script>
 
 {#snippet guestsTrigger()}
-	<span class="icon-[lucide--users] size-4 shrink-0 text-muted-foreground"></span>
+	<span
+		class={cn(
+			'icon-[lucide--users] size-4 shrink-0',
+			dark ? 'text-header-foreground/60' : 'text-muted-foreground'
+		)}
+	></span>
 	<span class="flex items-center gap-1.5 truncate">
 		<Plural
 			count={value.adults}
@@ -63,8 +70,11 @@
 		id={popoverId}
 		trigger={guestsTrigger}
 		triggerLabel={m['Components.SearchCardGuests.label']()}
-		triggerClass="h-9 w-full justify-start gap-2 rounded-3xl border border-transparent bg-input/50 px-3 text-sm font-normal transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-		class="w-72! p-4"
+		triggerClass={cn(
+			'h-9 w-full justify-start gap-2 rounded-3xl border border-transparent px-3 text-sm font-normal transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
+			dark ? 'bg-header-foreground/10 text-header-foreground' : 'bg-input/50'
+		)}
+		class={cn('w-72! p-4', dark && 'dark')}
 	>
 		<div class="flex flex-col gap-4">
 			<Counter

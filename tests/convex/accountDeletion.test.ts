@@ -97,6 +97,7 @@ async function setup() {
 	) {
 		return t.run((ctx) =>
 			ctx.db.insert('bookings', {
+				loyaltyStatus: 'ineligible',
 				platformFeeTerms: null,
 				paymentMethod: 'cash',
 				accommodationId,

@@ -76,6 +76,8 @@
 				// Keep the primary column flexible while metadata and action columns stay compact.
 				'[&_td:not(:first-child)]:w-px [&_th:not(:first-child)]:w-px',
 				'[&_td]:px-4 [&_th]:px-4',
+				// Extra breathing room so last-column actions never hug the card edge.
+				'[&_td:last-child]:pe-6 [&_th:last-child]:pe-6',
 				className
 			)}
 		>

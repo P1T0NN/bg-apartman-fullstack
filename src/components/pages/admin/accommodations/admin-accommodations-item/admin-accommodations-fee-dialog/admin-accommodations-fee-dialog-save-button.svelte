@@ -19,7 +19,7 @@
 	import { adminAccommodationsFeeDialogFormSchema } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
 
 	// TYPES
-	import type { AdminAccommodationsFeeDialogDraft } from './adminAccommodationsFeeDialogTypes.js';
+	import type { AdminAccommodationsFeeDialogDraft } from './admin-accommodations-fee-dialog-form.svelte';
 
 	let {
 		draft,
