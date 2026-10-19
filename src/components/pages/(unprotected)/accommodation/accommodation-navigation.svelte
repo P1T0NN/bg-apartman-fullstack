@@ -25,7 +25,7 @@
 		const sections = tabs
 			.map((tab) => document.getElementById(tab.id))
 			.filter((element) => element !== null);
-			
+
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const visible = new Set<string>();
 

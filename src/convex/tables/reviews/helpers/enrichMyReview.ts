@@ -1,5 +1,5 @@
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../../accommodations/helpers/isAccommodationPublic.js';
 
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
@@ -22,7 +22,9 @@ export async function enrichMyReview(ctx: QueryCtx, review: Doc<'reviews'>) {
 		bookingId: review.bookingId,
 		accommodationId: review.accommodationId,
 		status: review.status,
-		accommodationName: isAccommodationVisible(accommodation) ? accommodation.name : null,
+		accommodationName: (await isAccommodationPublic(ctx, accommodation))
+			? (accommodation?.name ?? null)
+			: null,
 		checkInDate: booking?.checkInDate ?? null,
 		checkOutDate: booking?.checkOutDate ?? null
 	};

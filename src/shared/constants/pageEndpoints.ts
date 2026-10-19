@@ -5,8 +5,11 @@ export const PROTECTED_PAGE_ENDPOINTS = {
 	HOST_DASHBOARD: resolve('/host/dashboard'),
 	ADD_ACCOMMODATION: resolve('/host/add-accommodation'),
 	MY_ACCOMMODATIONS: resolve('/host/my-accommodations'),
+	ACCOMMODATION_PAYMENT_RESULT: (id: string) =>
+		resolve(`/host/accommodation-payment-successful?fee_payment=${encodeURIComponent(id)}`),
 	MY_ACCOMMODATION: (id: string) => resolve(`/host/my-accommodations/${id}`),
 	HOST_BOOKINGS: resolve('/host/bookings'),
+	HOST_SETTINGS: resolve('/host/settings'),
 	CLAIM_BOOKING: resolve('/guest/claim-booking'),
 	FAVORITES: resolve('/guest/favorites'),
 	MY_BOOKINGS: resolve('/guest/my-bookings'),

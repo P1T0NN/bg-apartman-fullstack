@@ -11,10 +11,16 @@ export function getBackendErrorMessage(error: Error): string | undefined {
 	if (!parsed.success) return;
 
 	switch (parsed.data.code) {
+		case 'INVALID_ANALYTICS_RANGE':
+			return m['BackendMessages.invalidAnalyticsRange']();
+		case 'FEE_CHECKOUT_PENDING':
+			return m['BackendMessages.feeCheckoutPending']();
 		case 'FEE_CHECKOUT_EXPIRED':
 			return m['BackendMessages.feeCheckoutExpired']();
 		case 'FEE_REFUND_UNAVAILABLE':
 			return m['BackendMessages.feeRefundUnavailable']();
+		case 'FEE_REFUND_NOT_SUPPORTED':
+			return m['BackendMessages.feeRefundNotSupported']();
 		case 'SAME_DAY_RESERVATION_DISABLED':
 			return m['BackendMessages.sameDayReservationDisabled']();
 		case 'BOOKING_START_PASSED':

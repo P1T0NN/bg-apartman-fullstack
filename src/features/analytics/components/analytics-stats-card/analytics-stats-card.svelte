@@ -18,13 +18,15 @@
 		title,
 		value,
 		change,
+		showComparison = true,
 		format,
 		caption = m['AnalyticsFeature.AnalyticsStatsCard.vsPreviousPeriod'](),
 		lowerIsBetter = false
 	}: {
 		title: string;
-		value: number;
+		value: number | undefined;
 		change?: number;
+		showComparison?: boolean;
 		format?: (value: number) => string;
 		caption?: string;
 		lowerIsBetter?: boolean;
@@ -38,12 +40,16 @@
 
 <Card.Root>
 	<Card.Header>
-		<Card.Description>{title}</Card.Description>
+		<Card.Description class="min-w-0 truncate" {title}>{title}</Card.Description>
 		<Card.Title class="text-2xl font-semibold tabular-nums">
-			<NumbersUp {value} {format} />
+			{#if value !== undefined}
+				<NumbersUp {value} {format} />
+			{:else}
+				—
+			{/if}
 		</Card.Title>
 
-		{#if change !== undefined}
+		{#if showComparison && change !== undefined}
 			<Card.Action>
 				{#key isGood}
 					<span
@@ -68,7 +74,7 @@
 					</span>
 				{/key}
 			</Card.Action>
-		{:else}
+		{:else if showComparison}
 			<Card.Action>
 				<Badge variant="outline">{m['AnalyticsFeature.AnalyticsStatsCard.noPreviousData']()}</Badge>
 			</Card.Action>

@@ -9,7 +9,7 @@ export const fetchUserBreadcrumbAdmin = adminQuery({
 	args: { id: v.string() },
 	returns: v.union(v.null(), v.object({ name: v.string() })),
 	handler: async (ctx, args) => {
-		const user = await ctx.runQuery(components.betterAuth.queries.getUser.getUser, {
+		const user = await ctx.runQuery(components.betterAuth.queries.fetchUser.fetchUser, {
 			id: args.id
 		});
 

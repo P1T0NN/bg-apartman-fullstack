@@ -1,85 +1,103 @@
-'use node';
-
 // LIBRARIES
-import { ConvexError, v, type Infer } from 'convex/values';
-
-// CONVEX
-import { internal } from '../../../_generated/api.js';
+import { ConvexError, v } from 'convex/values';
 
 // BUILDERS
 import { authenticatedAction } from '../../../builders/convexFunctionBuilders.js';
 
+// CONVEX
+import { internal } from '../../../_generated/api.js';
+
 // CONFIG
-import { STRIPE_CONFIG } from '../../../../shared/features/stripe/config.js';
+import { CHECKOUT_CONFIG } from '../../../../shared/features/checkout/config.js';
+
+// SCHEMAS
+import { hostedCheckoutSchema } from '../../../../shared/features/checkout/schemas/checkoutSchemas.js';
 
 // HELPERS
-import { createFeeCheckoutSession } from '../../../stripe/helpers/createFeeCheckoutSession.js';
-import { retrieveCheckoutSession } from '../../../stripe/helpers/retrieveCheckoutSession.js';
-import { applyFeeCheckoutSession } from '../../../stripe/helpers/applyFeeCheckoutSession.js';
-import { expireCheckoutSession } from '../../../stripe/helpers/expireCheckoutSession.js';
+import { checkoutRequest } from '../../../checkout/helpers/checkoutRequest.js';
+import { getCheckoutConfig } from '../../../checkout/helpers/getCheckoutConfig.js';
+
+// UTILS
+import { validateCheckoutUrl } from '../../../../shared/features/checkout/utils/validateCheckoutUrl.js';
+
+// ERRORS
+import { CheckoutApiError } from '../../../checkout/errors/CheckoutApiError.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
-const checkoutResult = v.object({
-	url: v.union(v.string(), v.null()),
-	paymentId: v.id('accommodationFeePayments')
-});
-
 export const createFeeCheckout = authenticatedAction({
-	rateLimit: { name: 'accommodations:pay-flat-fee', config: STRIPE_CONFIG.checkoutRequestLimit },
 	args: { accommodationId: v.id('accommodations') },
-	returns: checkoutResult,
-	handler: async (ctx, args): Promise<Infer<typeof checkoutResult>> => {
-		let payment = await ctx.runMutation(
+	returns: v.object({ url: v.string() }),
+	handler: async (ctx, { accommodationId }): Promise<{ url: string }> => {
+		const { channelId } = getCheckoutConfig();
+		const origin = process.env.PUBLIC_ORIGIN;
+		if (!origin) throw new Error('Application origin is not configured');
+		const payment = await ctx.runMutation(
 			internal.tables.accommodationFeePayments.mutations.beginFeeCheckout.beginFeeCheckout,
-			args
+			{
+				accommodationId,
+				provider: 'checkout',
+				providerEnvironment: 'sandbox',
+				providerAccountId: channelId
+			}
 		);
-		const mustReconcilePreviousCheckout =
-			payment.checkoutSessionId && (payment.invalidated || payment.expiresAt <= Date.now());
-		if (mustReconcilePreviousCheckout) {
-			await ctx.runAction(internal.stripe.actions.reconcileFeeCheckout.reconcileFeeCheckout, {
-				paymentId: payment._id,
-				expire: true
-			});
-			const previous = await ctx.runQuery(
-				internal.tables.accommodationFeePayments.queries.getFeePayment.getFeePayment,
-				{ paymentId: payment._id }
-			);
-			const mustWaitForPreviousPayment = !previous || previous.paidAt || !previous.closedAt;
-			if (mustWaitForPreviousPayment) return { url: null, paymentId: payment._id };
-			payment = await ctx.runMutation(
-				internal.tables.accommodationFeePayments.mutations.beginFeeCheckout.beginFeeCheckout,
-				args
-			);
+		if (payment.checkoutUrl && payment.providerCheckoutId) {
+			return { url: validateCheckoutUrl(payment.checkoutUrl) };
 		}
-
-		const session = payment.checkoutSessionId
-			? await retrieveCheckoutSession(payment.checkoutSessionId)
-			: await createFeeCheckoutSession(payment);
-
-		await ctx.runMutation(
-			internal.tables.accommodationFeePayments.mutations.saveFeeCheckout.saveFeeCheckout,
-			{ paymentId: payment._id, sessionId: session.id, url: session.url }
-		);
-
-		const saved = await ctx.runQuery(
-			internal.tables.accommodationFeePayments.queries.getFeePayment.getFeePayment,
+		const claimed = await ctx.runMutation(
+			internal.tables.accommodationFeePayments.mutations.claimFeeCheckout.claimFeeCheckout,
 			{ paymentId: payment._id }
 		);
-
-		const shouldExpireInvalidatedCheckout = saved?.invalidated && session.status === 'open';
-
-		if (shouldExpireInvalidatedCheckout) {
-			await expireCheckoutSession(session.id);
-			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' });
+		if (!claimed) throw new ConvexError<BackendErrorData>({ code: 'FEE_CHECKOUT_PENDING' });
+		const resultUrl = new URL('/host/accommodation-payment-successful', origin);
+		resultUrl.searchParams.set('fee_payment', payment._id);
+		const cancelUrl = new URL(`/host/my-accommodations/${accommodationId}`, origin);
+		cancelUrl.searchParams.set('tab', 'billing');
+		cancelUrl.searchParams.set('fee_checkout', 'cancelled');
+		cancelUrl.searchParams.set('fee_payment', payment._id);
+		let checkout;
+		try {
+			checkout = await checkoutRequest('/hosted-payments', hostedCheckoutSchema, {
+				method: 'POST',
+				body: JSON.stringify({
+					amount: payment.terms.amountMinor,
+					currency: payment.terms.currency,
+					reference: payment._id,
+					metadata: { fee_payment_id: payment._id },
+					processing_channel_id: channelId,
+					capture: true,
+					'3ds': { enabled: true },
+					allow_payment_methods: ['card'],
+					// shortcut: Sandbox defaults to RS; collect the host's billing country before live payments.
+					billing: { address: { country: CHECKOUT_CONFIG.sandboxBillingCountry } },
+					success_url: resultUrl.href,
+					failure_url: resultUrl.href,
+					cancel_url: cancelUrl.href
+				})
+			});
+		} catch (error) {
+			const creationRejected =
+				error instanceof CheckoutApiError && [400, 401, 403, 422].includes(error.status);
+			if (creationRejected)
+				await ctx.runMutation(
+					internal.tables.accommodationFeePayments.mutations.saveFeeReconciliation
+						.saveFeeReconciliation,
+					{ paymentId: payment._id, retry: false, creationRejected: true }
+				);
+			throw error;
 		}
-
-		await applyFeeCheckoutSession(ctx, session);
-
-		if (session.status === 'expired')
+		const url = validateCheckoutUrl(checkout._links.redirect.href);
+		await ctx.runMutation(
+			internal.tables.accommodationFeePayments.mutations.saveFeeCheckout.saveFeeCheckout,
+			{ paymentId: payment._id, provider: 'checkout', providerCheckoutId: checkout.id, url }
+		);
+		const current = await ctx.runQuery(
+			internal.tables.accommodationFeePayments.queries.fetchFeePayment.fetchFeePayment,
+			{ paymentId: payment._id }
+		);
+		if (!current || current.invalidated)
 			throw new ConvexError<BackendErrorData>({ code: 'FEE_CHECKOUT_EXPIRED' });
-
-		return { url: session.status === 'open' ? session.url : null, paymentId: payment._id };
+		return { url };
 	}
 });

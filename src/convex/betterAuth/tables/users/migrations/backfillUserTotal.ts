@@ -14,7 +14,7 @@ export const backfillUserTotal = internalMutation({
 	args: { cursor: v.union(v.null(), v.string()) },
 	returns: v.object({ processed: v.number(), nextCursor: v.union(v.null(), v.string()) }),
 	handler: async (ctx, args) => {
-		const page = await ctx.runQuery(components.betterAuth.queries.listUsers.listUsers, {
+		const page = await ctx.runQuery(components.betterAuth.queries.fetchUsers.fetchUsers, {
 			paginationOpts: { numItems: 100, cursor: args.cursor }
 		});
 

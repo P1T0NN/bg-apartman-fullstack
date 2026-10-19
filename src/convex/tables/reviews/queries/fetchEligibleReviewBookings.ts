@@ -1,5 +1,5 @@
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../../accommodations/helpers/isAccommodationPublic.js';
 
 import { ConvexError, v } from 'convex/values';
 import { authenticatedQuery } from '../../../builders/convexFunctionBuilders.js';
@@ -34,7 +34,9 @@ export const fetchEligibleReviewBookings = authenticatedQuery({
 		const ownerId = getOwnerId(ctx.identity);
 		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
 		const isUnavailable =
-			!isAccommodationVisible(accommodation) || accommodation.ownerId === ownerId;
+			!accommodation ||
+			!(await isAccommodationPublic(ctx, accommodation)) ||
+			accommodation.ownerId === ownerId;
 		if (isUnavailable) return setEmptyPagination(args.paginationOpts.numItems);
 		const now = Date.now();
 		// One extra day covers property-local midnight and daylight-saving changes.

@@ -5,8 +5,11 @@ export type typesBackendResult<Code extends string = string> =
 	{ success: true } | { success: false; code: Code };
 
 export const backendErrorDataSchema = z.discriminatedUnion('code', [
+	z.object({ code: z.literal('INVALID_ANALYTICS_RANGE') }),
+	z.object({ code: z.literal('FEE_CHECKOUT_PENDING') }),
 	z.object({ code: z.literal('FEE_CHECKOUT_EXPIRED') }),
 	z.object({ code: z.literal('FEE_REFUND_UNAVAILABLE') }),
+	z.object({ code: z.literal('FEE_REFUND_NOT_SUPPORTED') }),
 	z.object({ code: z.literal('ACCOUNT_HAS_ACTIVE_BOOKINGS') }),
 	z.object({ code: z.literal('ACCOUNT_HAS_ACCOMMODATIONS') }),
 	z.object({ code: z.literal('INVALID_ACCOMMODATION') }),

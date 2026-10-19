@@ -36,7 +36,7 @@ export const fetchUsersAdmin = adminQuery({
 	},
 	returns: adminUsersPage,
 	handler: async (ctx, args) => {
-		const page = await ctx.runQuery(components.betterAuth.queries.listUsers.listUsers, {
+		const page = await ctx.runQuery(components.betterAuth.queries.fetchUsers.fetchUsers, {
 			paginationOpts: args.paginationOpts,
 			search: args.search,
 			filters: args.filters

@@ -1,6 +1,8 @@
 // LIBRARIES
 import { ConvexError } from 'convex/values';
 import { awardLoyaltyStay } from '../../loyaltyMemberships/helpers/awardLoyaltyStay.js';
+import { syncHostBookingAggregate } from './syncHostBookingAggregate.js';
+import { bookingAdminAggregate } from '../aggregates/bookingAdminAggregate.js';
 
 // TYPES
 import type { Doc } from '../../../_generated/dataModel.js';
@@ -27,4 +29,6 @@ export async function completeBooking(
 		completionNote: reason
 	});
 	await awardLoyaltyStay(ctx, booking._id);
+	await syncHostBookingAggregate(ctx, { ...booking, status: 'completed' });
+	await bookingAdminAggregate.replaceOrInsert(ctx, booking, { ...booking, status: 'completed' });
 }

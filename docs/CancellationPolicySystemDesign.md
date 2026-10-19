@@ -42,7 +42,7 @@ its full schedule. Checkout, confirmation, recovered bookings and cancellation
 review show the applicable refund and local deadline. Eligible guest views show
 the refundable amount now. Closed bookings show historical terms without an
 active refund offer. Existing display components and the standard Price component
-are reused; no payment-specific UI or Stripe integration is introduced here.
+are reused; no payment-specific UI or provider integration is introduced here.
 
 ## Development data and backfill
 

@@ -24,10 +24,12 @@
 	const analytics = createAnalyticsDashboard('host');
 
 	const pendingBookings = useQuery(
-		api.tables.bookings.queries.hasPendingHostBookings.hasPendingHostBookings,
+		api.tables.bookings.queries.fetchHasPendingHostBookings.fetchHasPendingHostBookings,
 		{}
 	);
+
 	const { href } = useSearchParams(['status']);
+
 	const pendingHref = href(PROTECTED_PAGE_ENDPOINTS.HOST_BOOKINGS, { status: 'pending' });
 </script>
 

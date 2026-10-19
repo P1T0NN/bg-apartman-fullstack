@@ -124,7 +124,7 @@ async function assertAccountDeletionAllowed(
 	user: { id: string; email: string }
 ) {
 	const restriction = await ctx.runQuery(
-		internal.betterAuth.queries.checkAccountDeletion.checkAccountDeletion,
+		internal.betterAuth.queries.fetchAccountDeletionRestrictions.fetchAccountDeletionRestrictions,
 		{ id: user.id, email: user.email }
 	);
 	if (restriction) throw APIError.from('FORBIDDEN', { code: restriction, message: restriction });
@@ -179,6 +179,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
 			})
 		},
 		user: {
+			additionalFields: {
+				payoutsEnabled: {
+					type: 'boolean',
+					required: false,
+					defaultValue: false,
+					input: false
+				}
+			},
 			deleteUser: {
 				enabled: true,
 				beforeDelete: async (user) => {

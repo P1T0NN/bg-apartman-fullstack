@@ -5,6 +5,9 @@ import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.j
 
 import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { api } from '../../src/convex/_generated/api';
@@ -35,6 +38,12 @@ async function setup() {
 	const t = convexTest(schema, modules);
 	aggregateTest.register(t, 'reviewsAggregate');
 	aggregateTest.register(t, 'bookingOwnerAggregate');
+	aggregateTest.register(t, 'bookingHostAggregate');
+	aggregateTest.register(t, 'bookingAdminAggregate');
+	aggregateTest.register(t, 'bookingFeeDueAggregate');
+	aggregateTest.register(t, 'bookingFeePendingAggregate');
+	aggregateTest.register(t, 'bookingFeePaidAggregate');
+	aggregateTest.register(t, 'bookingFeeRevenueAggregate');
 	rateLimiterTest.register(t);
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
@@ -112,6 +121,11 @@ async function setup() {
 	});
 	return { t, guest, stranger, admin, accommodationId, bookingId, booking };
 }
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('author review history is paginated, private and retains hidden or removed-listing receipts', async () => {
 	const { t, guest, stranger, admin, accommodationId, bookingId, booking } = await setup();

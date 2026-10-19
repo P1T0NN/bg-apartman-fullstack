@@ -46,6 +46,28 @@ genuinely must change for something to work and that edit has been explicitly
 approved. When an edit is approved, keep it minimal, preserve every existing
 caller, and state why it was required.
 
+## Browser security
+
+- Configure CSP through `sveltekit({ csp })` in `vite.config.ts`, using `mode: 'auto'`
+  so SvelteKit manages script nonces/hashes. Manually included scripts in
+  `src/app.html` use `%sveltekit.nonce%`. Arbitrary inline script handlers are
+  blocked; only Svelte's fixed `this.__e=event` image-event replay handler has
+  an allowed hash. Recheck that exception after framework upgrades.
+- Keep the outer security handle in `src/hooks.server.ts` around auth and locale
+  processing. Clone response headers while preserving the body, status, cookies
+  and CSP; auth proxies and redirects can return immutable headers.
+- Authenticated/token-bearing, remote-function, Authorization-bearing and
+  Set-Cookie responses must use `Cache-Control: private, no-store`. Public
+  responses retain their existing caching policy. HSTS is HTTPS-only outside dev.
+- Keep SvelteKit's default CSRF origin checks enabled. Run
+  `bun scripts/check-security.ts http://127.0.0.1:5173` against a production
+  preview after security changes; development deliberately relaxes some checks.
+
+## Query naming
+
+Files and exported functions in any `queries/` directory use the `fetch` prefix.
+Reserve `get` for helpers, not Convex query entry points.
+
 ## Project shape and request flow
 
 - `src/routes` owns URL structure, layouts, page composition, and server load.
@@ -433,6 +455,10 @@ optimize the actual bottleneck. `analyzeAlgorithm()` automates this abstract
 runtime benchmark or latency prediction.
 
 ## Convex platform conventions
+
+In development, do not leave fields optional solely for legacy data compatibility.
+Deploy the backfill with the permissive schema, migrate and verify existing rows,
+then require the fields. Keep fields optional only when absence is a domain state.
 
 Use generated `Doc<'table'>` types for Convex documents. Do not derive document
 types from query response items; reserve `FunctionReturnType` for query-specific

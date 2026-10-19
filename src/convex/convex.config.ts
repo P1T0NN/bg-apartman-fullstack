@@ -1,5 +1,6 @@
 // LIBRARIES
 import { defineApp } from 'convex/server';
+import { v } from 'convex/values';
 import aggregate from '@convex-dev/aggregate/convex.config';
 import migrations from '@convex-dev/migrations/convex.config';
 import rateLimiter from '@convex-dev/rate-limiter/convex.config';
@@ -10,7 +11,14 @@ import auditLog from 'convex-audit-log/convex.config.js';
 // COMPONENTS
 import betterAuth from './betterAuth/component/convex.config.js';
 
-const app = defineApp();
+const app = defineApp({
+	env: {
+		CHECKOUT_API_SECRET: v.optional(v.string()),
+		CHECKOUT_API_BASE_URL: v.optional(v.string()),
+		CHECKOUT_PROCESSING_CHANNEL_ID: v.optional(v.string()),
+		CHECKOUT_WEBHOOK_SECRET: v.optional(v.string())
+	}
+});
 
 app.use(betterAuth);
 app.use(resend);
@@ -18,6 +26,13 @@ app.use(migrations);
 app.use(rateLimiter);
 app.use(aggregate, { name: 'accommodationOwnerAggregate' });
 app.use(aggregate, { name: 'bookingOwnerAggregate' });
+app.use(aggregate, { name: 'bookingHostAggregate' });
+app.use(aggregate, { name: 'bookingAdminAggregate' });
+app.use(aggregate, { name: 'flatFeeRevenueAggregate' });
+app.use(aggregate, { name: 'bookingFeeDueAggregate' });
+app.use(aggregate, { name: 'bookingFeePendingAggregate' });
+app.use(aggregate, { name: 'bookingFeePaidAggregate' });
+app.use(aggregate, { name: 'bookingFeeRevenueAggregate' });
 app.use(aggregate, { name: 'userTotalAggregate' });
 app.use(aggregate, { name: 'newslettersAggregate' });
 app.use(aggregate, { name: 'feedbacksAggregate' });

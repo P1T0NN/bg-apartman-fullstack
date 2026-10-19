@@ -6,6 +6,9 @@ import { literals } from 'convex-helpers/validators';
 export const accommodationFeePayments = defineTable({
 	accommodationId: v.id('accommodations'),
 	ownerId: v.string(),
+	provider: v.string(),
+	providerEnvironment: v.optional(v.string()),
+	providerAccountId: v.optional(v.string()),
 	terms: v.object({ amountMinor: v.number(), currency: v.string(), intervalMonths: v.number() }),
 	status: literals(
 		'creating',
@@ -23,9 +26,10 @@ export const accommodationFeePayments = defineTable({
 	closedAt: v.optional(v.number()),
 	cleanupAt: v.optional(v.number()),
 	nextReconcileAt: v.optional(v.number()),
-	checkoutSessionId: v.optional(v.string()),
+	providerCheckoutId: v.optional(v.string()),
 	checkoutUrl: v.optional(v.string()),
-	paymentIntentId: v.optional(v.string()),
+	checkoutRequestStartedAt: v.optional(v.number()),
+	providerPaymentId: v.optional(v.string()),
 	paidAt: v.optional(v.number()),
 	billingPeriodEndsAt: v.optional(v.number()),
 	/** False once billing is replaced; historical refunds must not revoke newer/admin periods. */
@@ -42,7 +46,8 @@ export const accommodationFeePayments = defineTable({
 	updatedAt: v.number()
 })
 	.index('by_accommodation_id', ['accommodationId'])
-	.index('by_checkout_session_id', ['checkoutSessionId'])
-	.index('by_payment_intent_id', ['paymentIntentId'])
+	.index('by_provider_and_checkout_id', ['provider', 'providerCheckoutId'])
+	.index('by_provider_and_payment_id', ['provider', 'providerPaymentId'])
 	.index('by_cleanup_at', ['cleanupAt'])
+	.index('by_provider_and_next_reconcile_at', ['provider', 'nextReconcileAt'])
 	.index('by_next_reconcile_at', ['nextReconcileAt']);

@@ -4,6 +4,7 @@ import { tables } from './generatedSchema.js';
 
 const schema = defineSchema({
 	...tables,
+	rateLimit: tables.rateLimit.index('lastRequest', ['lastRequest']),
 	// Better Auth stores sessions here; the adapter lists them per user ordered by expiry.
 	session: tables.session.index('userId_expiresAt', ['userId', 'expiresAt']),
 	user: tables.user

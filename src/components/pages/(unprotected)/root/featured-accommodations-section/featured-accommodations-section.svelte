@@ -28,7 +28,7 @@
 			>
 				{m['HomePage.FeaturedAccommodationsSection.title']()}
 			</h2>
-			
+
 			<p class="text-muted-foreground">
 				{m['HomePage.FeaturedAccommodationsSection.description']()}
 			</p>

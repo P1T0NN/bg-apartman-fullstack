@@ -5,12 +5,12 @@ and guest booking payments. Creation requires an explicit plan choice in Pricing
 
 ## Stored fields
 
-| Field           | Purpose                                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| `billingPlanId` | Selected billing plan, `flat_fee`, `booking_fee`, or admin-granted `free`. This is not a Stripe Price ID. |
-| `billingTerms`  | Server-owned snapshot of the accepted offer, discriminated by `model`.                                    |
-| `billingStatus` | Platform eligibility: `pending_payment` or `active`. This is not a Stripe subscription or payment status. |
-| `status`        | Host publication choice: `published`, `unpublished`, or `deleted`.                                        |
+| Field           | Purpose                                                                    |
+| --------------- | -------------------------------------------------------------------------- |
+| `billingPlanId` | Selected billing plan, `flat_fee`, `booking_fee`, or admin-granted `free`. |
+| `billingTerms`  | Server-owned snapshot of the accepted offer, discriminated by `model`.     |
+| `billingStatus` | Platform eligibility: `pending_payment` or `active`.                       |
+| `status`        | Host publication choice: `published`, `unpublished`, or `deleted`.         |
 
 Flat-fee terms contain `model: 'flat_fee'`, `amountMinor: 30000`, `currency: 'EUR'`
 and `intervalMonths: 3`. Booking-fee terms contain `model: 'booking_fee'` and
@@ -28,7 +28,7 @@ Ordinary listing edits cannot change the plan, terms, or billing status. Changin
 
 - Flat fee: creation stores `billingStatus: 'pending_payment'` and
   `status: 'published'`. The owner sees Awaiting payment and Pay to activate.
-  Pay redirects to Stripe-hosted one-time Checkout using the stored fee terms.
+  Pay creates a Checkout.com sandbox Hosted Payments Page and redirects the owner.
 - Booking fee: creation stores `billingStatus: 'active'` and `status: 'published'`.
   No upfront payment is required and no booking commission is collected yet.
 - The publish toggle changes the host's choice even while payment is due. Public
@@ -73,143 +73,69 @@ contains the final required schema; do not deploy it over unbackfilled rows.
 The development backfill completed on 2026-10-07 across all 101 accommodations.
 The required schema was deployed after completion.
 
-## One-time Stripe listing-fee checkout (chunk 2)
+## Provider-neutral listing-fee payments
 
-The approved integration buys one stored listing-fee period through hosted
-Checkout with `mode: 'payment'`. Renewal requires another explicit payment after
-expiry. There are no subscriptions or automatic renewals. Guest booking payment
-methods and the accommodation booking page are unchanged.
+`src/convex/tables/accommodationFeePayments` retains frozen amount/currency/interval,
+owner/listing linkage, provider name, `providerCheckoutId`, `providerPaymentId`,
+payment/refund status and paid-period timestamps. Optional provider-neutral
+`providerEnvironment` and `providerAccountId` freeze the receiving account.
+Provider references are scoped
+by provider in their indexes. Shared `PAYMENTS_CONFIG` owns attempt duration and
+owner creation budgets.
 
-`AccommodationFlatFeePaymentButton` calls the authenticated
-`accommodationFeePayments/actions/createFeeCheckout` action. The server verifies
-ownership, listing state and accepted flat-fee terms. It freezes amount, EUR
-currency and interval in a payment attempt; the browser supplies only the listing
-ID. Checkout uses inline `price_data` so admin fee overrides are honored without
-maintaining a separate Stripe Price catalog. Zero/free access uses the existing
-admin grant flow; a payable EUR amount must meet Stripe's minimum of 50 cents.
+Internal mutations preserve ownership checks, frozen-price verification, attempt
+reuse, activation and refund recording. `src/convex/checkout` integrates Checkout.com
+sandbox Hosted Payments Pages; live keys and live API/redirect URLs are rejected.
+Authenticated `createFeeCheckout` and `refreshFeePayment` actions use the existing
+fee records. The selected sandbox processing channel is frozen as `providerAccountId`.
+Only a matching server-retrieved payment with the full captured balance activates
+the paid period. Browser redirects and authorization alone never grant access.
 
-An indexed latest-attempt lookup and atomic mutation reuse creating, pending or
-processing attempts. Stripe creation and refund calls use stable idempotency keys.
-Checkout expires after an hour; unattached attempts with less than 30 minutes
-remaining are replaced to satisfy Stripe's creation deadline. A scheduled action
-reconciles or expires abandoned sessions. Paid asynchronous sessions stay
-processing until payment succeeds or fails; returning from Checkout is optional.
+Provider response and webhook schemas live in
+`src/shared/features/checkout/schemas/checkoutSchemas.ts`, with non-secret settings
+in the feature's `config.ts` and redirect validation under `utils`. Secret environment
+reads and authenticated requests stay in separate Convex `getCheckoutConfig` and
+`checkoutRequest` helpers. The HTTP handler is `checkout/checkoutWebhook.ts`, with
+signature verification under its `utils`; payment and refund reconciliation have
+separate helpers. Shared `PAYMENTS_CONFIG.reconcileIntervalMs` owns retry timing.
 
-An attached session is reconciled before its expired/invalidated local attempt can
-be replaced. If Stripe reports payment success or ongoing processing, checkout
-does not create another payable session. Verification errors also block a
-replacement. Open sessions are expired through Stripe before replacement. Stripe
-idempotency keys and atomic attempt allocation protect concurrent requests.
+Hosted-page creation is claimed transactionally because its API has no documented
+idempotency support. Explicit rejected requests allow a fresh attempt; ambiguous
+network failures remain blocked until the one-hour unattached-attempt expiry.
+Sandbox card checkout enables 3DS, requests automatic capture and defaults the billing
+country to RS; collect the host's actual billing country before supporting live payments.
 
-`STRIPE_CONFIG` limits checkout requests to 5/minute/account. Only new attempts
-consume the creation budget: 10/day/account. Reusing an attempt does not consume
-another creation token. Limits use the existing rate-limiter component and are
-scoped to the authenticated account, so exhausting one account's budget does not
-block other accounts. There are no shared global checkout limits.
+`POST /checkout-webhook` verifies HMAC-SHA256 against the raw body and the separate
+`CHECKOUT_WEBHOOK_SECRET`. Event IDs are deduplicated for seven days. The event queues
+server-side reconciliation rather than applying its payload as payment truth. A
+bounded minute cron retries outstanding checkout/refund verification and removes
+expired event IDs. Late invalidated payments request refunds with stable provider
+idempotency keys. The admin Refund fee button now completes refunds for
+development-simulation receipts through the shared request/application mutations
+in one transaction. Fully refunding the current paid period clears its deadline
+and requires payment again, hiding the listing while preserving its publication
+choice and existing bookings. Later paid periods are preserved. Other providers
+remain unavailable from this button until real refund submission is connected.
 
-Indexed maintenance runs every 15 minutes in bounded batches. It retries failed
-reconciliation and pending refund work, including recovering sessions whose Stripe
-creation response was lost. Confirmed closed, unpaid attempts are removed after
-7 days; paid, refunded, processing and unresolved records are retained. Event
-deduplication receipts expire after 30 days; durable payment states still prevent
-replayed events from extending access. A provider history search is bounded to
-three pages; incomplete searches retain the receipt and retry rather than assuming
-no payment exists. Stripe keeps its own expired session/payment history.
+Configure `CHECKOUT_API_SECRET`, `CHECKOUT_API_BASE_URL`,
+`CHECKOUT_PROCESSING_CHANNEL_ID` and `CHECKOUT_WEBHOOK_SECRET` on the Convex development
+deployment; `PUBLIC_ORIGIN` supplies return URLs. In Checkout.com's sandbox dashboard,
+register `https://<development-deployment>.convex.site/checkout-webhook` for payment
+events with the same signature key and the chosen processing channel. Run a test card
+through Pay now and verify both the sandbox payment and the application's paid period.
+Payout onboarding and public listing visibility are separate requirements.
 
-Existing attempts are enrolled through the bounded, repeatable migration
-`migrations/backfillFeePaymentMaintenance:backfillFeePaymentMaintenance`.
+Paid-period activation preserves publication intent, uses UTC calendar-month
+clamping and cannot extend access on replay. Late payments for superseded attempts,
+changed terms or deleted listings are marked for refund. Full refunds revoke only
+their own still-current period; newer periods and admin grants remain intact.
 
-### Payment records, verification and activation
-
-`src/convex/tables/accommodationFeePayments` owns payment attempts, frozen terms,
-owner/listing linkage, provider references, payment/refund status and the granted
-period. `stripeWebhookEvents` stores processed event IDs. Indexed lookups use
-listing, Checkout Session and PaymentIntent IDs; histories are paginated. No
-payment arrays or Stripe fields are added to accommodations.
-
-`src/convex/http.ts` exposes `POST /stripe-webhook`. The Node handler verifies the
-raw-body signature and test/live mode, retrieves current provider objects, and
-checks the session reference, total, currency and payment mode against the frozen
-receipt. SDK calls live under `src/convex/stripe`; Zod boundary schemas live in
-`src/shared/features/stripe/schemas/stripeSchemas.ts` and shared provider types in
-`src/shared/features/stripe/types/stripeTypes.ts`.
-Provider or persistence failures return HTTP 500 for Stripe retries; invalid
-signatures return 400. Unsupported and connected-account events are ignored.
-
-One internal mutation deduplicates events and grants entitlement only for verified
-paid sessions. It preserves publication intent, including a deliberate host pause.
-The period starts at server fulfillment time and uses UTC calendar months with
-month-end clamping. An active future period cannot be bought again or extended by
-a duplicate event. Existing scheduled expiry and public deadline checks remove
-eligibility after expiry without relying on scheduler timing.
-
-Plan changes, admin overrides, free grants and deletion invalidate the current
-payment attempt. A late payment for deleted/changed listings or a superseded
-attempt is refunded instead of activating access. Retries of the same webhook
-continue an unfinished automatic refund using the same idempotency key. Already
-refunded payments cannot be reactivated by older Checkout events. Existing
-bookings and commission snapshots are preserved.
-
-### Owner status and admin refunds
-
-Host settings show paginated payment history with amount, payment date, period,
-status and refunded amount. History rows display live status without a manual
-refresh button. Returning from Checkout requests a server-verified refresh;
-URL flags never establish payment. Cancellation leaves the listing unpaid and
-allows reuse of the pending Checkout Session.
-
-Successful Checkout returns to `/host/accommodation-payment-successful?fee_payment=<id>`.
-The page refreshes provider state and subscribes to the owner-only
-`fetchFeePaymentConfirmation` query. It shows the accommodation, fee, status,
-payment date and paid-through date, with a My accommodations CTA. Success requires
-the receipt's paid period to still be applied; pending, failed, refunded,
-unavailable and verification-error states never imply activation. Renewal remains
-manual. Already-created Stripe sessions retain their original return URLs.
-
-The existing admin refund dialog targets the latest recorded payment and freezes
-the reviewed payment ID and remaining amount. The server independently checks
-admin identity and the refundable balance. A pending or failed refund cannot
-revoke access; a verified full refund revokes only its own still-current paid
-period. Partial external refunds remain visible without ending the period. Admin
-grants and later paid periods cannot be revoked by refunds of older receipts.
-Failed/canceled refunds can be retried with a new recorded attempt.
-
-`ACCOMMODATION_PAYMENT_SIMULATION = false` disables the legacy
-`payFlatFeeAccommodation` and `refundFlatFeeForAccommodation` entry points.
-The host and admin UI call the real payment actions.
-
-### Development setup and verification
-
-Chunk 1 code setup is complete, and the owner has handled Stripe account setup.
-`getStripe` resolves deployment secrets lazily; the internal read-only
-`verifyStripeTestSetup` checks test-mode account/balance readiness without
-exposing bank/contact data. On 2026-10-08 the development account reported ES/EUR,
-enabled test charges/payouts and `livemode: false`.
-
-Chunk 2 registered an enabled **test-mode** webhook at
-`https://grateful-otter-919.eu-west-1.convex.site/stripe-webhook` and securely saved
-its signing secret in development Convex. It listens for Checkout completion,
-asynchronous success/failure, session expiry, refund creation/update/failure and
-charge refunds. No live account configuration was changed.
-
-`verifyStripeWebhookSetup` is a read-only endpoint configuration check;
-`configureStripeTestWebhook` is an internal test-only provisioning action that
-returns a newly generated signing secret to the deployment operator. Neither is
-public. Do not log or commit signing secrets. Runtime secrets belong in Convex:
-`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and the server-owned
-`PUBLIC_ORIGIN` (hosted Checkout needs no browser publishable key).
-
-Automated tests cover SDK Checkout/refund calls, real SDK webhook signatures,
-ownership, amount/reference tampering, event replay, stale attempts/overrides,
-publication preservation, delayed payments, refunds and calendar-month expiry.
-A hosted Checkout test-card payment/refund has **not** yet been completed; this
-remains a release check before collecting real money. Production needs its own
-matching webhook signing secret and endpoint; development configuration is not a
-production deployment.
-
-References: [Checkout creation and expiry](https://docs.stripe.com/api/checkout/sessions/create),
-[verified fulfillment](https://docs.stripe.com/checkout/fulfillment),
-[refund lifecycle](https://docs.stripe.com/refunds).
+Host history remains paginated and owner/admin scoped. The confirmation route
+`/host/accommodation-payment-successful?fee_payment=<id>` uses the owner-only
+`fetchFeePaymentConfirmation` query. URL parameters never prove payment, and only
+a currently applied paid period produces its success state. Manual renewal and
+checkout-cancellation display remain in place. Existing payment records and their
+provider-neutral terms are retained when an integration is removed.
 
 ## Admin fee overrides and free access
 
@@ -257,13 +183,57 @@ Explicit admin rate overrides remain supported. Listing changes, host acceptance
 cancellation and later plan switches never rewrite existing fee snapshots.
 Both cash and online bookings capture identical fee terms.
 
-A snapshot records the original calculated fee, not a collected payment or an
-amount currently owed. Pending requests do not create a charge. Declined,
-expired or cancelled bookings retain their historical snapshot. Before collection
-ships, decide when fees become payable, cancellation/refund adjustments, and how
-cash commission is invoiced or reconciled. Keep future payment/refund records
-separate and link them to booking IDs; verified, idempotent provider events will
-record actual collection. No Stripe calls or collection status are simulated here.
+A snapshot records the original calculated fee. Online booking payments split
+that frozen commission to the platform and the remainder to the host automatically
+(10% / 90% at the standard rate). Hosts are not invoiced later for this allocation.
+Payment capture and allocation must be verified; stay completion is independent.
+
+`syncBookingFeePayment` maintains expected allocations for confirmed/completed
+online bookings. Cash, exemptions and unknown terms create none. Unverified
+allocations stop contributing to pending totals on cancellation; verified receipts remain for refunds.
+Internal `applyBookingFeePayment` verifies the full captured amount and both
+shares against frozen booking terms, currency and provider identity. Capture can
+be recorded before completion, even without a preceding expected-allocation row.
+Idempotent writes and cumulative commission refunds prevent duplicate earnings.
+Original host shares are allocation facts, not proof of bank settlement.
+
+`grossAmountMinor`, `hostAmountMinor` and `pendingOnlineSplit` are required on all
+fee records. Development migration on 2026-10-19 backfilled 391 legacy records
+from their frozen booking terms before enforcing these validators. Legacy cash
+rows retain `pendingOnlineSplit: false`; no payment status or earnings changed.
+The temporary backfill was removed after completion and verification.
+
+The host dashboard shows Booked value and Bookings cards and the gross booked-value
+chart. Pending and deducted platform fees remain backend bookkeeping without host
+dashboard cards or explanatory fee copy. Admin Revenue and the
+daily chart sum net flat-fee and booking-fee receipts. No actual collection, bank
+payout or guest-payment refund submission is implemented by these records.
+
+Paid flat-fee hosts remain locked until their stored three-calendar-month deadline.
+They can switch exactly at expiry without waiting for a cron. Explicit admin
+billing overrides are separate and never imply an automatic refund.
+
+The development fixture split on 2026-10-19 retains 50 booking-fee and 51 flat-fee
+listings (Test 1 remains flat fee). An earlier mistaken host-debt backfill created
+391 unpaid cash commission rows totalling EUR 19,444.50. The correction initially
+retained those rows while excluding them from pending online allocations.
+For visual testing, the user explicitly requested removing the earlier
+simulated flat-fee history of the 50 booking-fee listings. A development-only
+migration deleted those 50 receipts (one already refunded) and their revenue
+aggregate entries together. Listing states and bookings were unchanged. The 51
+flat-fee listings retain EUR 15,300 in simulated earnings. The user then explicitly
+approved converting the 202 completed seed bookings on booking-fee listings from
+cash to online and recording simulated successful payments through the normal
+`applyBookingFeePayment` handler. Their existing fee rows now record gross
+EUR 94,273, platform EUR 9,427.30 and host EUR 84,845.70, with obsolete legacy
+aggregate entries removed. Admin revenue totals EUR 24,727.30. The other 189
+unverified cash rows remain excluded from earnings. Frozen prices and commission
+terms, listing states, 392 booking records and the one cancellation were preserved.
+The temporary migrations and their tests were removed after verification. No real
+money moved; production cash/online payment rules did not change.
+Normal plan changes still preserve payment history. Cash commission collection still needs
+its own product rule; cash received directly by the host cannot create a verified
+online split.
 
 Historical bookings store `platformFeeTerms: null`, meaning unknown historical
 terms, never zero commission. Do not reconstruct fees from today's listing plan
@@ -286,3 +256,21 @@ recorded.
 
 Development migration on 2026-10-07 processed 101 accommodations and 394 bookings,
 then deployed the required validators. No temporary optional billing fields remain.
+
+## Payout prerequisite
+
+Payment and payout readiness are independent. A paid flat-fee listing, booking-fee
+listing or admin-granted free listing stays hidden until the owner's Better Auth
+`user.payoutsEnabled` is true. Missing legacy user values require setup. Listing
+records do not store payout readiness. One verified host account enables all their
+current and future listings, subject to each listing's billing and publication choice.
+
+The owner list links to `/host/settings?tab=payouts` after any required listing payment.
+The payouts tab currently logs setup requests and cannot enable payout readiness. A
+future provider integration must verify the receiving account server-side before
+setting `user.payoutsEnabled`.
+
+Public backend reads resolve readiness from the listing owner's user. Search/map use
+an async filter on bounded indexed pages and reuse one readiness read per owner per
+query. Pagination cursors and read limits are preserved. Existing bookings, billing
+entitlements and publication choices remain independent of payout-provider setup.

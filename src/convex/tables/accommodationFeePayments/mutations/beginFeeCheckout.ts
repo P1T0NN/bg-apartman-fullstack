@@ -1,10 +1,9 @@
 // LIBRARIES
 import { ConvexError, v } from 'convex/values';
 import { internalMutation } from '../../../_generated/server.js';
-import { internal } from '../../../_generated/api.js';
 
 // CONFIG
-import { STRIPE_CONFIG } from '../../../../shared/features/stripe/config.js';
+import { PAYMENTS_CONFIG } from '../../../../shared/features/payments/config.js';
 
 // HELPERS
 import { getLatestFeePayment } from '../helpers/getLatestFeePayment.js';
@@ -21,9 +20,18 @@ import type { BackendErrorData } from '../../../../shared/types/types.js';
 import type { Doc } from '../../../_generated/dataModel.js';
 
 export const beginFeeCheckout = internalMutation({
-	args: { accommodationId: v.id('accommodations') },
+	args: {
+		accommodationId: v.id('accommodations'),
+		provider: v.string(),
+		providerEnvironment: v.optional(v.string()),
+		providerAccountId: v.optional(v.string())
+	},
 	returns: feePaymentDoc,
-	handler: async (ctx, { accommodationId }): Promise<Doc<'accommodationFeePayments'>> => {
+	handler: async (
+		ctx,
+		{ accommodationId, provider, providerEnvironment, providerAccountId }
+	): Promise<Doc<'accommodationFeePayments'>> => {
+		if (!provider.trim()) throw new Error('Payment provider is required');
 		const identity = await requireIdentity(ctx);
 
 		const accommodation = await ctx.db.get('accommodations', accommodationId);
@@ -54,7 +62,7 @@ export const beginFeeCheckout = internalMutation({
 
 		const validTerms =
 			Number.isSafeInteger(amountMinor) &&
-			amountMinor >= STRIPE_CONFIG.minimumEurChargeMinor &&
+			amountMinor > 0 &&
 			currency === 'EUR' &&
 			Number.isSafeInteger(intervalMonths) &&
 			intervalMonths > 0;
@@ -64,11 +72,10 @@ export const beginFeeCheckout = internalMutation({
 		const latest = await getLatestFeePayment(ctx, accommodationId);
 		const hasUnresolvedCheckout =
 			latest &&
-			latest.checkoutSessionId &&
+			latest.providerCheckoutId &&
 			!latest.closedAt &&
 			latest.status !== 'paid' &&
 			latest.status !== 'refunded';
-		if (hasUnresolvedCheckout) return latest;
 
 		const hasReusableAttempt =
 			latest &&
@@ -76,16 +83,16 @@ export const beginFeeCheckout = internalMutation({
 			(latest.status === 'creating' ||
 				latest.status === 'pending' ||
 				latest.status === 'processing');
+		const hasDifferentProvider =
+			(hasUnresolvedCheckout || hasReusableAttempt) &&
+			(latest.provider !== provider ||
+				latest.providerEnvironment !== providerEnvironment ||
+				latest.providerAccountId !== providerAccountId);
+		if (hasDifferentProvider) throw new Error('An unresolved payment uses another provider');
+		if (hasUnresolvedCheckout) return latest;
 
 		if (hasReusableAttempt) {
-			// Stripe requires at least 30 minutes remaining when a session is first created.
-			const needsSessionCreation = latest.status === 'creating' && !latest.checkoutSessionId;
-
-			const usableDeadline = needsSessionCreation
-				? latest.expiresAt - STRIPE_CONFIG.minimumCheckoutLifetimeMs
-				: latest.expiresAt;
-
-			const canResumeAttempt = latest.status === 'processing' || usableDeadline > now;
+			const canResumeAttempt = latest.status === 'processing' || latest.expiresAt > now;
 
 			if (canResumeAttempt) return latest;
 
@@ -96,27 +103,23 @@ export const beginFeeCheckout = internalMutation({
 			});
 		}
 
-		const expiresAt = now + STRIPE_CONFIG.checkoutExpiresInMs;
+		const expiresAt = now + PAYMENTS_CONFIG.checkoutExpiresInMs;
 		await limitFeeCheckoutCreation(ctx, getOwnerId(identity));
 		const id = await ctx.db.insert('accommodationFeePayments', {
 			accommodationId,
 			ownerId: getOwnerId(identity),
+			provider,
+			providerEnvironment,
+			providerAccountId,
 			terms: { amountMinor, currency, intervalMonths },
 			status: 'creating',
 			createdAt: now,
 			expiresAt,
-			nextReconcileAt: expiresAt,
 			entitlementApplied: false,
 			invalidated: false,
 			refundedAmountMinor: 0,
 			updatedAt: now
 		});
-
-		await ctx.scheduler.runAt(
-			expiresAt,
-			internal.stripe.actions.reconcileFeeCheckout.reconcileFeeCheckout,
-			{ paymentId: id, expire: true }
-		);
 
 		const payment = await ctx.db.get('accommodationFeePayments', id);
 

@@ -7,6 +7,7 @@ import { v } from 'convex/values';
 import { adminQuery } from '../../../builders/convexFunctionBuilders.js';
 
 // HELPERS
+import { isAccommodationPublic } from '../helpers/isAccommodationPublic.js';
 import { getPagination } from '../../../helpers/getPagination.js';
 import { paginateSearch } from '../../../helpers/paginateSearch.js';
 
@@ -38,6 +39,7 @@ export const fetchAccommodationsAdmin = adminQuery({
 			docValidator('accommodations', accommodations)
 				.pick(...ADMIN_FIELDS)
 				.extend({
+					isVisible: v.boolean(),
 					address: v.object({ city: v.string(), country: v.string() })
 				})
 		)
@@ -96,10 +98,13 @@ export const fetchAccommodationsAdmin = adminQuery({
 		}
 		return {
 			...page,
-			items: page.items.map((item) => ({
-				...pick(item, [...ADMIN_FIELDS]),
-				address: { city: item.address.city, country: item.address.country }
-			}))
+			items: await Promise.all(
+				page.items.map(async (item) => ({
+					isVisible: await isAccommodationPublic(ctx, item),
+					...pick(item, [...ADMIN_FIELDS]),
+					address: { city: item.address.city, country: item.address.country }
+				}))
+			)
 		};
 	}
 });

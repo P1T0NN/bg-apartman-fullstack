@@ -3,29 +3,31 @@ import { v } from 'convex/values';
 import { internalMutation } from '../../../_generated/server.js';
 import { internal } from '../../../_generated/api.js';
 
+// CONFIG
+import { PAYMENTS_CONFIG } from '../../../../shared/features/payments/config.js';
+
 // HELPERS
 import { getLatestFeePayment } from '../helpers/getLatestFeePayment.js';
-
-// CONFIG
-import { STRIPE_CONFIG } from '../../../../shared/features/stripe/config.js';
+import { syncFlatFeeRevenueAggregate } from '../helpers/syncFlatFeeRevenueAggregate.js';
 
 // UTILS
 import { calculatePaidPeriodEnd } from '../../../../shared/features/payments/utils/calculatePaidPeriodEnd.js';
 
 export const applyFeeCheckout = internalMutation({
 	args: {
-		paymentReference: v.string(),
-		sessionId: v.string(),
-		clientReference: v.union(v.string(), v.null()),
-		amountMinor: v.union(v.number(), v.null()),
-		currency: v.union(v.string(), v.null()),
-		paymentIntentId: v.union(v.string(), v.null()),
-		mode: v.string(),
-		status: v.union(v.literal('open'), v.literal('complete'), v.literal('expired'), v.null()),
-		paymentStatus: v.string(),
-		failed: v.boolean(),
-		eventId: v.optional(v.string()),
-		eventType: v.optional(v.string()),
+		paymentId: v.id('accommodationFeePayments'),
+		provider: v.string(),
+		providerCheckoutId: v.string(),
+		amountMinor: v.number(),
+		currency: v.string(),
+		providerPaymentId: v.optional(v.string()),
+		status: v.union(
+			v.literal('pending'),
+			v.literal('processing'),
+			v.literal('paid'),
+			v.literal('expired'),
+			v.literal('failed')
+		),
 		refundedAmountMinor: v.number()
 	},
 	returns: v.object({
@@ -33,37 +35,20 @@ export const applyFeeCheckout = internalMutation({
 		refund: v.boolean()
 	}),
 	handler: async (ctx, args) => {
-		const paymentId = ctx.db.normalizeId('accommodationFeePayments', args.paymentReference);
-
-		const payment = paymentId ? await ctx.db.get('accommodationFeePayments', paymentId) : null;
+		const payment = await ctx.db.get('accommodationFeePayments', args.paymentId);
 
 		if (!payment) return { paymentId: null, refund: false };
 
 		const matchesReceipt =
-			args.clientReference === payment._id &&
-			args.mode === 'payment' &&
+			args.provider === payment.provider &&
+			Boolean(args.providerCheckoutId.trim()) &&
 			args.amountMinor === payment.terms.amountMinor &&
-			args.currency?.toUpperCase() === payment.terms.currency &&
-			(!payment.checkoutSessionId || payment.checkoutSessionId === args.sessionId);
+			args.currency.toUpperCase() === payment.terms.currency &&
+			(!payment.providerCheckoutId || payment.providerCheckoutId === args.providerCheckoutId);
 
-		if (!matchesReceipt) throw new Error('Stripe checkout does not match the recorded fee');
+		if (!matchesReceipt) throw new Error('Payment checkout does not match the recorded fee');
 
 		const now = Date.now();
-
-		if (args.eventId) {
-			const seen = await ctx.db
-				.query('stripeWebhookEvents')
-				.withIndex('by_event_id', (q) => q.eq('eventId', args.eventId!))
-				.unique();
-
-			if (seen) return { paymentId: payment._id, refund: payment.status === 'refund_pending' };
-
-			await ctx.db.insert('stripeWebhookEvents', {
-				eventId: args.eventId,
-				type: args.eventType ?? 'checkout',
-				processedAt: now
-			});
-		}
 
 		const isSettledPayment =
 			payment.status === 'refunded' ||
@@ -73,8 +58,9 @@ export const applyFeeCheckout = internalMutation({
 		if (isSettledPayment)
 			return { paymentId: payment._id, refund: payment.status === 'refund_pending' };
 
-		if (args.paymentStatus === 'paid') {
-			if (!args.paymentIntentId) throw new Error('Paid checkout has no payment intent');
+		if (args.status === 'paid') {
+			if (!args.providerPaymentId?.trim())
+				throw new Error('Paid checkout has no payment reference');
 
 			const hasInvalidRefundedAmount =
 				!Number.isSafeInteger(args.refundedAmountMinor) ||
@@ -113,8 +99,8 @@ export const applyFeeCheckout = internalMutation({
 			const shouldRefundPayment = !canActivate && !fullyRefunded;
 
 			await ctx.db.patch('accommodationFeePayments', payment._id, {
-				checkoutSessionId: args.sessionId,
-				paymentIntentId: args.paymentIntentId,
+				providerCheckoutId: args.providerCheckoutId,
+				providerPaymentId: args.providerPaymentId,
 				paidAt: now,
 				status: fullyRefunded ? 'refunded' : canActivate ? 'paid' : 'refund_pending',
 				entitlementApplied: Boolean(canActivate),
@@ -124,7 +110,7 @@ export const applyFeeCheckout = internalMutation({
 				cleanupAt: undefined,
 				closedAt: undefined,
 				nextReconcileAt: shouldRefundPayment
-					? now + STRIPE_CONFIG.reconciliationRetryMs
+					? (payment.nextReconcileAt ?? now + PAYMENTS_CONFIG.reconcileIntervalMs)
 					: undefined,
 				refundAmountMinor: shouldRefundPayment
 					? payment.terms.amountMinor - args.refundedAmountMinor
@@ -132,6 +118,8 @@ export const applyFeeCheckout = internalMutation({
 				refundAttempt: shouldRefundPayment ? 1 : payment.refundAttempt
 			});
 
+			const collectedPayment = await ctx.db.get('accommodationFeePayments', payment._id);
+			if (collectedPayment) await syncFlatFeeRevenueAggregate(ctx, collectedPayment);
 			const shouldGrantPaidPeriod = canActivate && billingPeriodEndsAt !== undefined;
 
 			if (shouldGrantPaidPeriod) {
@@ -153,32 +141,23 @@ export const applyFeeCheckout = internalMutation({
 		}
 
 		const isUnpaidAttemptClosed = payment.status === 'failed' || payment.status === 'expired';
-		const hasFailedCompletedPayment = payment.status === 'failed' && args.status === 'complete';
-		const isProviderClosedUnpaid =
-			args.status === 'expired' || args.failed || hasFailedCompletedPayment;
+		const isProviderClosedUnpaid = args.status === 'expired' || args.status === 'failed';
 		const shouldPreserveClosedAttempt = isUnpaidAttemptClosed && !isProviderClosedUnpaid;
 		if (shouldPreserveClosedAttempt) return { paymentId: payment._id, refund: false };
 
-		const status = args.failed
-			? 'failed'
-			: args.status === 'expired'
-				? 'expired'
-				: args.status === 'complete'
-					? 'processing'
-					: 'pending';
-
 		// An invalidated attempt can never become payable again from an older event.
 		await ctx.db.patch('accommodationFeePayments', payment._id, {
-			checkoutSessionId: args.sessionId,
-			status: payment.invalidated ? 'expired' : isUnpaidAttemptClosed ? payment.status : status,
+			providerCheckoutId: args.providerCheckoutId,
+			providerPaymentId: args.providerPaymentId ?? payment.providerPaymentId,
+			status: payment.invalidated
+				? 'expired'
+				: isUnpaidAttemptClosed
+					? payment.status
+					: args.status,
 			updatedAt: now,
 			closedAt: isProviderClosedUnpaid ? (payment.closedAt ?? now) : payment.closedAt,
-			cleanupAt: isProviderClosedUnpaid
-				? (payment.cleanupAt ?? now + STRIPE_CONFIG.unpaidAttemptRetentionMs)
-				: undefined,
-			nextReconcileAt: isProviderClosedUnpaid
-				? undefined
-				: now + STRIPE_CONFIG.reconciliationRetryMs
+			cleanupAt: undefined,
+			nextReconcileAt: isProviderClosedUnpaid ? undefined : payment.nextReconcileAt
 		});
 
 		return { paymentId: payment._id, refund: false };

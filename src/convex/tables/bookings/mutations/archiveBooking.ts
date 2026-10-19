@@ -24,7 +24,7 @@ export const archiveBooking = authenticatedMutation({
 		}
 
 		const canArchive = BOOKING_ARCHIVABLE_STATUSES.includes(booking.status);
-		
+
 		if (!canArchive) {
 			throw new ConvexError<BackendErrorData>({ code: 'INVALID_BOOKING_STATUS' });
 		}

@@ -1,97 +1,38 @@
 # Payment implementation plan
 
-Status: chunk 1 code setup complete; the owner confirmed Stripe account setup is
-handled. Chunk 2 listing-fee checkout is implemented and deployed to development
-test mode. A hosted Checkout test-card payment/refund remains a release check.
-Chunks 3-6 have not started. The accommodation booking page is intentionally
-untouched. One-time listing fees use manual renewal, without subscriptions.
+Status: Checkout.com sandbox listing-fee checkout and payment verification are
+deployed to development. Webhook registration and end-to-end sandbox testing
+remain to be completed. Admin refund UI, guest payment collection and
+host payout onboarding remain separate unfinished work. No live money is processed.
 
-Recommended order: host listing fees, guest money flow, instant bookings,
-approval-based bookings, then cash commission collection. Loyalty activation can
-proceed separately once its policies are agreed.
+One-time listing fees use manual renewal, without subscriptions. Recommended
+order: host listing fees, guest money flow, instant bookings, approval-based
+bookings, then cash commission collection.
 
-## Chunk 1: Confirm provider and listing-fee billing model
+## Chunk 1: Choose and prepare a provider
 
-Start here, before provider-specific implementation.
+- [ ] Select a provider that supports the required host countries and payout flow.
+- [ ] Confirm account eligibility, currency support and settlement flow.
+- [x] Preserve one-time listing periods, manual renewal and server-owned fee terms.
+- [x] Keep shared payment fields and domain transitions provider-neutral.
 
-- [x] Confirm Stripe as the selected provider for this setup work.
-- [x] Verify development test access with the existing Convex Stripe credentials.
-      Read-only verification returned `livemode: false`, account country `ES`,
-      default currency `eur`, and enabled test charges/payouts on 2026-10-08.
-- [x] Check provider availability for the reported test-account country: Spain is
-      listed in [Stripe's supported countries](https://stripe.com/global).
-- [x] Account/business setup is handled by the owner. Code verification uses test
-      mode; test flags are not live approval.
-- [x] Confirm EUR is supported as a charge currency. Existing catalog terms are
-      EUR 300 for three calendar months; existing accommodation snapshots remain
-      authoritative, including admin overrides.
-- [x] Account/bank configuration is handled by the owner.
-- [x] Use one-time payment for a fixed period with manual renewal. No subscription
-      or automatic renewal will be added.
-- [x] Preserve existing UTC calendar-month clamping, disallow early renewal, and
-      start the paid period on verified fulfillment. Admins can refund a recorded
-      payment; guest cancellation/refund policies remain separate.
+## Chunk 2: Connect host listing-fee payments
 
-Chunk 1 code setup is complete. Chunk 2 adds Checkout and verified fulfillment.
-No subscriptions, automatic renewal or guest booking checkout are included.
+- [x] Connect authenticated Checkout.com sandbox checkout and status refresh.
+- [ ] Connect the admin recorded-payment refund operation.
+- [x] Verify signatures and authoritative amount/currency/reference data.
+- [x] Claim hosted-page creation once per attempt, use idempotent refunds and
+      deduplicate events before reconciling authoritative provider state.
+- [ ] Reconcile existing attempts before replacement and recover lost responses.
+- [ ] Handle abandonment, late success, refunds and safe bounded retention.
+- [ ] Preserve ownership, creation budgets, publication intent and paid-period rules.
+- [x] Keep private history and owner-only payment confirmation queries.
+- [x] Keep legacy payment/refund simulations disabled.
+- [ ] Exercise checkout, fulfillment and refunds in the provider sandbox.
 
-The internal read-only check can be rerun with:
-
-```powershell
-bunx convex run stripe/actions/verifyStripeTestSetup:verifyStripeTestSetup '{}'
-```
-
-Provider initialization lives in `src/convex/stripe/helpers/getStripe.ts`; the
-check lives in `src/convex/stripe/actions/verifyStripeTestSetup.ts`. Missing secrets
-fail when the helper is used, rather than breaking unrelated functions on import.
-
-Done when: the provider and first billing model are agreed and test access works.
-Guest payout and loyalty decisions do not block this chunk.
-
-## Chunk 2: Implement real host listing-fee payments
-
-Build the payment foundation inside this first complete flow, extending the
-existing accommodation billing behavior.
-
-- [x] Store payment attempts, frozen amounts/currency, payer and accommodation
-      linkage, provider references, payment status and processed webhook events.
-- [x] Create checkout server-side using stored accommodation billing terms and
-      authenticated ownership. Recommendation: hosted checkout initially.
-- [x] Verify webhook signatures and payment amounts/currency; process each payment
-      once, including duplicate or out-of-order notifications.
-- [x] Activate the paid period only after verified payment success. Preserve host
-      publication intent, deletion and later changes to billing terms.
-- [x] Handle failed/abandoned checkout, safe retries, renewal after expiry and
-      late payment notifications.
-- [x] Limit checkout requests and new attempts per account. Reconcile
-      an existing provider session before allowing its replacement; block a new
-      session if payment succeeded, is processing, or cannot be verified.
-- [x] Retry due payment reconciliation in bounded periodic jobs. Clean up only
-      verified closed unpaid attempts after 7 days and event receipts after
-      30 days; retain actual payments/refunds and unresolved processing records.
-- [x] Show payment status/history in the existing host fee surfaces.
-- [x] Replace simulated refunds with refunds against recorded payments; record
-      provider results and update entitlement only after successful refund.
-- [x] Disable the development payment/refund simulation entry points before
-      enabling real payments.
-- [x] Test ownership, amount tampering, duplicate checkout/payment events, failed
-      payments, refunds and paid-period expiry.
-- [x] Register the development test-mode `/stripe-webhook` endpoint for Checkout,
-      asynchronous payment, expiry and refund events; save its signing secret in
-      Convex. Read-only verification confirms it is enabled for all eight events.
-- [ ] Complete a hosted Checkout test-card payment and refund end to end before
-      enabling real money. Automated SDK-boundary tests cover signed webhooks,
-      fulfillment and refunds; a browser payment has not been performed.
-
-Payment records/functions live in `src/convex/tables/accommodationFeePayments`;
-event deduplication uses `stripeWebhookEvents`. Reusable Stripe calls stay in
-`src/convex/stripe`. Owner fee history lives in `src/features/payments`; the
-existing admin refund dialog targets a recorded payment and reviewed amount.
-Checkout uses inline server-owned prices to preserve accommodation fee overrides.
-
-Done when: a host can pay for a listing period, see the result and history, and
-receive a supported refund. Returning to the success page is not required for
-activation. This is the first independently usable payment release.
+Shared records/transitions live in `src/convex/tables/accommodationFeePayments`.
+Shared contracts/configuration live in `src/shared/features/payments`; payment UI
+lives in `src/features/payments`. A browser return URL never proves payment.
 
 ## Chunk 3: Agree guest money flow and prepare host payments
 
@@ -177,10 +118,9 @@ payments.
   under `src/convex/tables`; accommodation and booking features own their domain
   transitions. Follow `docs/CodingRules.md`, `docs/ProjectCodingRules.md` and the
   generated Convex guidelines before implementation.
-- Keep reusable Stripe SDK operations in `src/convex/stripe/helpers` and pure
-  provider utilities in `src/convex/stripe/utils` when needed. Registered actions
-  belong in `src/convex/stripe/actions`; domain billing and booking transitions
-  remain in their table features. Do not create unused wrappers or folders.
+- Keep external provider calls in the provider's Convex module once implemented;
+  domain billing and booking transitions remain in their table features.
+  Do not create unused wrappers or folders.
 - Keep secrets and provider calls server-side. Derive identity and authoritative
   amounts on the server; browser success flags never prove payment.
 - Extend existing helpers and UI instead of building a generic payment framework.
@@ -191,6 +131,4 @@ payments.
 
 References:
 [existing accommodation billing design](docs/AccommodationBillingSystemDesign.md),
-[loyalty decisions](docs/LoyaltySystem.md),
-[Stripe Checkout](https://docs.stripe.com/payments/checkout),
-[verified payment fulfillment](https://docs.stripe.com/checkout/fulfillment).
+[loyalty decisions](docs/LoyaltySystem.md).

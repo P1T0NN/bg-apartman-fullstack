@@ -10,9 +10,10 @@
 
 import type * as adapter from "../adapter.js";
 import type * as generatedSchema from "../generatedSchema.js";
-import type * as queries_getUser from "../queries/getUser.js";
-import type * as queries_listSessions from "../queries/listSessions.js";
-import type * as queries_listUsers from "../queries/listUsers.js";
+import type * as migrations_removeUserPaypalFields from "../migrations/removeUserPaypalFields.js";
+import type * as queries_fetchSessions from "../queries/fetchSessions.js";
+import type * as queries_fetchUser from "../queries/fetchUser.js";
+import type * as queries_fetchUsers from "../queries/fetchUsers.js";
 
 import type {
   ApiFromModules,
@@ -24,9 +25,10 @@ import { anyApi, componentsGeneric } from "convex/server";
 const fullApi: ApiFromModules<{
   adapter: typeof adapter;
   generatedSchema: typeof generatedSchema;
-  "queries/getUser": typeof queries_getUser;
-  "queries/listSessions": typeof queries_listSessions;
-  "queries/listUsers": typeof queries_listUsers;
+  "migrations/removeUserPaypalFields": typeof migrations_removeUserPaypalFields;
+  "queries/fetchSessions": typeof queries_fetchSessions;
+  "queries/fetchUser": typeof queries_fetchUser;
+  "queries/fetchUsers": typeof queries_fetchUsers;
 }> = anyApi as any;
 
 /**

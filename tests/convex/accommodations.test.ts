@@ -5,7 +5,7 @@ import actionRetrierTest from '@convex-dev/action-retrier/test';
 import aggregateTest from '@convex-dev/aggregate/test';
 import r2Test from '@convex-dev/r2/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
-import { expect, test, vi } from 'vitest';
+import { expect, test, vi, beforeEach } from 'vitest';
 import { convexTest } from 'convex-test';
 import {
 	defineSchema,
@@ -14,6 +14,9 @@ import {
 	type FunctionReturnType
 } from 'convex/server';
 import { v } from 'convex/values';
+
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
 
 // CONVEX
 import { api, internal } from '../../src/convex/_generated/api.js';
@@ -53,6 +56,30 @@ import {
 import { AMENITY_KEYS } from '../../src/shared/features/accommodations/data/accommodationsData.js';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
+import { isAccommodationVisible } from '../../src/shared/features/accommodations/utils/isAccommodationVisible.js';
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
+
+test('publication requires payout readiness independently of billing', () => {
+	const now = Date.now();
+	for (const billingPlanId of ['flat_fee', 'booking_fee', 'free'] as const) {
+		const listing = {
+			status: 'published' as const,
+			billingPlanId,
+			billingStatus: 'active' as const,
+			billingPeriodEndsAt: now + 1000
+		};
+		expect(isAccommodationVisible(listing, false, now)).toBe(false);
+		expect(isAccommodationVisible(listing, true, now)).toBe(true);
+		expect(isAccommodationVisible({ ...listing, status: 'unpublished' }, true, now)).toBe(false);
+		expect(
+			isAccommodationVisible({ ...listing, billingStatus: 'pending_payment' }, true, now)
+		).toBe(false);
+	}
+});
 
 test('admin fee drafts validate the selected plan, money precision and required expiry', () => {
 	const booking = { id: 'accommodation', plan: 'booking_fee', commission: 10 };
@@ -267,6 +294,7 @@ test('billing plans control initial visibility and cannot be bypassed through li
 		);
 	}
 	const [flatId, bookingId] = ids;
+	vi.mocked(hostPayouts.getHostPayoutsEnabled).mockResolvedValue(false);
 	const unpaid = await t.run((ctx) => ctx.db.get('accommodations', flatId));
 	expect(unpaid).toMatchObject({
 		status: 'published',
@@ -275,11 +303,38 @@ test('billing plans control initial visibility and cannot be bypassed through li
 		billingTerms: { model: 'flat_fee', amountMinor: 30000, currency: 'EUR', intervalMonths: 3 }
 	});
 	expect(await detailQuery(flatId)).toBeNull();
+	expect(await detailQuery(bookingId)).toBeNull();
+	const searchArgs = {
+		location: { country: 'Serbia' },
+		paginationOpts: { cursor: null, numItems: 10 }
+	};
+	expect(
+		(
+			await t.query(
+				api.tables.accommodations.queries.fetchAccommodationsSearch.fetchAccommodationsSearch,
+				searchArgs
+			)
+		).items
+	).toEqual([]);
+	expect(
+		(
+			await t.query(
+				api.tables.accommodations.queries.fetchAccommodationsMapSearch.fetchAccommodationsMap,
+				searchArgs
+			)
+		).items
+	).toEqual([]);
+	const forgedPayoutUpdate = { id: bookingId, payoutsEnabled: true };
+	await expect(host.mutation(update, forgedPayoutUpdate)).rejects.toThrow();
+	await host.mutation(publish, { id: bookingId, status: 'published' });
+	expect(await detailQuery(bookingId)).toBeNull();
+	vi.mocked(hostPayouts.getHostPayoutsEnabled).mockResolvedValue(true);
 	const publicBookingFee = await detailQuery(bookingId);
 	expect(publicBookingFee?.status).toBe('published');
 	expect(publicBookingFee).not.toHaveProperty('billingTerms');
 	expect(publicBookingFee).not.toHaveProperty('billingPlanId');
 	expect(publicBookingFee).not.toHaveProperty('billingStatus');
+	expect(publicBookingFee).not.toHaveProperty('payoutsEnabled');
 	await host.mutation(publish, { id: flatId, status: 'unpublished' });
 	await host.mutation(publish, { id: flatId, status: 'published' });
 	expect(await detailQuery(flatId)).toBeNull();
@@ -612,12 +667,24 @@ test('simulated flat-fee payment grants calendar months, preserves pauses, locks
 			Date.parse('2026-10-30T12:34:56.789Z')
 		);
 		vi.setSystemTime(Date.parse('2026-10-30T12:34:56.789Z'));
-		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		vi.setSystemTime(Date.parse('2026-10-30T12:34:56.789Z') - 1);
+		await expect(
+			owner.mutation(change, {
+				id,
+				billingPlanId: 'booking_fee',
+				expectedBillingPlanId: 'flat_fee'
+			})
+		).rejects.toMatchObject({ data: { code: 'ACCOMMODATION_BILLING_PLAN_LOCKED' } });
+		vi.setSystemTime(Date.parse('2026-10-30T12:34:56.789Z'));
 		await owner.mutation(change, {
 			id,
 			billingPlanId: 'booking_fee',
 			expectedBillingPlanId: 'flat_fee'
 		});
+		await t.finishAllScheduledFunctions(() => vi.runAllTimersAsync());
+		expect((await t.run((ctx) => ctx.db.get('accommodations', id)))?.billingPlanId).toBe(
+			'booking_fee'
+		);
 		await expect(owner.mutation(pay, { id })).rejects.toMatchObject({
 			data: { code: 'ACCOMMODATION_BILLING_PLAN_CHANGED' }
 		});

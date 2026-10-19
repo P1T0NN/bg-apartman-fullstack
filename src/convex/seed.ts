@@ -6,14 +6,24 @@ import { parseDate } from '@internationalized/date';
 import { v } from 'convex/values';
 
 // CONVEX
-import { internalMutation } from './_generated/server.js';
+import { components } from './_generated/api.js';
+import { env, internalMutation } from './_generated/server.js';
 
 // AGGREGATES
 import { accommodationOwnerAggregate } from './tables/accommodations/aggregates/accommodationOwnerAggregate.js';
 import { reviewAggregate } from './tables/reviews/aggregates/reviewAggregate.js';
+import { bookingHostAggregate } from './tables/bookings/aggregates/bookingHostAggregate.js';
+import { bookingOwnerAggregate } from './tables/bookings/aggregates/bookingOwnerAggregate.js';
+import { bookingAdminAggregate } from './tables/bookings/aggregates/bookingAdminAggregate.js';
+import { userTotalAggregate } from './betterAuth/tables/users/aggregates/userTotalAggregate.js';
 
 // HELPERS
 import { updateAccommodationReviewSortKeys } from './tables/accommodations/helpers/updateAccommodationReviewSortKeys.js';
+import { syncHostBookingAggregate } from './tables/bookings/helpers/syncHostBookingAggregate.js';
+import {
+	bookingFeePendingAggregate,
+	legacyBookingFeeAggregate
+} from './tables/bookingFeePayments/aggregates/bookingFeeAggregates.js';
 
 // CONFIG
 import {
@@ -34,9 +44,53 @@ import { calculateBookingPlatformFee } from '../shared/features/bookings/utils/c
 // TYPES
 import type { Doc } from './_generated/dataModel.js';
 import type { WithoutSystemFields } from 'convex/server';
+import type { MutationCtx } from './_generated/server.js';
 
 const SEED_OWNER_ID = 'seed-owner';
 const IMAGE_COUNT = 5;
+
+/** Default fixtures use a real test identity so public visibility checks need no exceptions. */
+async function getSeedOwnerId(ctx: MutationCtx): Promise<string> {
+	if (env.CONVEX_CLOUD_URL !== 'https://grateful-otter-919.eu-west-1.convex.cloud') {
+		throw new Error('The payout-ready seed host is restricted to the development deployment.');
+	}
+	const existing: { _id: string; payoutsEnabled?: boolean | null } | null = await ctx.runQuery(
+		components.betterAuth.adapter.findOne,
+		{ model: 'user', where: [{ field: 'userId', value: SEED_OWNER_ID }] }
+	);
+	const now = Date.now();
+	let ownerId: string;
+	if (existing) {
+		ownerId = existing._id;
+		if (!existing.payoutsEnabled) {
+			await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+				input: {
+					model: 'user',
+					where: [{ field: '_id', value: ownerId }],
+					update: { payoutsEnabled: true, updatedAt: now }
+				}
+			});
+		}
+	} else {
+		const user: { _id: string } = await ctx.runMutation(components.betterAuth.adapter.create, {
+			input: {
+				model: 'user',
+				data: {
+					name: 'Seed host',
+					email: 'seed-host@example.invalid',
+					emailVerified: true,
+					payoutsEnabled: true,
+					userId: SEED_OWNER_ID,
+					createdAt: now,
+					updatedAt: now
+				}
+			}
+		});
+		ownerId = user._id;
+	}
+	await userTotalAggregate.insertIfDoesNotExist(ctx, { key: ownerId, id: ownerId });
+	return ownerId;
+}
 
 type SeedCity = {
 	timeZone: string;
@@ -262,7 +316,7 @@ export const seedAccommodations = internalMutation({
 	returns: v.number(),
 	handler: async (ctx, args) => {
 		const count = Math.min(Math.max(Math.floor(args.count ?? 100), 1), 500);
-		const ownerId = args.ownerId?.trim() || SEED_OWNER_ID;
+		const ownerId = args.ownerId?.trim() || (await getSeedOwnerId(ctx));
 		const offset = args.offset ?? 0;
 		if (!Number.isSafeInteger(offset) || offset < 0) throw new Error('Invalid seed offset.');
 
@@ -350,7 +404,7 @@ export const clearSeededAccommodations = internalMutation({
 	},
 	returns: v.number(),
 	handler: async (ctx, args) => {
-		const ownerId = args.ownerId?.trim() || SEED_OWNER_ID;
+		const ownerId = args.ownerId?.trim() || (await getSeedOwnerId(ctx));
 		const seeded = await ctx.db
 			.query('accommodations')
 			.withIndex('by_owner_id', (query) => query.eq('ownerId', ownerId))
@@ -374,7 +428,7 @@ export const seedReviews = internalMutation({
 	},
 	returns: v.number(),
 	handler: async (ctx, args) => {
-		const ownerId = args.ownerId?.trim() || SEED_OWNER_ID;
+		const ownerId = args.ownerId?.trim() || (await getSeedOwnerId(ctx));
 		const maxAccommodations = Math.min(Math.max(Math.floor(args.maxAccommodations ?? 200), 1), 500);
 		const maxReviews = Math.min(Math.max(Math.floor(args.maxReviewsPerAccommodation ?? 8), 0), 20);
 		const accommodations = await ctx.db
@@ -474,6 +528,12 @@ export const seedReviews = internalMutation({
 					status: 'published'
 				});
 				await ctx.db.patch('bookings', bookingId, { reviewId });
+				const booking = await ctx.db.get('bookings', bookingId);
+				if (booking) {
+					await bookingAdminAggregate.insert(ctx, booking);
+					await bookingOwnerAggregate.insert(ctx, booking);
+					await syncHostBookingAggregate(ctx, booking);
+				}
 				const review = await ctx.db.get('reviews', reviewId);
 				if (review) await reviewAggregate.insert(ctx, review);
 				inserted += 1;
@@ -503,6 +563,23 @@ export const clearSeededReviews = internalMutation({
 			for (const review of reviews) {
 				await reviewAggregate.delete(ctx, review);
 				await ctx.db.delete('reviews', review._id);
+				const booking = await ctx.db.get('bookings', review.bookingId);
+				if (booking) {
+					const fee = await ctx.db
+						.query('bookingFeePayments')
+						.withIndex('by_booking_id', (q) => q.eq('bookingId', booking._id))
+						.unique();
+					if (fee?.paidAt !== undefined)
+						throw new Error('Cannot delete collected booking fee history');
+					if (fee) {
+						await bookingFeePendingAggregate.deleteIfExists(ctx, fee);
+						await legacyBookingFeeAggregate.deleteIfExists(ctx, fee);
+						await ctx.db.delete('bookingFeePayments', fee._id);
+					}
+					await bookingAdminAggregate.deleteIfExists(ctx, booking);
+					await bookingOwnerAggregate.deleteIfExists(ctx, booking);
+					await bookingHostAggregate.deleteIfExists(ctx, booking);
+				}
 				await ctx.db.delete('bookings', review.bookingId);
 				affectedAccommodations.add(review.accommodationId);
 				deleted += 1;

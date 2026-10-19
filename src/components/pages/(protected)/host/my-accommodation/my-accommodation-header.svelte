@@ -15,7 +15,10 @@
 
 	// CONFIG
 	import { m } from '@/lib/paraglide/messages';
-	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
+	import {
+		PROTECTED_PAGE_ENDPOINTS,
+		UNPROTECTED_PAGE_ENDPOINTS
+	} from '@/shared/constants/pageEndpoints.js';
 
 	// HOOKS
 	import { useClock } from '@/hooks/useClock.svelte.js';
@@ -36,7 +39,14 @@
 		() => ({ id: accommodationId })
 	);
 	const clock = useClock();
-	const isPublished = $derived(isAccommodationVisible(summary.data ?? accommodation, clock.now));
+	const isPublished = $derived(
+		isAccommodationVisible(
+			summary.data ?? accommodation,
+			page.data.currentUser?.payoutsEnabled === true,
+			clock.now
+		)
+	);
+	const requiresPayouts = $derived(page.data.currentUser?.payoutsEnabled !== true);
 </script>
 
 <header class="flex flex-col gap-5">
@@ -65,9 +75,19 @@
 			</p>
 		</div>
 
-		<Button variant="outline" href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(accommodation._id)}>
-			<span class="icon-[lucide--external-link]" data-icon="inline-start" aria-hidden="true"></span>
-			{m['MyAccommodationPage.MyAccommodationHeader.view']()}
-		</Button>
+		{#if requiresPayouts}
+			<Button href={`${PROTECTED_PAGE_ENDPOINTS.HOST_SETTINGS}?tab=payouts`}>
+				{m['MyAccommodationPage.MyAccommodationHeader.setUpPayouts']()}
+			</Button>
+		{:else if isPublished}
+			<Button href={UNPROTECTED_PAGE_ENDPOINTS.ACCOMMODATION(accommodation._id)}>
+				<span
+					class="icon-[lucide--external-link]"
+					data-icon="inline-start"
+					aria-hidden="true"
+				></span>
+				{m['MyAccommodationPage.MyAccommodationHeader.view']()}
+			</Button>
+		{/if}
 	</div>
 </header>

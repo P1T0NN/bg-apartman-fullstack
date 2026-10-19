@@ -43,54 +43,63 @@
 
 	const stats = $derived.by<AnalyticsStat[]>(() => {
 		const data = analytics.statsData;
-		if (!data) return [];
-
 		const locale = getLocale();
-		const { current, previous } = data;
-		const compare = (select: (values: DashboardStats) => number) =>
-			getComparisonPercentage(select(current), select(previous));
+		const { current, previous } = data ?? {};
+		const compare = (select: (values: DashboardStats) => number | null) =>
+			current && previous ? getComparisonPercentage(select(current), select(previous)) : undefined;
 
 		const cards: AnalyticsStat[] = [
 			{
-				title: m['AnalyticsFeature.AnalyticsData.revenue'](),
-				value: current.revenue,
+				title:
+					scope === 'host'
+						? m['AnalyticsFeature.AnalyticsData.bookedValue']()
+						: m['AnalyticsFeature.AnalyticsData.revenue'](),
+				value: current?.revenue,
 				format: (value) => formatCurrency(value, locale),
 				change: compare((values) => values.revenue)
 			},
 			{
 				title: m['AnalyticsFeature.AnalyticsData.bookings'](),
-				value: current.bookings,
+				value: current?.bookings,
 				change: compare((values) => values.bookings)
 			}
 		];
 
 		if (scope === 'admin') {
+			cards.splice(
+				1,
+				0,
+				{
+					title: m['AnalyticsFeature.AnalyticsData.flatFee'](),
+					value: current?.flatFeeRevenue,
+					format: (value) => formatCurrency(value, locale),
+					change: compare((values) => values.flatFeeRevenue ?? null)
+				},
+				{
+					title: m['AnalyticsFeature.AnalyticsData.bookingFee'](),
+					value: current?.bookingFeeRevenue,
+					format: (value) => formatCurrency(value, locale),
+					change: compare((values) => values.bookingFeeRevenue ?? null)
+				}
+			);
 			cards.push({
 				title: m['AnalyticsFeature.AnalyticsData.cancellationRate'](),
-				value: current.cancellationRate,
+				value: current?.cancellationRate ?? undefined,
 				format: formatPercentage,
 				change: compare((values) => values.cancellationRate),
 				lowerIsBetter: true
 			});
-			return cards;
 		}
-
-		cards.push({
-			title: m['AnalyticsFeature.AnalyticsData.occupancyRate'](),
-			value: current.occupancyRate,
-			format: formatPercentage,
-			change: compare((values) => values.occupancyRate)
-		});
 		return cards;
 	});
 </script>
 
 {#if error}
 	<ErrorComponent message={m['AnalyticsFeature.AnalyticsStats.loadError']()} />
-{:else if loading || stats.length === 0}
-	<AnalyticsStatsLoading />
+{:else if loading}
+	<AnalyticsStatsLoading {scope} />
 {:else}
-	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+	<div class={['grid gap-4 sm:grid-cols-2', scope === 'admin' && 'xl:grid-cols-5']}>
 		{#each stats as stat (stat.title)}
 			<AnalyticsStatsCard {...stat} />
 		{/each}

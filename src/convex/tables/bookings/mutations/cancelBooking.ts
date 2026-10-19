@@ -7,6 +7,8 @@ import { authenticatedMutation } from '../../../builders/convexFunctionBuilders.
 
 // HELPERS
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
+import { syncHostBookingAggregate } from '../helpers/syncHostBookingAggregate.js';
+import { bookingAdminAggregate } from '../aggregates/bookingAdminAggregate.js';
 
 // UTILS
 import { canCancelBooking } from '../../../../shared/features/bookings/utils/canCancelBooking.js';
@@ -65,11 +67,11 @@ export const cancelBooking = authenticatedMutation({
 
 		const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
 
-		let host: FunctionReturnType<typeof components.betterAuth.queries.getUser.getUser> = null;
+		let host: FunctionReturnType<typeof components.betterAuth.queries.fetchUser.fetchUser> = null;
 
 		if (booking.hostId) {
 			try {
-				host = await ctx.runQuery(components.betterAuth.queries.getUser.getUser, {
+				host = await ctx.runQuery(components.betterAuth.queries.fetchUser.fetchUser, {
 					id: booking.hostId
 				});
 			} catch {
@@ -90,6 +92,9 @@ export const cancelBooking = authenticatedMutation({
 				emailIds: {}
 			}
 		});
+
+		if (!isWithdrawal) await syncHostBookingAggregate(ctx, { ...booking, status: 'cancelled' });
+		await bookingAdminAggregate.replaceOrInsert(ctx, booking, { ...booking, status: 'cancelled' });
 
 		const delivery =
 			internal.tables.bookings.mutations.enqueueBookingCancellationEmail

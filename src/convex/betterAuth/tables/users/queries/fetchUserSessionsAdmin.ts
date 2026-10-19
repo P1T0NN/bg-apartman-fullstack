@@ -30,7 +30,10 @@ export const fetchUserSessionsAdmin = adminQuery({
 	},
 	returns: sessionsPage,
 	handler: async (ctx, args) => {
-		const page = await ctx.runQuery(components.betterAuth.queries.listSessions.listSessions, args);
+		const page = await ctx.runQuery(
+			components.betterAuth.queries.fetchSessions.fetchSessions,
+			args
+		);
 
 		return {
 			items: page.page,

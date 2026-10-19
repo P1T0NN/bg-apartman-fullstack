@@ -1,11 +1,19 @@
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 // LIBRARIES
-import { expect, test } from 'vitest';
+import { expect, test, vi, beforeEach } from 'vitest';
 
 // UTILS
 import { calculateBookingPlatformFee } from '../../src/shared/features/bookings/utils/calculateBookingPlatformFee.js';
 
 // FIXTURES
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('platform fees round once, preserve overrides and resolve free and paid periods at booking time', () => {
 	const now = 1000;

@@ -1,6 +1,3 @@
-// CONVEX
-import { internal } from '../../../_generated/api.js';
-
 // HELPERS
 import { getLatestFeePayment } from './getLatestFeePayment.js';
 
@@ -22,14 +19,4 @@ export async function invalidateFeePayment(
 		entitlementApplied: false,
 		updatedAt: Date.now()
 	});
-
-	const shouldExpireCheckout =
-		payment.checkoutSessionId && (payment.status === 'pending' || payment.status === 'creating');
-
-	if (shouldExpireCheckout)
-		await ctx.scheduler.runAfter(
-			0,
-			internal.stripe.actions.reconcileFeeCheckout.reconcileFeeCheckout,
-			{ paymentId: payment._id, expire: true }
-		);
 }

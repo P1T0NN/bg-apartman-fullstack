@@ -27,6 +27,11 @@
 	const analytics = useAnalyticsDashboard();
 
 	const locale = $derived(getLocale());
+	const valueLabel = $derived(
+		analytics.scope === 'host'
+			? m['AnalyticsFeature.AnalyticsData.bookedValue']()
+			: m['AnalyticsFeature.AnalyticsData.revenue']()
+	);
 
 	const timeRange = $derived.by<TimeRangeValue>(() =>
 		analytics.activeRange === 'today' ? '1d' : analytics.activeRange
@@ -57,7 +62,7 @@
 
 	const config = $derived({
 		revenue: {
-			label: m['AnalyticsFeature.AnalyticsData.revenue'](),
+			label: valueLabel,
 			color: 'var(--foreground)'
 		}
 	});
@@ -97,7 +102,7 @@
 
 {#if analytics.revenueError}
 	<ErrorComponent message={m['AnalyticsFeature.AnalyticsRevenueChart.loadError']()} />
-{:else if analytics.revenueLoading || !analytics.revenueData}
+{:else if analytics.revenueLoading}
 	<AnalyticsRevenueChartLoading />
 {:else}
 	<AreaChartInteractive
@@ -112,8 +117,10 @@
 		showLegend={false}
 		containerClass="aspect-auto h-72 w-full"
 		areaChartProps={{ yAxis: { tickSpacing: 72 } }}
-		title={m['AnalyticsFeature.AnalyticsRevenueChart.title']()}
-		descriptionPrefix={m['AnalyticsFeature.AnalyticsRevenueChart.descriptionPrefix']()}
+		title={valueLabel}
+		descriptionPrefix={analytics.scope === 'host'
+			? m['AnalyticsFeature.AnalyticsRevenueChart.bookedValueDescriptionPrefix']()
+			: m['AnalyticsFeature.AnalyticsRevenueChart.descriptionPrefix']()}
 		{yAxisFormat}
 		{xAxisFormat}
 		{tooltip}

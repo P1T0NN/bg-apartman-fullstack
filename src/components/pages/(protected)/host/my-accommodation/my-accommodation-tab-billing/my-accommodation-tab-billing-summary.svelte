@@ -1,4 +1,7 @@
 <script lang="ts">
+	// SVELTEKIT IMPORTS
+	import { page } from '$app/state';
+
 	// LIBRARIES
 	import { getLocale } from '@/lib/paraglide/runtime.js';
 
@@ -51,7 +54,13 @@
 				: m['MyAccommodationPage.MyAccommodationTabBillingSummary.bookingFee']()
 	);
 	const visibility = $derived(
-		requiresPayment ? 'hidden' : data.status === 'published' ? 'visible' : 'paused'
+		requiresPayment
+			? 'hidden'
+			: data.status !== 'published'
+				? 'paused'
+				: page.data.currentUser?.payoutsEnabled !== true
+					? 'payoutsRequired'
+					: 'visible'
 	);
 </script>
 
@@ -62,13 +71,17 @@
 			'flex items-center gap-3 rounded-2xl px-5 py-4 text-sm font-medium',
 			visibility === 'hidden' && 'bg-destructive/10 text-destructive',
 			visibility === 'visible' && 'bg-success/10 text-success',
-			visibility === 'paused' && 'bg-muted text-muted-foreground'
+			visibility === 'paused' && 'bg-muted text-muted-foreground',
+			visibility === 'payoutsRequired' && 'bg-warning/10 text-warning'
 		)}
 		role="status"
 	>
 		{#if visibility === 'hidden'}
 			<span class="icon-[lucide--eye-off] size-5 shrink-0" aria-hidden="true"></span>
 			{m['MyAccommodationPage.MyAccommodationTabBillingSummary.hidden']()}
+		{:else if visibility === 'payoutsRequired'}
+			<span class="icon-[lucide--eye-off] size-5 shrink-0" aria-hidden="true"></span>
+			{m['MyAccommodationPage.MyAccommodationTabBillingSummary.payoutsRequired']()}
 		{:else if visibility === 'visible'}
 			<span class="icon-[lucide--eye] size-5 shrink-0" aria-hidden="true"></span>
 			{m['MyAccommodationPage.MyAccommodationTabBillingSummary.visible']()}

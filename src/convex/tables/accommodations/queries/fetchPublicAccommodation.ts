@@ -20,7 +20,7 @@ import { reviewSummary } from '../../reviews/validators/reviewValidators.js';
 import { calendarResult } from '../../accommodationBlockedDates/validators/accommodationBlockedDatesValidators.js';
 
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../helpers/isAccommodationPublic.js';
 
 // TYPES
 import type { PublicAccommodation } from '../../../../shared/features/accommodations/types/accommodationTypes.js';
@@ -52,7 +52,7 @@ export const fetchPublicAccommodation = query({
 	handler: async (ctx, { id }) => {
 		const accommodation = await ctx.db.get('accommodations', id);
 
-		if (!isAccommodationVisible(accommodation)) return null;
+		if (!accommodation || !(await isAccommodationPublic(ctx, accommodation))) return null;
 
 		const {
 			ownerId: _ownerId,

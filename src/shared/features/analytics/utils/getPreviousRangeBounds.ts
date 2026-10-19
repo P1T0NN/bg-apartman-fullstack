@@ -1,8 +1,12 @@
+// LIBRARIES
+import { parseDate } from '@internationalized/date';
+
 // CONFIG
 import { COMPANY_DATA } from '../../../config.js';
 
 // UTILS
-import { DAY_IN_MS, getStoreDayStart } from '../../../utils/date.js';
+import { DAY_IN_MS, getStoreDayKey } from '../../../utils/date.js';
+import { getIsoDateInTimeZone } from '../../timezone/utils/getIsoDateInTimeZone.js';
 
 // TYPES
 import type { RangeBounds } from '../types/analyticsTypes.js';
@@ -12,12 +16,14 @@ export function getPreviousRangeBounds(
 	timeZone: string = COMPANY_DATA.TIMEZONE
 ): RangeBounds {
 	const from = bounds.from.getTime();
-	const fromDayStart = getStoreDayStart(from, timeZone);
-	const toDayStart = getStoreDayStart(bounds.to.getTime(), timeZone);
-	const dayCount = Math.max(1, Math.round((toDayStart - fromDayStart) / DAY_IN_MS) + 1);
+	const fromDay = getStoreDayKey(from, timeZone);
+	const toDay = getStoreDayKey(bounds.to.getTime(), timeZone);
+	const dayCount = Math.max(1, (toDay - fromDay) / DAY_IN_MS + 1);
 
 	return {
-		from: new Date(getStoreDayStart(fromDayStart - dayCount * DAY_IN_MS, timeZone)),
+		from: parseDate(getIsoDateInTimeZone(from, timeZone))
+			.subtract({ days: dayCount })
+			.toDate(timeZone),
 		to: new Date(from - 1)
 	};
 }

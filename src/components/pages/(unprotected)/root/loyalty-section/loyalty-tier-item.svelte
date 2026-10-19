@@ -17,7 +17,7 @@
 			class={cn(
 				icon,
 				'mt-0.5 size-4 shrink-0',
-				featured ? 'text-header-foreground' : 'text-primary'
+				featured ? 'text-primary-foreground' : 'text-primary'
 			)}
 			aria-hidden="true"
 		></span>
@@ -28,7 +28,7 @@
 <li
 	class={cn(
 		'flex flex-col gap-8 p-6 sm:p-8',
-		featured ? 'bg-header text-header-foreground' : 'bg-background'
+		featured ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'
 	)}
 >
 	<div class="flex flex-col gap-1">
@@ -36,7 +36,7 @@
 			{m['HomePage.LoyaltyTierItem.level']({ level: tier.level })}
 		</h3>
 
-		<p class={cn('text-sm', featured ? 'text-header-foreground/70' : 'text-muted-foreground')}>
+		<p class={cn('text-sm', featured ? 'text-primary-foreground' : 'text-muted-foreground')}>
 			{m['HomePage.LoyaltyTierItem.threshold']({ stays: tier.stays })}
 		</p>
 	</div>
@@ -46,7 +46,7 @@
 			{tier.discount}%
 		</span>
 
-		<span class={cn('text-sm', featured ? 'text-header-foreground/70' : 'text-muted-foreground')}>
+		<span class={cn('text-sm', featured ? 'text-primary-foreground' : 'text-muted-foreground')}>
 			{m['HomePage.LoyaltyTierItem.discount']()}
 		</span>
 	</p>
@@ -54,7 +54,7 @@
 	<ul
 		class={cn(
 			'flex flex-col gap-3 border-t pt-6 text-sm',
-			featured ? 'border-header-foreground/15' : 'border-border'
+			featured ? 'border-primary-foreground/20' : 'border-border'
 		)}
 	>
 		{#if tier.parking}

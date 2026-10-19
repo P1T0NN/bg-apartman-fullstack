@@ -1,3 +1,6 @@
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 /// <reference types="vite/client" />
 
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
@@ -46,6 +49,11 @@ afterEach(async () => {
 	vi.unstubAllGlobals();
 	LOYALTY_CONFIG.BOOKING_ENABLED = true;
 	LOYALTY_CONFIG.DISCOUNT_MODE = 'best';
+});
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
 });
 
 test('two completed eligible bookings unlock rewards for the next booking without repricing past stays', async () => {
@@ -313,6 +321,12 @@ test('cash and card receive the same rewards only at enabled properties while ro
 async function setup() {
 	const t = convexTest(schema, modules);
 	aggregateTest.register(t, 'bookingOwnerAggregate');
+	aggregateTest.register(t, 'bookingHostAggregate');
+	aggregateTest.register(t, 'bookingAdminAggregate');
+	aggregateTest.register(t, 'bookingFeeDueAggregate');
+	aggregateTest.register(t, 'bookingFeePendingAggregate');
+	aggregateTest.register(t, 'bookingFeePaidAggregate');
+	aggregateTest.register(t, 'bookingFeeRevenueAggregate');
 	rateLimiterTest.register(t);
 	registerResend(t);
 	t.registerComponent(
@@ -339,9 +353,10 @@ async function setup() {
 const createBooking = api.tables.bookings.mutations.createBooking.createBooking;
 const fetchHostBookings = api.tables.bookings.queries.fetchHostBookings.fetchHostBookings;
 const updateBookingStatus = api.tables.bookings.mutations.updateBookingStatus.updateBookingStatus;
+const hostDashboard = api.tables.bookings.queries.fetchHostDashboard.fetchHostDashboard;
 const archiveBooking = api.tables.bookings.mutations.archiveBooking.archiveBooking;
-const hasPendingHostBookings =
-	api.tables.bookings.queries.hasPendingHostBookings.hasPendingHostBookings;
+const fetchHasPendingHostBookings =
+	api.tables.bookings.queries.fetchHasPendingHostBookings.fetchHasPendingHostBookings;
 
 const accommodation = {
 	ownerId: 'host-1',
@@ -841,8 +856,8 @@ test('host manages bookings for their own accommodations', async () => {
 	);
 	const host = t.withIdentity({ subject: hostId, tokenIdentifier: `issuer|${hostId}` });
 	const stranger = t.withIdentity({ subject: 'host-2', tokenIdentifier: 'issuer|host-2' });
-	expect(await host.query(hasPendingHostBookings, {})).toBe(false);
-	await expect(t.query(hasPendingHostBookings, {})).rejects.toMatchObject({
+	expect(await host.query(fetchHasPendingHostBookings, {})).toBe(false);
+	await expect(t.query(fetchHasPendingHostBookings, {})).rejects.toMatchObject({
 		data: { code: 'UNAUTHENTICATED' }
 	});
 
@@ -861,8 +876,10 @@ test('host manages bookings for their own accommodations', async () => {
 	);
 
 	const base = { paginationOpts: { cursor: null, numItems: 10 } };
-	expect(await host.query(hasPendingHostBookings, {})).toBe(true);
-	expect(await stranger.query(hasPendingHostBookings, {})).toBe(false);
+	const analyticsRange = { from: Date.now() - 86400000, to: Date.now() + 86400000 };
+	expect((await host.query(hostDashboard, analyticsRange)).current.bookings).toBe(0);
+	expect(await host.query(fetchHasPendingHostBookings, {})).toBe(true);
+	expect(await stranger.query(fetchHasPendingHostBookings, {})).toBe(false);
 	expect(
 		(await host.query(fetchHostBookings, { ...base, filters: { status: 'pending' } })).items
 	).toHaveLength(1);
@@ -876,7 +893,7 @@ test('host manages bookings for their own accommodations', async () => {
 	).rejects.toMatchObject({ data: { code: 'BOOKING_NOT_FOUND' } });
 
 	await host.mutation(updateBookingStatus, { id: bookingId, status: 'confirmed' });
-	expect(await host.query(hasPendingHostBookings, {})).toBe(false);
+	expect(await host.query(fetchHasPendingHostBookings, {})).toBe(false);
 	expect(
 		(await host.query(fetchHostBookings, { ...base, filters: { status: 'pending' } })).items
 	).toEqual([]);
@@ -885,6 +902,10 @@ test('host manages bookings for their own accommodations', async () => {
 		filters: { status: 'confirmed' }
 	});
 	expect(confirmed.items).toHaveLength(1);
+	expect((await host.query(hostDashboard, analyticsRange)).current).toMatchObject({
+		bookings: 1,
+		revenue: 24075
+	});
 
 	await expect(
 		host.mutation(updateBookingStatus, { id: bookingId, status: 'declined' })
@@ -902,6 +923,10 @@ test('host manages bookings for their own accommodations', async () => {
 	);
 	await host.mutation(updateBookingStatus, { id: bookingId, status: 'completed' });
 	expect((await t.run((ctx) => ctx.db.get(bookingId)))?.completedAt).toBeTypeOf('number');
+	expect((await host.query(hostDashboard, analyticsRange)).current).toMatchObject({
+		bookings: 1,
+		revenue: 24075
+	});
 	await expect(
 		host.mutation(updateBookingStatus, { id: bookingId, status: 'cancelled' })
 	).rejects.toMatchObject({ data: { code: 'INVALID_BOOKING_STATUS' } });

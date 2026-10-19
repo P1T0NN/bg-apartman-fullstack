@@ -1,5 +1,8 @@
 import { registerResend, successfulResendResponse, emailStatuses } from '../fixtures/resend';
 /// <reference types="vite/client" />
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
 import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
@@ -96,6 +99,12 @@ async function setup() {
 	registerResend(t);
 	rateLimiterTest.register(t);
 	aggregateTest.register(t, 'bookingOwnerAggregate');
+	aggregateTest.register(t, 'bookingHostAggregate');
+	aggregateTest.register(t, 'bookingAdminAggregate');
+	aggregateTest.register(t, 'bookingFeeDueAggregate');
+	aggregateTest.register(t, 'bookingFeePendingAggregate');
+	aggregateTest.register(t, 'bookingFeePaidAggregate');
+	aggregateTest.register(t, 'bookingFeeRevenueAggregate');
 	aggregateTest.register(t, 'reviewsAggregate');
 	t.registerComponent(
 		'betterAuth',
@@ -148,6 +157,11 @@ function emails() {
 		}))
 	);
 }
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('manual blocks allow exactly 30 inclusive nights, are idempotent, and support partial unblocking', async () => {
 	const { t, host, accommodationId } = await setup();
@@ -585,9 +599,14 @@ test('confirmed dates block instant booking, allow same-day turnover, and reopen
 		})
 	);
 	const account = t.withIdentity({ subject: host._id, tokenIdentifier: `issuer|${host._id}` });
+	const dashboard = api.tables.bookings.queries.fetchHostDashboard.fetchHostDashboard;
+	const range = { from: Date.now() - 86400000, to: Date.now() + 86400000 };
+	expect((await account.query(dashboard, range)).current.bookings).toBe(2);
 	await account.mutation(updateStatus, { id, status: 'cancelled' });
+	expect((await account.query(dashboard, range)).current.bookings).toBe(1);
 	const replacement = await t.mutation(create, withExpectedTotal(instantArgs));
 	expect((await t.run((ctx) => ctx.db.get('bookings', replacement)))?.status).toBe('confirmed');
+	expect((await account.query(dashboard, range)).current.bookings).toBe(2);
 	await drain();
 });
 

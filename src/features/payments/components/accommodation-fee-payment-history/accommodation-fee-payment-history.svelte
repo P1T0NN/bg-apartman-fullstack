@@ -6,8 +6,8 @@
 	import { onMount } from 'svelte';
 
 	// LIBRARIES
-	import { useAction } from 'convex-svelte';
 	import { m } from '@/lib/paraglide/messages.js';
+	import { useAction } from 'convex-svelte';
 
 	// CONVEX
 	import { api } from '@convex/_generated/api.js';
@@ -29,19 +29,19 @@
 
 	let { accommodationId }: { accommodationId: Id<'accommodations'> } = $props();
 	const titleId = $props.id();
+	const refresh = useAction(
+		api.tables.accommodationFeePayments.actions.refreshFeePayment.refreshFeePayment
+	);
 	const isCheckoutCancelled = $derived(page.url.searchParams.get('fee_checkout') === 'cancelled');
 	const payments = useConvexPagination(
 		api.tables.accommodationFeePayments.queries.fetchFeePayments.fetchFeePayments,
 		() => ({ accommodationId }),
 		{ pageSize: 5 }
 	);
-	const refresh = useAction(
-		api.tables.accommodationFeePayments.actions.refreshFeePayment.refreshFeePayment
-	);
 	onMount(() => {
 		const paymentId = page.url.searchParams.get('fee_payment');
 		if (paymentId) {
-			// SAFETY: the action validates the ID and derives access from the authenticated identity.
+			// SAFETY: Convex validates the URL ID and authorizes the payment owner.
 			void refresh({ paymentId: paymentId as Id<'accommodationFeePayments'> }).catch((error) => {
 				toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
 			});

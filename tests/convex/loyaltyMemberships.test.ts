@@ -1,7 +1,11 @@
 /// <reference types="vite/client" />
 
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
-import { afterEach, expect, test, vi } from 'vitest';
+import aggregateTest from '@convex-dev/aggregate/test';
+import { afterEach, expect, test, vi, beforeEach } from 'vitest';
 import { api, internal } from '../../src/convex/_generated/api';
 import schema from '../../src/convex/schema';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
@@ -15,6 +19,11 @@ const fetchMyBenefits = api.tables.loyaltyMemberships.queries.fetchMyBenefits.fe
 const completeStays = internal.tables.bookings.crons.completeBookingsCron.completeBookingsCron;
 afterEach(() => vi.useRealTimers());
 
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
+
 test('levels unlock at 2, 5 and 8 completed stays', () => {
 	expect(Array.from({ length: 10 }, (_, stays) => getLoyaltyLevel(stays))).toEqual([
 		0, 0, 1, 1, 1, 2, 2, 2, 3, 3
@@ -23,6 +32,12 @@ test('levels unlock at 2, 5 and 8 completed stays', () => {
 
 async function setupLoyalty() {
 	const t = convexTest(schema, modules);
+	aggregateTest.register(t, 'bookingHostAggregate');
+	aggregateTest.register(t, 'bookingAdminAggregate');
+	aggregateTest.register(t, 'bookingFeeDueAggregate');
+	aggregateTest.register(t, 'bookingFeePendingAggregate');
+	aggregateTest.register(t, 'bookingFeePaidAggregate');
+	aggregateTest.register(t, 'bookingFeeRevenueAggregate');
 	const accommodationId = await t.run((ctx) =>
 		ctx.db.insert('accommodations', {
 			...bookingFeeBilling,

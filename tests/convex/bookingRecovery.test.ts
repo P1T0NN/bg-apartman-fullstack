@@ -3,6 +3,9 @@ import { registerResend, successfulResendResponse } from '../fixtures/resend';
 import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.js';
 
 import { ACCOMMODATION_CONFIG } from '../../src/shared/features/accommodations/config';
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
 import { z } from 'zod';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
@@ -180,6 +183,11 @@ async function setupClaim(emailVerified = true, accountEmail = 'alex+stay@exampl
 
 const claimBooking = api.tables.bookings.mutations.claimBooking.claimBooking;
 const previewClaim = api.tables.bookings.queries.fetchBookingToClaim.fetchBookingToClaim;
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('claim preview never changes ownership; explicit and repeated claims update ownership and totals once', async () => {
 	const { t, bookingId, user, account, args } = await setupClaim();

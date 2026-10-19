@@ -5,22 +5,26 @@ import { internalMutation } from '../../../_generated/server.js';
 // SCHEMAS
 import { accommodationFeePayments } from '../schema.js';
 
+// HELPERS
+import { syncFlatFeeRevenueAggregate } from '../helpers/syncFlatFeeRevenueAggregate.js';
+
 export const applyFeeRefund = internalMutation({
 	args: {
-		paymentIntentId: v.string(),
+		provider: v.string(),
+		providerPaymentId: v.string(),
 		amountMinor: v.number(),
 		currency: v.string(),
 		refundedAmountMinor: v.number(),
 		refundId: v.optional(v.string()),
-		refundStatus: accommodationFeePayments.validator.fields.refundStatus,
-		eventId: v.optional(v.string()),
-		eventType: v.optional(v.string())
+		refundStatus: accommodationFeePayments.validator.fields.refundStatus
 	},
 	returns: v.null(),
 	handler: async (ctx, args) => {
 		const payment = await ctx.db
 			.query('accommodationFeePayments')
-			.withIndex('by_payment_intent_id', (q) => q.eq('paymentIntentId', args.paymentIntentId))
+			.withIndex('by_provider_and_payment_id', (q) =>
+				q.eq('provider', args.provider).eq('providerPaymentId', args.providerPaymentId)
+			)
 			.unique();
 
 		if (!payment) return null;
@@ -32,24 +36,9 @@ export const applyFeeRefund = internalMutation({
 			args.refundedAmountMinor >= 0 &&
 			args.refundedAmountMinor <= args.amountMinor;
 
-		if (!validAmounts) throw new Error('Stripe refund does not match the recorded fee');
+		if (!validAmounts) throw new Error('Payment refund does not match the recorded fee');
 
 		const now = Date.now();
-
-		if (args.eventId) {
-			const seen = await ctx.db
-				.query('stripeWebhookEvents')
-				.withIndex('by_event_id', (q) => q.eq('eventId', args.eventId!))
-				.unique();
-
-			if (seen) return null;
-
-			await ctx.db.insert('stripeWebhookEvents', {
-				eventId: args.eventId,
-				type: args.eventType ?? 'refund',
-				processedAt: now
-			});
-		}
 
 		const refundedAmountMinor = Math.max(payment.refundedAmountMinor, args.refundedAmountMinor);
 
@@ -65,6 +54,8 @@ export const applyFeeRefund = internalMutation({
 			updatedAt: now
 		});
 
+		const refundedPayment = await ctx.db.get('accommodationFeePayments', payment._id);
+		if (refundedPayment) await syncFlatFeeRevenueAggregate(ctx, refundedPayment);
 		const shouldRevokePaidPeriod = fullyRefunded && payment.entitlementApplied;
 
 		if (shouldRevokePaidPeriod) {

@@ -9,6 +9,9 @@ import { BOOKINGS_CONFIG } from '../../../../shared/features/bookings/config.js'
 // UTILS
 import { calculateBookingRequestExpiry } from '../../../../shared/features/bookings/utils/calculateBookingRequestExpiry.js';
 
+// AGGREGATES
+import { bookingAdminAggregate } from '../aggregates/bookingAdminAggregate.js';
+
 // EMAILS
 import { sendBookingExpirationEmail } from '../emails/sendBookingExpirationEmail.js';
 
@@ -54,6 +57,7 @@ export const expireBookingRequestsCron = internalMutation({
 				status: 'expired',
 				expiredAt: now
 			});
+			await bookingAdminAggregate.replaceOrInsert(ctx, booking, { ...booking, status: 'expired' });
 		}
 
 		const hasMore = legacy.length === batchSize || due.length === batchSize;

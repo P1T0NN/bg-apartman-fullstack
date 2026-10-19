@@ -5,6 +5,7 @@
 	// COMPONENTS
 	import Header from '@/components/ui/custom-components/header/header.svelte';
 	import HeaderAnnouncement from '@/components/ui/custom-components/header/header-announcement.svelte';
+	import Footer from '@/components/ui/custom-components/footer/footer.svelte';
 
 	// CONFIG
 	import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
@@ -34,10 +35,17 @@
 	);
 </script>
 
-{#if LOYALTY_CONFIG.BOOKING_ENABLED && !isAnnouncementExcluded}
-	<HeaderAnnouncement />
-{/if}
-{#if !isAuthPage && !isSearchPage}
-	<Header />
-{/if}
-{@render children()}
+<div class="flex min-h-svh flex-col">
+	{#if LOYALTY_CONFIG.BOOKING_ENABLED && !isAnnouncementExcluded}
+		<HeaderAnnouncement />
+	{/if}
+	{#if !isAuthPage && !isSearchPage}
+		<Header />
+	{/if}
+	<div class="flex-1">
+		{@render children()}
+	</div>
+	{#if !isAuthPage && !isSearchPage}
+		<Footer />
+	{/if}
+</div>

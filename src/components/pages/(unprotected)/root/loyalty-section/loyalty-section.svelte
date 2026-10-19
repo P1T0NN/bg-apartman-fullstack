@@ -35,7 +35,11 @@
 	];
 </script>
 
-<Section id="loyalty" aria-labelledby={`${uid}-title`} class="scroll-mt-24">
+<Section
+	id="loyalty"
+	aria-labelledby={`${uid}-title`}
+	class="scroll-mt-24 bg-header text-header-foreground"
+>
 	<div class="flex flex-col gap-10 sm:gap-12">
 		<div class="flex max-w-2xl flex-col gap-3">
 			<h2
@@ -45,14 +49,14 @@
 				{m['HomePage.LoyaltySection.title']()}
 			</h2>
 
-			<p class="text-base text-pretty text-muted-foreground sm:text-lg">
+			<p class="text-base text-pretty text-header-foreground/75 sm:text-lg">
 				{m['HomePage.LoyaltySection.description']({ stays: LOYALTY_LEVELS[0].stays })}
 			</p>
 		</div>
 
-		<!-- One panel, three steps. The last step is dark: the top reward. -->
+		<!-- One panel, three steps. The amber final step highlights the top reward. -->
 		<ul
-			class="grid divide-y overflow-hidden rounded-3xl border md:grid-cols-3 md:divide-x md:divide-y-0"
+			class="grid divide-y divide-header-foreground/20 overflow-hidden rounded-3xl border border-header-foreground/20 md:grid-cols-3 md:divide-x md:divide-y-0"
 		>
 			{#each LOYALTY_LEVELS as tier, index (tier.level)}
 				<LoyaltyTierItem {tier} featured={index === LOYALTY_LEVELS.length - 1} />
@@ -64,20 +68,20 @@
 				{m['HomePage.LoyaltySection.faqTitle']()}
 			</h3>
 
-			<div class="divide-y border-y">
+			<div class="divide-y divide-header-foreground/15 border-y border-header-foreground/15">
 				{#each faqs as faq (faq.question)}
 					<details class="group py-5">
 						<summary
-							class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md font-medium focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+							class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md font-medium focus-visible:ring-3 focus-visible:ring-ring/70 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
 						>
 							{faq.question}
 							<span
-								class="icon-[lucide--chevron-down] size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+								class="icon-[lucide--chevron-down] size-4 shrink-0 text-header-foreground/75 transition-transform group-open:rotate-180"
 								aria-hidden="true"
 							></span>
 						</summary>
 
-						<p class="mt-3 max-w-prose text-sm leading-6 text-pretty text-muted-foreground">
+						<p class="mt-3 max-w-prose text-sm leading-6 text-pretty text-header-foreground/75">
 							{faq.answer}
 						</p>
 					</details>

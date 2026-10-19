@@ -1,6 +1,10 @@
 import { registerResend, successfulResendResponse, emailStatuses } from '../fixtures/resend';
 /// <reference types="vite/client" />
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
+import aggregateTest from '@convex-dev/aggregate/test';
 import rateLimiterTest from '@convex-dev/rate-limiter/test';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { api, internal, components } from '../../src/convex/_generated/api';
@@ -11,6 +15,7 @@ import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.j
 import { checkBookingCancellationRefund } from '../../src/shared/features/bookings/utils/checkBookingCancellationRefund.js';
 import { canCancelBooking } from '../../src/shared/features/bookings/utils/canCancelBooking.js';
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
+import { syncHostBookingAggregate } from '../../src/convex/tables/bookings/helpers/syncHostBookingAggregate.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
 const cancel = api.tables.bookings.mutations.cancelBooking.cancelBooking;
@@ -26,6 +31,11 @@ const custom = {
 	oneToThreeDays: 50,
 	under24Hours: 0
 } as const;
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('preset cancellation rechecks the frozen inclusive deadline and records only full or zero refunds', async () => {
 	for (const mode of ACCOMMODATION_CONFIG.CANCELLATION_POLICY_MODES) {
@@ -79,6 +89,12 @@ async function setup(
 	checkInAt = now + 4 * 86400000
 ) {
 	const t = convexTest(schema, modules);
+	aggregateTest.register(t, 'bookingHostAggregate');
+	aggregateTest.register(t, 'bookingAdminAggregate');
+	aggregateTest.register(t, 'bookingFeeDueAggregate');
+	aggregateTest.register(t, 'bookingFeePendingAggregate');
+	aggregateTest.register(t, 'bookingFeePaidAggregate');
+	aggregateTest.register(t, 'bookingFeeRevenueAggregate');
 	registerResend(t);
 	rateLimiterTest.register(t);
 	t.registerComponent(
@@ -160,6 +176,8 @@ async function setup(
 			adults: 2,
 			children: 0
 		});
+		const booking = await ctx.db.get('bookings', bookingId);
+		if (booking) await syncHostBookingAggregate(ctx, booking);
 		return { bookingId, accommodationId };
 	});
 	const account = t.withIdentity({ subject: 'guest-1', tokenIdentifier: 'issuer|guest-1' });
@@ -218,7 +236,11 @@ test('withdrawal is atomic, has no policy outcome, preserves history and notifie
 });
 
 test('confirmed cancellation uses frozen policy after listing edits, escapes the reason and rejects repeats', async () => {
-	const { t, account, args, accommodationId, bookingId, drain } = await setup();
+	const { t, account, args, accommodationId, bookingId, drain, host } = await setup();
+	const hostAccount = t.withIdentity({ subject: host._id });
+	const dashboard = api.tables.bookings.queries.fetchHostDashboard.fetchHostDashboard;
+	const range = { from: now - 86400000, to: now + 86400000 };
+	expect((await hostAccount.query(dashboard, range)).current.bookings).toBe(1);
 	await t.run((ctx) =>
 		ctx.db.patch('accommodations', accommodationId, {
 			cancellationPolicy: ACCOMMODATION_CONFIG.CANCELLATION_DEFAULT_POLICY,
@@ -226,6 +248,10 @@ test('confirmed cancellation uses frozen policy after listing edits, escapes the
 		})
 	);
 	await account.mutation(cancel, { ...args, reason: '<script>bad()</script>' });
+	expect((await hostAccount.query(dashboard, range)).current).toMatchObject({
+		bookings: 0,
+		revenue: 0
+	});
 	expect(
 		(await t.run((ctx) => ctx.db.get('bookings', bookingId)))?.cancellation?.refundPercentage
 	).toBe(50);

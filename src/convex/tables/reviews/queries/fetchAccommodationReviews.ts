@@ -19,7 +19,7 @@ import { reviewPage } from '../validators/reviewValidators.js';
 import { createReviewSchema } from '../../../../shared/features/reviews/schemas/reviewSchemas.js';
 
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../../accommodations/helpers/isAccommodationPublic.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -34,7 +34,7 @@ export const fetchAccommodationReviews = query({
 	handler: async (ctx, args) => {
 		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
 
-		if (!isAccommodationVisible(accommodation)) {
+		if (!accommodation || !(await isAccommodationPublic(ctx, accommodation))) {
 			return setEmptyPagination(args.paginationOpts.numItems);
 		}
 

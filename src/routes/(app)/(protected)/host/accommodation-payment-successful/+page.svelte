@@ -3,7 +3,6 @@
 	import { page } from '$app/state';
 	// SVELTE IMPORTS
 	import { onMount } from 'svelte';
-
 	// LIBRARIES
 	import { useAction, useQuery } from 'convex-svelte';
 	import { m } from '@/lib/paraglide/messages.js';
@@ -24,21 +23,21 @@
 
 	// UTILS
 	import { getFeePaymentStatusLabel } from '@/features/payments/utils/getFeePaymentStatusLabel.js';
+	import { toastMessage } from '@/utils/toastMessage.js';
 
 	// TYPES
 	import type { Id } from '@convex/_generated/dataModel.js';
 
 	const paymentId = $derived(page.url.searchParams.get('fee_payment'));
-	let checking = $state(false);
-	let verificationFailed = $state(false);
+	const refresh = useAction(
+		api.tables.accommodationFeePayments.actions.refreshFeePayment.refreshFeePayment
+	);
+	let refreshing = $state(false);
 	const confirmation = useQuery(
 		api.tables.accommodationFeePayments.queries.fetchFeePaymentConfirmation
 			.fetchFeePaymentConfirmation,
 		// SAFETY: Convex validates the URL ID and verifies authenticated ownership.
 		() => (paymentId ? { paymentId: paymentId as Id<'accommodationFeePayments'> } : 'skip')
-	);
-	const refresh = useAction(
-		api.tables.accommodationFeePayments.actions.refreshFeePayment.refreshFeePayment
 	);
 	const payment = $derived(confirmation.data);
 	const confirmed = $derived(Boolean(payment?.isCurrentPaidPeriod));
@@ -79,22 +78,20 @@
 		);
 	}
 
-	async function verifyPaymentStatus() {
-		if (!paymentId || checking) return;
-		checking = true;
-		verificationFailed = false;
+	async function checkPaymentStatus() {
+		if (!paymentId || refreshing) return;
+		refreshing = true;
 		try {
-			// SAFETY: the action validates the URL ID and checks authenticated ownership.
+			// SAFETY: Convex validates the URL ID and authorizes the payment owner.
 			await refresh({ paymentId: paymentId as Id<'accommodationFeePayments'> });
-		} catch {
-			verificationFailed = true;
+		} catch (error) {
+			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
 		} finally {
-			checking = false;
+			refreshing = false;
 		}
 	}
-
 	onMount(() => {
-		void verifyPaymentStatus();
+		void checkPaymentStatus();
 	});
 </script>
 
@@ -151,11 +148,6 @@
 				{m['AccommodationPaymentResult.manualRenewal']()}
 			</p>
 		{/if}
-		{#if verificationFailed && !confirmed}
-			<p role="alert" class="text-sm text-destructive">
-				{m['AccommodationPaymentResult.verificationFailed']()}
-			</p>
-		{/if}
 	{/if}
 	<div class="flex flex-wrap gap-3">
 		<Button href={PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATIONS} size="lg">
@@ -166,8 +158,9 @@
 			<Button
 				variant="outline"
 				size="lg"
-				disabled={checking}
-				onclick={() => void verifyPaymentStatus()}
+				onclick={checkPaymentStatus}
+				disabled={refreshing}
+				aria-busy={refreshing}
 			>
 				{m['AccommodationPaymentResult.refresh']()}
 			</Button>

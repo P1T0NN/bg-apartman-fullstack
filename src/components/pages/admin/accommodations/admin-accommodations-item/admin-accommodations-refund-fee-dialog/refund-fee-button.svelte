@@ -1,7 +1,7 @@
 <script lang="ts">
 	// LIBRARIES
-	import { useAction } from 'convex-svelte';
 	import { m } from '@/lib/paraglide/messages.js';
+	import { useMutation } from 'convex-svelte';
 
 	// CONVEX
 	import { api } from '@convex/_generated/api.js';
@@ -29,22 +29,28 @@
 		close: () => void;
 	} = $props();
 
-	let pending = $state(false);
-
-	const refund = useAction(
-		api.tables.accommodationFeePayments.actions.refundAccommodationFee.refundAccommodationFee
+	const refund = useMutation(
+		api.tables.accommodationFeePayments.mutations.refundAccommodationFee.refundAccommodationFee
 	);
 
-	async function refundFee() {
-		if (pending || expectedAmountMinor <= 0) return;
+	let pending = $state(false);
+
+	async function refundFee(): Promise<void> {
+		const canConfirm = canRefund && !pending && expectedAmountMinor > 0;
+
+		if (!canConfirm) return;
+
 		pending = true;
+
 		try {
 			await refund({ paymentId, expectedAmountMinor });
-			close();
+
 			toastMessage({
 				type: 'success',
 				message: m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.saved']()
 			});
+
+			close();
 		} catch (error) {
 			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
 		} finally {
@@ -59,5 +65,5 @@
 	cancelLabel={m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.cancel']()}
 	confirmLabel={m['AdminAccommodationsPage.AdminAccommodationsRefundFeeDialog.trigger']()}
 	confirmDisabled={!canRefund}
-	onConfirm={() => refundFee()}
+	onConfirm={refundFee}
 />

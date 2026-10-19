@@ -14,7 +14,8 @@ import { feedbacks } from './tables/feedbacks/schema.js';
 import { reviews } from './tables/reviews/schema.js';
 import { loyaltyMemberships } from './tables/loyaltyMemberships/schema.js';
 import { accommodationFeePayments } from './tables/accommodationFeePayments/schema.js';
-import { stripeWebhookEvents } from './tables/stripeWebhookEvents/schema.js';
+import { checkoutWebhookEvents } from './tables/checkoutWebhookEvents/schema.js';
+import { bookingFeePayments } from './tables/bookingFeePayments/schema.js';
 
 export const tables = {
 	accommodations,
@@ -27,7 +28,8 @@ export const tables = {
 	reviews,
 	loyaltyMemberships,
 	accommodationFeePayments,
-	stripeWebhookEvents,
+	bookingFeePayments,
+	checkoutWebhookEvents,
 	newsletters: defineTable({
 		/** Normalized (trimmed, lowercased) subscriber email. */
 		email: v.string(),

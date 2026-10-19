@@ -2,26 +2,20 @@
 import { internal } from './_generated/api';
 import { STORAGE_CONFIG } from '../shared/features/storage/config.js';
 import { BOOKINGS_CONFIG } from '../shared/features/bookings/config.js';
-import { STRIPE_CONFIG } from '../shared/features/stripe/config.js';
+import { PAYMENTS_CONFIG } from '../shared/features/payments/config.js';
 
 const crons = cronJobs();
+
+crons.interval(
+	'reconcile Checkout.com listing fees',
+	{ seconds: PAYMENTS_CONFIG.reconcileIntervalMs / 1000 },
+	internal.checkout.crons.maintainFeePayments.maintainFeePayments
+);
 
 crons.interval(
 	'complete finished stays and award loyalty credit',
 	{ minutes: 1 },
 	internal.tables.bookings.crons.completeBookingsCron.completeBookingsCron
-);
-
-crons.interval(
-	'reconcile and clean up listing fee payments',
-	{ minutes: STRIPE_CONFIG.maintenanceIntervalMinutes },
-	internal.tables.accommodationFeePayments.crons.maintainFeePaymentsCron.maintainFeePaymentsCron
-);
-crons.interval(
-	'clean up Stripe event receipts',
-	{ minutes: STRIPE_CONFIG.maintenanceIntervalMinutes },
-	internal.tables.stripeWebhookEvents.crons.cleanupStripeWebhookEventsCron
-		.cleanupStripeWebhookEventsCron
 );
 
 crons.interval(

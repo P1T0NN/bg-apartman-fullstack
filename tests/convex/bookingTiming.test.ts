@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
-import { expect, test } from 'vitest';
+import { expect, test, vi, beforeEach } from 'vitest';
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
@@ -13,6 +16,11 @@ import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms.j
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('booking timing backfill is idempotent, preserves snapshots, and gives pre-policy bookings full refund', async () => {
 	const legacySchema = defineSchema({

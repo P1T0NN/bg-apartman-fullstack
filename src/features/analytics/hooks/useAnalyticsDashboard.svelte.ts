@@ -2,7 +2,11 @@
 import { onMount, untrack } from 'svelte';
 
 // LIBRARIES
-import type { DateValue } from '@internationalized/date';
+import { parseDate, type DateValue } from '@internationalized/date';
+import { getConvexClient } from 'convex-svelte';
+
+// CONVEX
+import { api } from '@convex/_generated/api';
 
 // HOOKS
 import { useSearchParams } from '@/hooks/useSearchParams.svelte.js';
@@ -15,18 +19,10 @@ import {
 	useAnalyticsDashboardContext
 } from '@/shared/features/analytics/contexts/useAnalyticsDashboardContext.js';
 
-// DATA
-import { fetchDummyDashboard, fetchDummyRevenueSeries } from '../data/dummyAnalytics.js';
-
 // UTILS
 import { getPreviousRangeBounds } from '@/shared/features/analytics/utils/getPreviousRangeBounds.js';
-import {
-	DAY_IN_MS,
-	daysInRange,
-	getStoreDayStart,
-	parseIsoDate,
-	toIsoDate
-} from '@/shared/utils/date.js';
+import { daysInRange, parseIsoDate, toIsoDate } from '@/shared/utils/date.js';
+import { getIsoDateInTimeZone } from '@/shared/features/timezone/utils/getIsoDateInTimeZone.js';
 
 // TYPES
 import type {
@@ -77,21 +73,18 @@ const TIME_ZONE = COMPANY_DATA.TIMEZONE;
 function customRangeBounds(range: DateRange): RangeBounds | undefined {
 	if (!range.start || !range.end) return undefined;
 
-	const from = getStoreDayStart(range.start.toDate(TIME_ZONE).getTime(), TIME_ZONE);
-	const dayAfterEnd = getStoreDayStart(
-		range.end.toDate(TIME_ZONE).getTime() + DAY_IN_MS,
-		TIME_ZONE
-	);
-	return { from: new Date(from), to: new Date(dayAfterEnd - 1) };
+	return {
+		from: range.start.toDate(TIME_ZONE),
+		to: new Date(range.end.add({ days: 1 }).toDate(TIME_ZONE).getTime() - 1)
+	};
 }
 
-function presetRangeBounds(activeRange: PresetTimeRange): RangeBounds {
-	const now = Date.now();
+function presetRangeBounds(activeRange: PresetTimeRange, now: number): RangeBounds {
 	const offset = activeRange === 'today' ? 0 : Number.parseInt(activeRange) - 1;
-	const todayStart = getStoreDayStart(now, TIME_ZONE);
+	const today = parseDate(getIsoDateInTimeZone(now, TIME_ZONE));
 
 	return {
-		from: new Date(getStoreDayStart(todayStart - offset * DAY_IN_MS, TIME_ZONE)),
+		from: today.subtract({ days: offset }).toDate(TIME_ZONE),
 		to: new Date(now)
 	};
 }
@@ -99,10 +92,11 @@ function presetRangeBounds(activeRange: PresetTimeRange): RangeBounds {
 export class AnalyticsDashboardState {
 	#searchParams = useSearchParams(['timerange', 'from', 'to']);
 	#requestId = 0;
-	#scope: AnalyticsScope;
+	#now = $state(Date.now());
+	readonly scope: AnalyticsScope;
 
 	constructor(scope: AnalyticsScope) {
-		this.#scope = scope;
+		this.scope = scope;
 	}
 
 	customRange = $state<DateRange | undefined>(
@@ -115,10 +109,10 @@ export class AnalyticsDashboardState {
 		untrack(() => (isPreset(this.activeRange) ? this.activeRange : ''))
 	);
 
-	statsData = $state<DashboardComparison>();
+	statsData = $state.raw<DashboardComparison>();
 	statsError = $state<Error>();
 	statsLoading = $state(true);
-	revenueData = $state<RevenuePoint[]>();
+	revenueData = $state.raw<RevenuePoint[]>();
 	revenueError = $state<Error>();
 	revenueLoading = $state(true);
 
@@ -129,7 +123,10 @@ export class AnalyticsDashboardState {
 			if (bounds) return bounds;
 		}
 
-		return presetRangeBounds(isPreset(this.activeRange) ? this.activeRange : DEFAULT_TIME_RANGE);
+		return presetRangeBounds(
+			isPreset(this.activeRange) ? this.activeRange : DEFAULT_TIME_RANGE,
+			this.#now
+		);
 	});
 
 	previousBounds = $derived.by<RangeBounds>(() => getPreviousRangeBounds(this.bounds, TIME_ZONE));
@@ -137,24 +134,41 @@ export class AnalyticsDashboardState {
 	/**
 	 * One-shot read of both dashboard data sets for the current range. Retains the previous
 	 * snapshot in state while a new range loads, and ignores out-of-order responses from rapid
-	 * range changes. `fetchDummy*` accepts the same arguments the Convex queries will.
+	 * range changes.
 	 */
 	load = async (): Promise<void> => {
 		const requestId = ++this.#requestId;
+		this.#now = Date.now();
 		const current = { from: this.bounds.from.getTime(), to: this.bounds.to.getTime() };
-		const previous = {
-			from: this.previousBounds.from.getTime(),
-			to: this.previousBounds.to.getTime()
-		};
-
 		this.statsLoading = true;
 		this.statsError = undefined;
 		this.revenueLoading = true;
 		this.revenueError = undefined;
 
 		const [stats, revenue] = await Promise.all([
-			toOutcome(fetchDummyDashboard(this.#scope, current, previous)),
-			toOutcome(fetchDummyRevenueSeries(this.#scope, current))
+			toOutcome<DashboardComparison | undefined>(
+				this.scope === 'host'
+					? getConvexClient().query(
+							api.tables.bookings.queries.fetchHostDashboard.fetchHostDashboard,
+							current
+						)
+					: getConvexClient().query(
+							api.tables.accommodationFeePayments.queries.fetchAdminDashboard.fetchAdminDashboard,
+							current
+						)
+			),
+			toOutcome<RevenuePoint[] | undefined>(
+				this.scope === 'host'
+					? getConvexClient().query(
+							api.tables.bookings.queries.fetchHostRevenueSeries.fetchHostRevenueSeries,
+							current
+						)
+					: getConvexClient().query(
+							api.tables.accommodationFeePayments.queries.fetchAdminRevenueSeries
+								.fetchAdminRevenueSeries,
+							current
+						)
+			)
 		]);
 
 		if (requestId !== this.#requestId) return;

@@ -1,11 +1,14 @@
 /// <reference types="vite/client" />
 // @vitest-environment node
+// HELPERS
+import * as hostPayouts from '../../src/convex/betterAuth/helpers/getHostPayoutsEnabled.js';
+
 import { convexTest } from 'convex-test';
 import aggregateTest from '@convex-dev/aggregate/test';
 import { createFunctionHandle } from 'convex/server';
 import { serializeSignedCookie } from 'better-call';
 import { betterAuth } from 'better-auth/minimal';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, expect, test, vi, beforeEach } from 'vitest';
 import { components, internal } from '../../src/convex/_generated/api';
 import schema from '../../src/convex/schema';
 import authSchema from '../../src/convex/betterAuth/component/schema';
@@ -15,7 +18,8 @@ import { bookingCancellationTerms } from '../fixtures/bookingCancellationTerms';
 import { bookingFeeBilling } from '../fixtures/accommodationBilling.js';
 
 const modules = import.meta.glob('../../src/convex/**/*.ts');
-const checkDeletion = internal.betterAuth.queries.checkAccountDeletion.checkAccountDeletion;
+const checkDeletion =
+	internal.betterAuth.queries.fetchAccountDeletionRestrictions.fetchAccountDeletionRestrictions;
 type AccountDeletionRequest = { callbackURL: string } | { userId: string };
 const secret = 'account-deletion-test-secret-at-least-32-characters';
 const origin = 'http://localhost:3000';
@@ -124,7 +128,7 @@ async function setup() {
 		});
 	}
 	async function findAccount() {
-		return t.query(components.betterAuth.queries.getUser.getUser, { id: user._id });
+		return t.query(components.betterAuth.queries.fetchUser.fetchUser, { id: user._id });
 	}
 	async function sessionHeaders(id = user._id) {
 		const token = `session-${id}`;
@@ -209,6 +213,11 @@ test.each(['cancelled', 'declined', 'completed', 'expired'] as const)(
 		await t.finishAllScheduledFunctions(() => {});
 	}
 );
+
+// These suites exercise listing/booking behavior with a payout-ready host account.
+beforeEach(() => {
+	vi.spyOn(hostPayouts, 'getHostPayoutsEnabled').mockResolvedValue(true);
+});
 
 test('requires removal of owned listings even without bookings', async () => {
 	const { t, user, account, accommodationId, removeAccount, findAccount } = await setup();

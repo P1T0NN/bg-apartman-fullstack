@@ -6,7 +6,7 @@ import { authenticatedMutation } from '../../../builders/convexFunctionBuilders.
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../../accommodations/helpers/isAccommodationPublic.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -17,7 +17,7 @@ export const updateFavoriteStatus = authenticatedMutation({
 	returns: v.boolean(),
 	handler: async (ctx, { accommodationId, favorite }) => {
 		const accommodation = await ctx.db.get('accommodations', accommodationId);
-		if (!isAccommodationVisible(accommodation)) {
+		if (!accommodation || !(await isAccommodationPublic(ctx, accommodation))) {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
 

@@ -3,12 +3,16 @@ import { filter } from 'convex-helpers/server/filter';
 import type { OrderedQuery } from 'convex/server';
 
 // HELPERS
+import { getHostPayoutsEnabled } from '../../../betterAuth/helpers/getHostPayoutsEnabled.js';
 import { getAccommodationsByRecommendedSort } from './getAccommodationsByRecommendedSort.js';
 import { getAccommodationsByGuestRatingSort } from './getAccommodationsByGuestRatingSort.js';
 import { getAccommodationsByPriceSort } from './getAccommodationsByPriceSort.js';
 
 // SCHEMAS
 import { accommodationSearchFiltersSchema } from '../../../../shared/features/accommodations/schemas/accommodationSchemas.js';
+
+// UTILS
+import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
 
 // TYPES
 import type { QueryCtx } from '../../../_generated/server.js';
@@ -88,8 +92,7 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 				q.eq(q.field('billingPlanId'), 'free'),
 				q.and(
 					q.eq(q.field('billingPlanId'), 'flat_fee'),
-					q.neq(q.field('billingPeriodEndsAt'), null),
-					q.gt(q.field('billingPeriodEndsAt'), now)
+					q.neq(q.field('billingPeriodEndsAt'), null)
 				)
 			)
 		)
@@ -133,7 +136,16 @@ export function buildAccommodationSearchQuery(ctx: QueryCtx, args: Accommodation
 		accommodationsQuery = accommodationsQuery.filter((q) => q.gte(q.field('bathrooms'), bathrooms));
 
 	const amenities = filters.amenities ?? [];
-	return amenities.length
-		? filter(accommodationsQuery, (item) => amenities.every((key) => item.amenities.includes(key)))
-		: accommodationsQuery;
+	const payoutsByOwner = new Map<string, Promise<boolean>>();
+	return filter(accommodationsQuery, async (item) => {
+		// Keep the changing clock out of the database query so continuation cursors stay valid.
+		if (!isAccommodationVisible(item, true, now)) return false;
+		if (!amenities.every((key) => item.amenities.includes(key))) return false;
+		let payouts = payoutsByOwner.get(item.ownerId);
+		if (!payouts) {
+			payouts = getHostPayoutsEnabled(ctx, item.ownerId);
+			payoutsByOwner.set(item.ownerId, payouts);
+		}
+		return payouts;
+	});
 }

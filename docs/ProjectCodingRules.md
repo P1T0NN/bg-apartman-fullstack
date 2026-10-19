@@ -26,11 +26,13 @@ and [`InfiniteScrollingSystemDesign.md`](./InfiniteScrollingSystemDesign.md).
   dashboard screens; its server layout owns the authentication redirect and its
   `+layout@.svelte` owns the workspace shell. `/guest/claim-booking` previews and
   explicitly claims an unowned recovered booking after authentication;
-  `/guest/my-bookings/[id]` remains an empty placeholder. `/host/dashboard` shows a
-  standard heading and an owner-scoped pending-booking notice linking to
-  `/host/bookings?status=pending`.
+  `/guest/my-bookings/[id]` remains an empty placeholder. `/host/dashboard` shows
+  real host-scoped booking counts, gross booked value and its daily chart,
+  outstanding and paid booking fees, plus a
+  pending-booking notice linking to `/host/bookings?status=pending`.
 - `/admin` contains users, user detail, feedback, newsletters, and audit logs;
-  `/admin/dashboard` and `/admin/accommodations` are empty placeholders. Its
+  `/admin/dashboard` shows collected flat-fee and booking-fee revenue, booking totals, cancellation
+  rates and a revenue chart; `/admin/accommodations` manages listings and billing. Its
   server layout owns authentication and admin-role redirects.
 - `/api/auth/[...all]` is the Better Auth HTTP handler. `/api/geocode` is the
   authenticated Google Geocoding proxy; `/api/places/autocomplete` and
@@ -210,10 +212,20 @@ status and dates remain visible; guest details use a native disclosure.
   deadline or permanent access. Matching-period internal expiry restores catalog
   booking fees and preserves publish/pause status. Free plans are excluded from
   host creation and host plan selection. No new optional billing fields are needed. Admin refunds target recorded
-  payments through `accommodationFeePayments/actions/refundAccommodationFee`.
+  payments through `accommodationFeePayments/mutations/refundAccommodationFee`.
   The dialog freezes the payment ID and refundable amount; server checks admin
   identity and remaining balance. Only verified full refunds revoke the matching
-  still-current paid period. The legacy payment/refund simulation flag is false.
+  still-current paid period. Development-simulation receipts on the development
+  deployment complete through `requestFeeRefund` and `applyFeeRefund` in one
+  transaction. The request records the admin and checks the reviewed balance;
+  the shared application updates receipt status and earnings. A current-period
+  full refund sets `billingStatus: 'pending_payment'` and clears its expiry,
+  preserving the host's publish choice. Public visibility then becomes false and
+  the host can pay again. Existing bookings and newer paid periods are preserved.
+  Other providers return `FEE_REFUND_NOT_SUPPORTED` until actual refund submission
+  is connected; they are never marked refunded without confirmation. The dialog
+  disables confirmation while pending and uses the shared success/error toasts.
+  The legacy payment/refund simulation flag remains false.
 
 - `/admin/reviews` provides indexed cursor moderation with required reasons,
   reversible hide/restore, and `completeBookingAdmin` for support-confirmed
@@ -485,6 +497,18 @@ in `COMPANY_DATA.CURRENCY` (EUR); accommodation photos are ordered R2 keys.
 - Better Auth owns its component tables (`user`, `session`, `account`,
   verification, rate-limit/JWKS) under `betterAuth/component`; admin user
   queries proxy through the component.
+  The component's `fetchUser` normalizes IDs before reading its `user` table;
+  malformed or missing owners, including `seed-owner`, return null. Public
+  listings with those owners fail the payout-readiness check without crashing.
+  The internal `betterAuth/component/migrations/removeUserPaypalFields.ts`
+  migration removes only `paypalEnvironment`, `paypalMerchantId`,
+  `paypalTrackingId`, and `paypalWebhookAt`, preserving `payoutsEnabled` and
+  all other user fields. It runs in batches of 100 through
+  `bunx convex run --deployment dev --component betterAuth migrations/removeUserPaypalFields:removeUserPaypalFields "{cursor:null}"`;
+  pass each returned `nextCursor` until it is null. Development was migrated on
+  2026-10-13 and the strict schema restored. For another deployment with legacy
+  fields, temporarily allow these four optional nullable fields in the component
+  schema, run the migration, then remove the temporary validators again.
 
 ## App-facing functions
 
@@ -506,9 +530,12 @@ Current app-facing functions are:
   acts as the guest capability token), authenticated `fetchMyBookings`, and the
   host-scoped `fetchHostBookings` (indexed page, search, status filter; pending
   oldest first, all other statuses newest first),
-  `hasPendingHostBookings` (boolean existence check using `by_host_id_status`
+  `fetchHasPendingHostBookings` (boolean existence check using `by_host_id_status`
   and `.take(1)`, no aggregate), and `updateBookingStatus` (transition-guarded
   lifecycle actions);
+- host analytics: authenticated `fetchHostDashboard` and `fetchHostRevenueSeries`
+  accept only bounded date ranges and derive host scope from identity. They use
+  aggregate counts/sums, never booking-history scans.
 - favorites: `fetchFavorites` and `updateFavoriteStatus`;
 - feedback: public `createFeedback`, admin `fetchFeedbacksAdmin` and
   `updateFeedbackStatus`;
@@ -531,51 +558,92 @@ Current app-facing functions are:
 
 ## Domain rules
 
-- Stripe SDK initialization and reusable provider operations live under
-  `src/convex/stripe/helpers`; pure provider utilities belong under `utils` when
-  needed, and registered provider actions under `actions`. `getStripe` resolves
-  deployment secrets on use, never at import time. The internal Node action
-  `verifyStripeTestSetup` performs only test-mode account/balance reads and returns
-  limited readiness fields; it does not prove live eligibility or bank settlement.
-  Listing fees use approved one-time fixed periods with manual renewal; no
-  subscription or automatic renewal is included. Accommodation/booking table
-  features retain ownership of their domain transitions. See
-  `AccommodationBillingSystemDesign.md` and `TODO.md` for outstanding decisions.
-  Stripe Zod boundary schemas live in
-  `src/shared/features/stripe/schemas/stripeSchemas.ts`; shared Stripe types live in
-  `src/shared/features/stripe/types/stripeTypes.ts`. Helpers import these contracts
-  instead of declaring local schemas or provider-specific type aliases.
-  `src/shared/features/stripe/config.ts` owns `STRIPE_CONFIG`: Checkout timing,
-  provider limits, webhook path/events, metadata purpose and key-mode patterns.
-  Keep secrets in deployment environment variables.
+- Browser security follows the universal template: SvelteKit-managed CSP plus
+  nosniff, strict-origin referrer policy, denied framing, disabled camera/mic/location,
+  HTTPS-only production HSTS, and private caching for sensitive responses.
+  `vite.config.ts` derives Convex HTTP/WebSocket origins from `PUBLIC_CONVEX_URL`
+  at build time; rebuild when that deployment URL changes. CSP permits Turnstile
+  scripts/frames, Google Maps scripts/requests/frames/fonts/blob workers, and R2
+  direct uploads. HTTPS images, data URLs and blob previews support existing
+  listing/profile photos and seeded Picsum redirects. Maps currently requires
+  `unsafe-eval`; inline CSS remains necessary for Maps, transitions and UI libraries.
+  Inline executable scripts use nonces; arbitrary inline handlers, objects, base
+  tags and framing by other sites are blocked. Svelte's fixed `this.__e=event`
+  image-event replay handler has an explicit hash allowance. Hosted checkout is a top-level navigation,
+  so it requires no payment scripts, frames or form-action exception here.
 
-- `accommodationFeePayments` owns authenticated Checkout actions, paginated owner/
-  admin history and internal payment/refund transitions; `stripeWebhookEvents`
-  deduplicates provider events. Frozen server-owned EUR amounts and intervals
-  determine one-time Checkout prices. SDK helpers/actions under `src/convex/stripe`
-  verify signatures, retrieve authoritative provider state and use idempotency
-  keys. `POST /stripe-webhook` handles Checkout/refund events; activation does not
-  depend on a browser redirect. Plan changes/overrides/deletion invalidate pending
-  attempts; late money is refunded without overriding publication or newer access.
-  Full refunds revoke only their own period. `src/features/payments` owns host fee
-  history; `src/shared/features/payments/utils/calculatePaidPeriodEnd.ts` clamps UTC
-  calendar months. Guest booking checkout and automatic renewal are excluded.
-  Summary return validators live in
-  `accommodationFeePayments/validators/accommodationFeePaymentsValidators.ts`.
-  `getFeePayment` and `getFeePaymentByIntent` each own an individual query file.
-  Attached sessions must be provider-confirmed closed before replacement; paid or
-  processing sessions and verification failures block a second checkout. Creation
-  and request budgets use the existing rate limiter with shared Stripe config.
-  `maintainFeePaymentsCron` retries indexed due receipts and deletes only confirmed
-  closed unpaid attempts after retention. Paid/processing/unresolved receipts are
-  retained. Event receipts have a separate bounded retention cleanup. Existing
-  attempts are enrolled by `backfillFeePaymentMaintenance`.
-  Hosted Checkout success returns to `/host/accommodation-payment-successful`.
-  The route owns confirmation logic and content; header and loading components
-  live under the matching protected host component directory.
-  `fetchFeePaymentConfirmation` checks receipt and accommodation ownership and
-  exposes a safe summary. The page refreshes Stripe state once and displays live
-  status; only the currently applied paid period earns a success message.
+- Host dashboard analytics count currently confirmed/completed bookings by their
+  immutable creation time, including cash and online bookings. Booked value sums
+  frozen `cancellationTerms.stayPricing.totalMinor`, before platform fees; it does
+  not assert payment collection. `bookingHostAggregate` partitions entries by the
+  original host and frozen currency. Creation, approval, cancellation, completion
+  and seed cleanup maintain it transactionally through
+  `syncHostBookingAggregate`; pending requests, declines and expirations never
+  contribute. Archiving and accommodation deletion preserve historical analytics.
+  Both endpoints validate at most 366 reporting calendar days in
+  `COMPANY_DATA.TIMEZONE`; the chart batches daily aggregate sums. The existing
+  one-shot parallel loader retains refresh, separate errors and stale-response
+  protection. The host dashboard shows two stats cards: Booked value and Bookings,
+  plus the gross booked-value chart. Platform fee tracking remains in the backend
+  and admin earnings; hosts do not see pending or deducted fee cards. On 2026-10-19,
+  the development migration processed and verified 395 bookings, including 391
+  confirmed/completed rows, with zero mismatches or missing hosts. Its temporary
+  backfill and verification functions were removed after completion.
+  Booking/review seeding and cleanup also maintain `bookingOwnerAggregate`, so
+  guest totals stay consistent when rebuilding development fixtures.
+
+- Admin analytics require the existing admin query wrapper. `fetchAdminDashboard`
+  and `fetchAdminRevenueSeries` count collected `accommodationFeePayments` and
+  `bookingFeePayments`, partitioned by currency and dated by `paidAt`. Revenue
+  sums both; Flat fee earnings and Bookings fee earnings show their respective
+  net collections after confirmed refunds. Unverified online payment allocations are
+  never admin earnings.
+  Refunds adjust the original payment date; requesting a refund alone does not
+  reduce income. Renewals count as separate receipts, even for the same listing.
+  Billing overrides, active booking-fee/free listings and unpaid attempts do not
+  imply collected revenue. Listing expiry/deletion does not erase receipts.
+  `flatFeeRevenueAggregate` is maintained by checkout/refund application;
+  `bookingAdminAggregate` counts all bookings by creation time and sums those
+  currently cancelled, including withdrawn requests, for the cancellation rate.
+  Creation, status changes, expiry, completion and seed cleanup maintain it in
+  the same transaction. The one-shot shared loader fetches stats and chart in
+  parallel for either scope, preserving refresh, stale guards and separate errors.
+  Both scopes share range validation (at most 366 calendar days), reporting
+  timezone, daily buckets and comparison periods. Dashboard reads use batched
+  aggregates rather than history scans. The admin UI has five matching cards
+  and loading placeholders. The development backfill on 2026-10-19 processed
+  392 bookings and four unpaid fee attempts; its temporary functions were removed.
+  A development-only simulation subsequently recorded one EUR 300 flat-fee
+  receipt for each of the 101 listings on 2026-10-19, through the existing
+  checkout application handler. All periods expire on 2027-01-19; the EUR 30,300
+  total is test revenue. The one-time simulation functions were removed after
+  verifying receipts, expiry dates and dashboard aggregates.
+
+- Payment records and billing transitions are provider-neutral. Listing fees use
+  one-time fixed periods with manual renewal. Guest booking payment methods,
+  frozen prices, commission snapshots and cancellation terms remain separate.
+  `accommodationFeePayments` retains frozen terms, owner/listing linkage, provider
+  name, `providerCheckoutId`, `providerPaymentId`, payment/refund status and paid
+  periods. Internal checkout/refund mutations accept normalized provider state;
+  `src/convex/checkout` owns sandbox Checkout.com Hosted Payments Page creation,
+  raw-body HMAC signature verification, event deduplication, reconciliation and
+  idempotent refund requests. Live keys/API URLs are rejected. Hosted-page creation
+  is claimed once per attempt; ambiguous failures wait for unattached-attempt expiry.
+  `PAYMENTS_CONFIG` in shared payments owns attempt timing and creation budgets.
+  Pure provider/webhook schemas live in `shared/features/checkout/schemas/checkoutSchemas.ts`;
+  non-secret Checkout settings and redirect validation live in that feature's config/utils.
+  Secret config, API requests, signature verification and refund reconciliation use
+  separate files under `convex/checkout`; do not combine them with shared schemas.
+  Plan changes, overrides and deletion invalidate attempts. Full refunds revoke
+  only their own paid period, preserving newer access and publication intent.
+  Host history and owner-only confirmation queries remain reactive and private.
+  Pay now redirects to the sandbox hosted page. Payment status refresh and signed
+  webhooks verify the hosted page and captured payment against the stored fee before
+  granting access. A bounded minute cron retries pending verification/refunds and
+  expires seven-day webhook deduplication records. Admin refund confirmation is
+  connected for development-simulation receipts through the shared refund application.
+  `calculatePaidPeriodEnd` preserves UTC calendar-month clamping. See
+  `AccommodationBillingSystemDesign.md` and `TODO.md`.
 
 - Host listing billing is separate from guest payment methods. The offer catalog
   lives in shared accommodations `config.ts`, and plan validation lives in
@@ -584,7 +652,7 @@ Current app-facing functions are:
   in `billingTerms` and sets `billingStatus`. Both plans start with
   `status: 'published'` as the host's choice; flat fees start pending payment and
   booking fees active. Public search, map, details, favorites and new bookings
-  require published status, active billing and a future paid-period end for flat
+  require published status, active billing, verified payout readiness and a future paid-period end for flat
   fees. Ordinary edits cannot change billing fields. Hosts can pause or resume
   while payment is due, without bypassing billing eligibility.
   The owner list exposes billing fields, public responses omit them.
@@ -595,19 +663,23 @@ Current app-facing functions are:
   A paid flat-fee period rejects switching until `billingPeriodEndsAt`.
   This required deadline is nullable until payment; ordinary listing edits cannot
   set it. `migrateAccommodationPublicationStatus` restored host choices and
-  removed the redundant publication field across 101 development accommodations. Real checkout remains deferred. Config-controlled
+  removed the redundant publication field across 101 development accommodations. Live payments remain deferred. Config-controlled
   `payFlatFeeAccommodation` requires `ACCOMMODATION_PAYMENT_SIMULATION` and grants
   the stored interval in UTC calendar months without changing host status.
   The internal `expireFlatFeeAccommodation` schedules matching-period expiry and
-  ignores stale jobs. The shared payment button invokes this preview. Shared `hooks/useClock.svelte.ts` refreshes fee and review eligibility
+  ignores stale jobs. The shared payment button creates a sandbox hosted checkout. Shared `hooks/useClock.svelte.ts` refreshes fee and review eligibility
   each minute and on tab visibility changes.
   All three billing fields are required. Seed rows use `booking_fee` with
-  catalog terms and `active` billing. `migrations/backfillAccommodationBilling`
+  catalog terms and `active` billing. Default seeding resolves the `seed-owner`
+  marker to a dedicated Better Auth test host with payout readiness; creating or
+  enabling that fixture is restricted to the development deployment. It reuses
+  the same account across reseeds and maintains the global user aggregate.
+  `migrations/backfillAccommodationBilling`
   assigns the same defaults to existing seeded rows without changing visibility,
   timestamps or existing billing choices. Deploy temporary optional validators,
   finish the backfill, then deploy the required schema. The development backfill
-  completed across all 101 accommodations on 2026-10-07. Checkout and commission collection
-  are not implemented. See
+  completed across all 101 accommodations on 2026-10-07. Listing-fee checkout uses
+  Checkout.com sandbox; booking commission collection is not implemented. See
   [AccommodationBillingSystemDesign.md](./AccommodationBillingSystemDesign.md).
 
 - Accommodation cancellation terms live in the required `cancellationPolicy`
@@ -773,6 +845,8 @@ Current app-facing functions are:
   Guest/bedroom minimums, scalar stay filters, and longitude filters run as in-query `filter`s
   because one query may call `.paginate()` once; map reads cap
   `maximumRowsRead`. Amenity inclusion uses the installed `convex-helpers/server/filter` on each bounded indexed page, preserving the cursor even for empty matches; the client continues pagination until the visible list batch is full or the map cursor is exhausted.
+  Billing expiry is checked in that result filter, keeping `Date.now()` out of
+  the database query so continuation cursors remain valid between requests.
 - `total` is attached only when no search/filters are active: owner
   accommodations (`accommodationOwnerAggregate`, plus the type-filtered
   aggregate total when only `type` is active), my-bookings
@@ -856,7 +930,83 @@ Current app-facing functions are:
   Historical bookings use null for unknown fee terms, never inferred zero fees.
   `backfillBookingPlatformFees` initializes only missing snapshots and null
   accommodation commission rates; explicit rates and snapshots are preserved.
-- Snapshotting does not collect fees, surcharge guests, or create payment debt.
-  Stripe collection, cancellation/refund adjustments and cash reconciliation are
-  separate work. Development backfills completed across 101 listings and 394
-  bookings before requiring the new snapshot and numeric commission validators.
+- Snapshotting alone does not collect fees, surcharge guests, or create host debt.
+  Online payments allocate the frozen commission to the platform and the remainder
+  to the host automatically. At the standard rate this is 10% / 90%; explicit
+  rate overrides still use the booking's frozen terms. No invoice from the host
+  is part of this automatic split.
+- `syncBookingFeePayment`, shared by booking aggregate lifecycle writes, records
+  expected positive online allocations for confirmed/completed bookings. Cash,
+  exemptions and unknown terms create none. Cancellation clears unverified pending contributions while preserving
+  allocation records; verified payment history remains for confirmed refunds. Completing
+  a stay never proves collection, and capture may be recorded before completion.
+- Internal `applyBookingFeePayment` accepts a booking ID and trusted provider
+  evidence of the captured gross amount, platform share and host share. It checks
+  all three against frozen terms and currency, stores the original allocation,
+  rejects cash and reused payment IDs, and applies cumulative commission refunds
+  monotonically. It can create a verified receipt without a preceding allocation.
+  No public client can mark a booking paid or assert an allocation. Bank settlement
+  and guest-payment refund submission remain provider integration work.
+  `grossAmountMinor`, `hostAmountMinor` and `pendingOnlineSplit` are required on
+  every fee row. The 2026-10-19 development backfill populated all 391 legacy rows
+  from frozen booking terms before schema tightening, preserving payment status
+  and keeping legacy cash rows out of pending online totals. Temporary migration
+  code was removed after verification.
+- `bookingFeePendingAggregate` tracks explicitly marked online allocations in its
+  own component. The old `bookingFeeDueAggregate` component is retained as legacy
+  test history and is never queried by the dashboard. `bookingFeePaidAggregate` and
+  `bookingFeeRevenueAggregate` track verified platform shares after commission
+  refunds by original capture date. All updates remain transactional.
+- The 2026-10-19 development split retains 50 booking-fee and 51 flat-fee listings,
+  including Test 1 on flat fee. Earlier mistaken backfills created 391 unpaid cash
+  commission rows totalling EUR 19,444.50. The correction initially retained those
+  rows and excluded them from pending online allocations. Original frozen prices
+  and commission snapshots remain intact.
+  For visual testing, the user explicitly requested deletion of prior simulated
+  flat-fee history belonging to the 50 booking-fee listings. A development-only
+  migration removed those 50 receipts and their revenue entries transactionally,
+  including one already refunded receipt. The 51 flat-fee listings retain EUR 15,300
+  in simulated earnings. With the user's explicit approval, a second development-only
+  migration converted 202 completed seed bookings on booking-fee listings from cash
+  to online and recorded successful splits through `applyBookingFeePayment`.
+  Existing fee rows were updated in place and their obsolete legacy aggregate
+  entries removed. Simulated gross EUR 94,273 splits into platform EUR 9,427.30
+  and host EUR 84,845.70; total admin revenue is EUR 24,727.30. The remaining 189
+  unverified cash rows stay excluded from earnings. Listing states, frozen terms,
+  all 392 bookings and the one cancellation were preserved. Temporary migrations
+  and their tests were removed after verification; no real money moved.
+- Hosts cannot switch a paid flat-fee plan before its stored three-calendar-month
+  deadline. Switching is allowed exactly at expiry, independently of scheduler
+  timing. Admin overrides are explicit exceptions and do not imply a refund.
+- Cash collection policy remains separate; this flow never invents an automatic
+  platform share for cash received directly by a host. Actual provider split
+  collection, payout and refund submission are not connected yet.
+
+## Host payout setup
+
+- `/host/settings` reuses the existing guest profile, security and account deletion panels,
+  with a host header and an additional URL-backed `payouts` tab. The host sidebar links
+  to settings; listing setup actions link directly to `/host/settings?tab=payouts`.
+- Better Auth `user.payoutsEnabled` is the single server-owned, provider-neutral
+  readiness value for all accommodations owned by that user. It defaults to false,
+  accepts no client input, and missing legacy values require setup. Listing records
+  do not store payout state.
+- `getHostPayoutsEnabled` reads the owner's Better Auth user. `isAccommodationPublic`
+  combines that value with the shared publication/billing check for public details,
+  featured listings, favorites, reviews and new bookings. Search and map queries use
+  the same account value through an async filter over bounded indexed pages, caching
+  one user lookup per owner per query. Pagination cursors and read limits are preserved.
+- Owner interfaces use `api.auth.getCurrentUser`'s normalized account readiness. Admin
+  accommodation rows receive a computed visibility boolean. Updating one verified user
+  account applies to all existing and future listings, with no per-listing synchronization.
+  Existing bookings, billing entitlements and publication choices are preserved.
+- Unpaid flat-fee cards retain Pay now; paid flat-fee and booking-fee cards offer Set up
+  payouts until ready. Owner cards display Payout setup required after billing is eligible.
+- The payouts tab currently explains that setup is unavailable. Its setup button only logs
+  the requested operation and does not change readiness. A future provider integration
+  must verify the recipient server-side before setting `user.payoutsEnabled`.
+- Flat-fee checkout and payment-status refresh use the Checkout.com sandbox adapter.
+  Payment activates the billing period only after full capture is verified server-side;
+  it does not enable host payouts or bypass the public-listing readiness requirement.
+  Shared frozen payment terms, owner-scoped history and confirmation queries remain
+  available for provider-neutral use.

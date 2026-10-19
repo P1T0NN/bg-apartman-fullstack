@@ -9,6 +9,8 @@ import { authenticatedMutation } from '../../../builders/convexFunctionBuilders.
 import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { completeBooking } from '../helpers/completeBooking.js';
 import { checkBookingAvailability } from '../helpers/checkBookingAvailability.js';
+import { syncHostBookingAggregate } from '../helpers/syncHostBookingAggregate.js';
+import { bookingAdminAggregate } from '../aggregates/bookingAdminAggregate.js';
 
 // EMAILS
 import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationEmail.js';
@@ -59,10 +61,17 @@ export const updateBookingStatus = authenticatedMutation({
 				accommodationName: accommodation?.name ?? ''
 			});
 			await ctx.db.patch('bookings', args.id, { status: 'confirmed' });
-		} else if (args.status === 'completed')
+			await syncHostBookingAggregate(ctx, { ...booking, status: 'confirmed' });
+		} else if (args.status === 'completed') {
 			await completeBooking(ctx, booking, getOwnerId(ctx.identity));
-		else await ctx.db.patch('bookings', args.id, { status: args.status });
+			return null;
+		} else {
+			await ctx.db.patch('bookings', args.id, { status: args.status });
+			if (booking.status === 'confirmed')
+				await syncHostBookingAggregate(ctx, { ...booking, status: args.status });
+		}
 
+		await bookingAdminAggregate.replaceOrInsert(ctx, booking, { ...booking, status: args.status });
 		return null;
 	}
 });

@@ -25,23 +25,15 @@
 		isExpired: boolean;
 		pending: boolean;
 	} = $props();
-	const pay = useAction(
+	const createCheckout = useAction(
 		api.tables.accommodationFeePayments.actions.createFeeCheckout.createFeeCheckout
 	);
-
 	async function payFlatFee() {
 		if (pending) return;
 		pending = true;
 		try {
-			const result = await pay({ accommodationId });
-			if (result.url) {
-				window.location.assign(result.url);
-				return;
-			}
-			toastMessage({
-				type: 'success',
-				message: m['AccommodationsFeature.AccommodationFlatFeePaymentButton.success']()
-			});
+			const { url } = await createCheckout({ accommodationId });
+			window.location.assign(url);
 		} catch (error) {
 			toastMessage({ type: 'error', error, message: m['ErrorMessages.unexpected']() });
 		} finally {
@@ -50,7 +42,7 @@
 	}
 </script>
 
-<Button type="button" disabled={pending} onclick={() => void payFlatFee()}>
+<Button type="button" disabled={pending} aria-busy={pending} onclick={payFlatFee}>
 	{#if pending}
 		<Spinner data-icon="inline-start" />
 	{/if}

@@ -18,6 +18,8 @@ import { getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 import { sendBookingRequestEmail } from '../emails/sendBookingRequestEmail.js';
 import { sendBookingConfirmationEmail } from '../emails/sendBookingConfirmationEmail.js';
 import { checkBookingAvailability } from '../helpers/checkBookingAvailability.js';
+import { syncHostBookingAggregate } from '../helpers/syncHostBookingAggregate.js';
+import { bookingAdminAggregate } from '../aggregates/bookingAdminAggregate.js';
 import { getBookingBenefitsContext } from '../../loyaltyMemberships/helpers/getBookingBenefitsContext.js';
 import { loyaltyBookingBenefitsValidator } from '../../loyaltyMemberships/validators/loyaltyBenefitsValidators.js';
 import { accommodations } from '../../accommodations/schema.js';
@@ -40,7 +42,7 @@ import { getIsoDateInTimeZone } from '../../../../shared/features/timezone/utils
 import { getZonedTimestamp } from '../../../../shared/features/timezone/utils/getZonedTimestamp.js';
 
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../../accommodations/helpers/isAccommodationPublic.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -72,7 +74,7 @@ export const createBooking = mutation({
 	returns: v.id('bookings'),
 	handler: async (ctx, args) => {
 		const accommodation = await ctx.db.get('accommodations', args.accommodationId);
-		if (!isAccommodationVisible(accommodation)) {
+		if (!accommodation || !(await isAccommodationPublic(ctx, accommodation))) {
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		}
 
@@ -221,12 +223,14 @@ export const createBooking = mutation({
 		await checkBookingAvailability(ctx, booking);
 		const bookingId = await ctx.db.insert('bookings', booking);
 
-		if (ownerId) {
-			const stored = await ctx.db.get('bookings', bookingId);
-			if (stored) await bookingOwnerAggregate.insert(ctx, stored);
+		const stored = await ctx.db.get('bookings', bookingId);
+		if (stored) {
+			await bookingAdminAggregate.insert(ctx, stored);
+			if (ownerId) await bookingOwnerAggregate.insert(ctx, stored);
+			if (instant) await syncHostBookingAggregate(ctx, stored);
 		}
 
-		const host = await ctx.runQuery(components.betterAuth.queries.getUser.getUser, {
+		const host = await ctx.runQuery(components.betterAuth.queries.fetchUser.fetchUser, {
 			id: booking.hostId
 		});
 		if (!host) throw new Error('Booking host account is unavailable');

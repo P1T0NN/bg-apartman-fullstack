@@ -12,7 +12,7 @@ import { ACCOMMODATION_CONFIG } from '../../../../shared/features/accommodations
 import { EMPTY_REVIEW_SUMMARY } from '../../../../shared/features/reviews/data/reviewsData.js';
 
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../helpers/isAccommodationPublic.js';
 
 // VALIDATORS
 import { featuredAccommodationItems } from '../validators/accommodationValidators.js';
@@ -29,8 +29,11 @@ export const fetchFeaturedAccommodations = query({
 			)
 			.take(ACCOMMODATION_CONFIG.featuredCandidateLimit);
 
+		const visibility = await Promise.all(
+			candidates.map((candidate) => isAccommodationPublic(ctx, candidate))
+		);
 		const featured = candidates
-			.filter((candidate) => isAccommodationVisible(candidate))
+			.filter((_, index) => visibility[index])
 			.slice(0, ACCOMMODATION_CONFIG.featuredLimit);
 
 		const items = await resolveImageUrls(featured);

@@ -20,7 +20,7 @@ import { createReviewSchema } from '../../../../shared/features/reviews/schemas/
 import { canReviewBooking } from '../../../../shared/features/reviews/utils/canReviewBooking.js';
 
 // UTILS
-import { isAccommodationVisible } from '../../../../shared/features/accommodations/utils/isAccommodationVisible.js';
+import { isAccommodationPublic } from '../../accommodations/helpers/isAccommodationPublic.js';
 
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
@@ -44,7 +44,7 @@ export const createReview = authenticatedMutation({
 		const isEligible = canReviewBooking(booking, now);
 		if (!isEligible) throw new ConvexError<BackendErrorData>({ code: 'REVIEW_NOT_ELIGIBLE' });
 		const accommodation = await ctx.db.get('accommodations', booking.accommodationId);
-		if (!isAccommodationVisible(accommodation))
+		if (!accommodation || !(await isAccommodationPublic(ctx, accommodation)))
 			throw new ConvexError<BackendErrorData>({ code: 'ACCOMMODATION_NOT_FOUND' });
 		if (accommodation.ownerId === ownerId)
 			throw new ConvexError<BackendErrorData>({ code: 'FORBIDDEN' });

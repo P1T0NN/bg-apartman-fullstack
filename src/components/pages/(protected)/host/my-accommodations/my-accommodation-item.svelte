@@ -1,4 +1,7 @@
 <script lang="ts">
+	// SVELTEKIT IMPORTS
+	import { page } from '$app/state';
+
 	// MESSAGES
 	import { m } from '@/lib/paraglide/messages.js';
 	import { getLocale } from '@/lib/paraglide/runtime.js';
@@ -34,7 +37,10 @@
 	const clock = useClock();
 	const titleId = $props.id();
 	const coverUrl = $derived(accommodation.imageUrls[0]);
-	const isVisible = $derived(isAccommodationVisible(accommodation, clock.now));
+	const isVisible = $derived(
+		isAccommodationVisible(accommodation, page.data.currentUser?.payoutsEnabled === true, clock.now)
+	);
+	const requiresPayouts = $derived(page.data.currentUser?.payoutsEnabled !== true);
 	const isExpired = $derived(
 		accommodation.billingPlanId === 'flat_fee' &&
 			accommodation.billingPeriodEndsAt !== null &&
@@ -53,19 +59,23 @@
 				? 'expired'
 				: isVisible
 					? 'visible'
-					: 'paymentRequired'
+					: requiresPayment
+						? 'paymentRequired'
+						: 'payoutsRequired'
 	);
 	const VISIBILITY_LABELS = {
 		visible: () => m['MyAccommodationsPage.MyAccommodationItem.visible'](),
 		paused: () => m['MyAccommodationsPage.MyAccommodationItem.paused'](),
 		expired: () => m['MyAccommodationsPage.MyAccommodationItem.expired'](),
-		paymentRequired: () => m['MyAccommodationsPage.MyAccommodationItem.paymentRequired']()
+		paymentRequired: () => m['MyAccommodationsPage.MyAccommodationItem.paymentRequired'](),
+		payoutsRequired: () => m['MyAccommodationsPage.MyAccommodationItem.payoutsRequired']()
 	};
 	const VISIBILITY_CLASSES = {
 		visible: 'border-success/30 bg-success/10 text-success',
 		paused: 'border-border bg-muted text-muted-foreground',
 		expired: 'border-destructive/30 bg-destructive/10 text-destructive',
-		paymentRequired: 'border-warning/30 bg-warning/10 text-warning'
+		paymentRequired: 'border-warning/30 bg-warning/10 text-warning',
+		payoutsRequired: 'border-warning/30 bg-warning/10 text-warning'
 	} satisfies Record<keyof typeof VISIBILITY_LABELS, string>;
 	let failedImageUrl = $state('');
 	let pending = $state(false);
@@ -182,6 +192,11 @@
 				{isExpired}
 				bind:pending
 			/>
+		{/if}
+		{#if requiresPayouts && !requiresPayment}
+			<Button href={`${PROTECTED_PAGE_ENDPOINTS.HOST_SETTINGS}?tab=payouts`} variant="outline">
+				{m['MyAccommodationsPage.MyAccommodationItem.setUpPayouts']()}
+			</Button>
 		{/if}
 		<Button
 			href={PROTECTED_PAGE_ENDPOINTS.MY_ACCOMMODATION(accommodation._id)}

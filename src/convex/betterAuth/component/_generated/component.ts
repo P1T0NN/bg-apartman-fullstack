@@ -39,6 +39,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   emailVerified: boolean;
                   image?: null | string;
                   name: string;
+                  payoutsEnabled?: null | boolean;
                   role?: null | string;
                   updatedAt: number;
                   userId?: null | string;
@@ -86,10 +87,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 model: "verification";
               }
             | {
-                data: { count: number; key: string; lastRequest: number };
-                model: "rateLimit";
-              }
-            | {
                 data: {
                   createdAt: number;
                   expiresAt?: null | number;
@@ -97,6 +94,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   publicKey: string;
                 };
                 model: "jwks";
+              }
+            | {
+                data: { count: number; key: string; lastRequest: number };
+                model: "rateLimit";
               };
           onCreateHandle?: string;
           select?: Array<string>;
@@ -125,6 +126,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "banReason"
                     | "banExpires"
                     | "userId"
+                    | "payoutsEnabled"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -258,10 +260,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "rateLimit";
+                model: "jwks";
                 where?: Array<{
                   connector?: "AND" | "OR";
-                  field: "key" | "count" | "lastRequest" | "_id";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
+                    | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
                     | "lt"
@@ -285,15 +292,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "jwks";
+                model: "rateLimit";
                 where?: Array<{
                   connector?: "AND" | "OR";
-                  field:
-                    | "publicKey"
-                    | "privateKey"
-                    | "createdAt"
-                    | "expiresAt"
-                    | "_id";
+                  field: "key" | "count" | "lastRequest" | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
                     | "lt"
@@ -350,6 +352,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "banReason"
                     | "banExpires"
                     | "userId"
+                    | "payoutsEnabled"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -483,10 +486,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "rateLimit";
+                model: "jwks";
                 where?: Array<{
                   connector?: "AND" | "OR";
-                  field: "key" | "count" | "lastRequest" | "_id";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
+                    | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
                     | "lt"
@@ -510,15 +518,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "jwks";
+                model: "rateLimit";
                 where?: Array<{
                   connector?: "AND" | "OR";
-                  field:
-                    | "publicKey"
-                    | "privateKey"
-                    | "createdAt"
-                    | "expiresAt"
-                    | "_id";
+                  field: "key" | "count" | "lastRequest" | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
                     | "lt"
@@ -557,8 +560,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "session"
             | "account"
             | "verification"
-            | "rateLimit"
-            | "jwks";
+            | "jwks"
+            | "rateLimit";
           offset?: number;
           paginationOpts: {
             cursor: string | null;
@@ -603,8 +606,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "session"
             | "account"
             | "verification"
-            | "rateLimit"
-            | "jwks";
+            | "jwks"
+            | "rateLimit";
           select?: Array<string>;
           where?: Array<{
             connector?: "AND" | "OR";
@@ -645,6 +648,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   emailVerified?: boolean;
                   image?: null | string;
                   name?: string;
+                  payoutsEnabled?: null | boolean;
                   role?: null | string;
                   updatedAt?: number;
                   userId?: null | string;
@@ -663,6 +667,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "banReason"
                     | "banExpires"
                     | "userId"
+                    | "payoutsEnabled"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -827,11 +832,21 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "rateLimit";
-                update: { count?: number; key?: string; lastRequest?: number };
+                model: "jwks";
+                update: {
+                  createdAt?: number;
+                  expiresAt?: null | number;
+                  privateKey?: string;
+                  publicKey?: string;
+                };
                 where?: Array<{
                   connector?: "AND" | "OR";
-                  field: "key" | "count" | "lastRequest" | "_id";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
+                    | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
                     | "lt"
@@ -855,21 +870,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "jwks";
-                update: {
-                  createdAt?: number;
-                  expiresAt?: null | number;
-                  privateKey?: string;
-                  publicKey?: string;
-                };
+                model: "rateLimit";
+                update: { count?: number; key?: string; lastRequest?: number };
                 where?: Array<{
                   connector?: "AND" | "OR";
-                  field:
-                    | "publicKey"
-                    | "privateKey"
-                    | "createdAt"
-                    | "expiresAt"
-                    | "_id";
+                  field: "key" | "count" | "lastRequest" | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
                     | "lt"
@@ -921,6 +926,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   emailVerified?: boolean;
                   image?: null | string;
                   name?: string;
+                  payoutsEnabled?: null | boolean;
                   role?: null | string;
                   updatedAt?: number;
                   userId?: null | string;
@@ -939,6 +945,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "banReason"
                     | "banExpires"
                     | "userId"
+                    | "payoutsEnabled"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -1103,34 +1110,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 }>;
               }
             | {
-                model: "rateLimit";
-                update: { count?: number; key?: string; lastRequest?: number };
-                where?: Array<{
-                  connector?: "AND" | "OR";
-                  field: "key" | "count" | "lastRequest" | "_id";
-                  mode?: "sensitive" | "insensitive";
-                  operator?:
-                    | "lt"
-                    | "lte"
-                    | "gt"
-                    | "gte"
-                    | "eq"
-                    | "in"
-                    | "not_in"
-                    | "ne"
-                    | "contains"
-                    | "starts_with"
-                    | "ends_with";
-                  value:
-                    | string
-                    | number
-                    | boolean
-                    | Array<string>
-                    | Array<number>
-                    | null;
-                }>;
-              }
-            | {
                 model: "jwks";
                 update: {
                   createdAt?: number;
@@ -1167,6 +1146,34 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | Array<number>
                     | null;
                 }>;
+              }
+            | {
+                model: "rateLimit";
+                update: { count?: number; key?: string; lastRequest?: number };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field: "key" | "count" | "lastRequest" | "_id";
+                  mode?: "sensitive" | "insensitive";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
               };
           onUpdateHandle?: string;
         },
@@ -1175,30 +1182,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       >;
     };
     queries: {
-      getUser: {
-        getUser: FunctionReference<
-          "query",
-          "internal",
-          { id: string },
-          null | {
-            banExpires: null | number;
-            banReason: null | string;
-            banned: boolean;
-            createdAt: number;
-            email: string;
-            emailVerified: boolean;
-            id: string;
-            image: null | string;
-            name: string;
-            role: string;
-            updatedAt: number;
-            userId: null | string;
-          },
-          Name
-        >;
-      };
-      listSessions: {
-        listSessions: FunctionReference<
+      fetchSessions: {
+        fetchSessions: FunctionReference<
           "query",
           "internal",
           {
@@ -1230,8 +1215,31 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
-      listUsers: {
-        listUsers: FunctionReference<
+      fetchUser: {
+        fetchUser: FunctionReference<
+          "query",
+          "internal",
+          { id: string },
+          null | {
+            banExpires: null | number;
+            banReason: null | string;
+            banned: boolean;
+            createdAt: number;
+            email: string;
+            emailVerified: boolean;
+            id: string;
+            image: null | string;
+            name: string;
+            payoutsEnabled: boolean;
+            role: string;
+            updatedAt: number;
+            userId: null | string;
+          },
+          Name
+        >;
+      };
+      fetchUsers: {
+        fetchUsers: FunctionReference<
           "query",
           "internal",
           {

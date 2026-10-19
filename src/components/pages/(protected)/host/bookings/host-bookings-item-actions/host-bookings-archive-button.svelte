@@ -80,7 +80,7 @@
 				<Button
 					type="button"
 					size="sm"
-						class="bg-blue-600 text-white hover:bg-blue-700 focus-visible:border-blue-600 focus-visible:ring-blue-600/30"
+					class="bg-blue-600 text-white hover:bg-blue-700 focus-visible:border-blue-600 focus-visible:ring-blue-600/30"
 					disabled={disabled || pending}
 					onclick={() => void archive(close)}
 				>

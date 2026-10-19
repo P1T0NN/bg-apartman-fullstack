@@ -5,9 +5,6 @@ import { internalMutation } from '../../../_generated/server.js';
 // HELPERS
 import { requireAdminIdentity, getOwnerId } from '../../../betterAuth/helpers/requireIdentity.js';
 
-// CONFIG
-import { STRIPE_CONFIG } from '../../../../shared/features/stripe/config.js';
-
 // TYPES
 import type { BackendErrorData } from '../../../../shared/types/types.js';
 
@@ -23,7 +20,7 @@ export const requestFeeRefund = internalMutation({
 
 		const canRefundReviewedAmount =
 			payment?.paidAt &&
-			payment.paymentIntentId &&
+			payment.providerPaymentId &&
 			remaining > 0 &&
 			remaining === expectedAmountMinor;
 
@@ -44,7 +41,6 @@ export const requestFeeRefund = internalMutation({
 			refundRequestedBy: getOwnerId(identity),
 			refundId: undefined,
 			refundStatus: undefined,
-			nextReconcileAt: Date.now() + STRIPE_CONFIG.reconciliationRetryMs,
 			updatedAt: Date.now()
 		});
 

@@ -19,9 +19,11 @@
 	},
 	"AnalyticsFeature": {
 		"AnalyticsData": {
+			"bookedValue": "Booked value",
 			"revenue": "Revenue",
+			"flatFee": "Flat fee earnings",
+			"bookingFee": "Bookings fee earnings",
 			"bookings": "Bookings",
-			"occupancyRate": "Occupancy rate",
 			"cancellationRate": "Cancellation rate"
 		},
 		"AnalyticsStats": {
@@ -42,8 +44,9 @@
 			"rangeTooLong": "You cannot select more than 366 days at once"
 		},
 		"AnalyticsRevenueChart": {
+			"bookedValueDescriptionPrefix": "Showing gross value of confirmed and completed bookings created in",
 			"title": "Revenue",
-			"descriptionPrefix": "Showing total revenue for",
+			"descriptionPrefix": "Showing flat-fee and booking-fee revenue after confirmed refunds for",
 			"loadError": "Couldn't load the revenue chart."
 		}
 	},
@@ -1875,6 +1878,23 @@
 			"copy": "Copy {label}",
 			"copied": "{label} copied"
 		},
+		"Footer": {
+			"tagline": "Handpicked places to stay, booked directly with local hosts.",
+			"bookStay": "Book a stay",
+			"searchStays": "Search stays",
+			"findBooking": "Find a booking",
+			"cancellationPolicy": "Cancellation policy",
+			"support": "Support",
+			"helpCenter": "Help center",
+			"contactUs": "Contact us",
+			"feedback": "Send feedback",
+			"hosting": "Hosting",
+			"listYourProperty": "List your property",
+			"hostHelp": "Help for hosts",
+			"whatsapp": "Chat on WhatsApp",
+			"instagram": "Instagram",
+			"copyright": "© {year} {name}. All rights reserved."
+		},
 		"Form": {
 			"savedSuccessfully": "Saved successfully.",
 			"fixHighlightedFields": "Please fix the highlighted fields.",
@@ -1973,6 +1993,7 @@
 		"discountPriceTooLow": "The discounted nightly price must be at least 0.01."
 	},
 	"BackendMessages": {
+		"invalidAnalyticsRange": "Choose a valid date range of at most 366 days.",
 		"bookingRequestExpired": "The response deadline has passed. This request can no longer be changed. You can submit a new request.",
 		"invalidCancellationPolicy": "Choose Flexible, Moderate or Firm as the cancellation policy.",
 		"rateLimitSingle": "You hit the rate limit. Try again in 1 second.",
@@ -2019,7 +2040,9 @@
 		"accommodationPaymentSimulationDisabled": "Payment previews are disabled. Use the accommodation fee checkout.",
 		"bookingBenefitsChanged": "The included benefits have changed. Review your booking summary before submitting again.",
 		"feeCheckoutExpired": "This checkout has expired. Please start a new payment.",
-		"feeRefundUnavailable": "This payment is no longer eligible for the reviewed refund. Refresh and review it again."
+		"feeCheckoutPending": "This payment attempt is still being checked. Please try again later.",
+		"feeRefundUnavailable": "This payment is no longer eligible for the reviewed refund. Refresh and review it again.",
+		"feeRefundNotSupported": "Refunds are not available for this payment yet."
 	},
 	"AddAccommodationPage": {
 		"title": "Add an accommodation",
@@ -2121,7 +2144,7 @@
 			"flatFee": "Flat fee: €{amount} for {months} months",
 			"flatFeeHint": "Create your accommodation now, then pay to activate it. It stays hidden from guests until payment is confirmed. No platform booking commission.",
 			"bookingFee": "Booking fee: no upfront listing payment",
-			"bookingFeeHint": "Your accommodation goes live when created. The platform takes {percent}% of each booking."
+			"bookingFeeHint": "Connect your payout account before your accommodation goes live. The platform takes {percent}% of each booking."
 		},
 		"AddAccommodationFormReview": {
 			"preview": "Listing preview",
@@ -2162,7 +2185,7 @@
 			"flatFee": "Flat fee: €{amount} for {months} months",
 			"flatFeeHint": "Create your accommodation now, then pay to activate it. It stays hidden from guests until payment is confirmed. No platform booking commission.",
 			"bookingFee": "Booking fee: no upfront listing payment",
-			"bookingFeeHint": "Your accommodation goes live when created. The platform takes {percent}% of each booking."
+			"bookingFeeHint": "Connect your payout account before your accommodation goes live. The platform takes {percent}% of each booking."
 		},
 		"AddAccommodationFormRules": {
 			"checkInStart": "Check-in from",
@@ -2181,7 +2204,7 @@
 			"previous": "Back"
 		},
 		"AddAccommodationForm": {
-			"published": "Accommodation published",
+			"published": "Accommodation created",
 			"images": "Photos",
 			"publishError": "We could not save your accommodation. Your entries are still on this page. Please try again.",
 			"savedAwaitingPayment": "Accommodation saved. Pay the listing fee to activate it."
@@ -2229,6 +2252,8 @@
 			"paused": "Paused",
 			"expired": "Expired",
 			"paymentRequired": "Payment required",
+			"payoutsRequired": "Payout setup required",
+			"setUpPayouts": "Set up payouts",
 			"flatFee": "Flat fee",
 			"bookingFee": "Booking fee",
 			"flatPrice": "{amount} every {months} months",
@@ -2257,7 +2282,8 @@
 			"back": "My accommodations",
 			"published": "Published",
 			"unpublished": "Unpublished",
-			"view": "View public listing"
+			"view": "View public listing",
+			"setUpPayouts": "Set up payouts"
 		},
 		"MyAccommodationTabListing": {
 			"title": "Your listing",
@@ -2361,7 +2387,7 @@
 			"unpublish": "Unpublish accommodation",
 			"publish": "Publish accommodation",
 			"unpublishedToast": "Listing unpublished. It is hidden from new guests.",
-			"publishedToast": "Listing published. Guests can find it again."
+			"publishedToast": "Publication enabled. Your listing appears to guests once billing and payout setup are complete."
 		},
 		"DangerZoneDeleteButton": {
 			"delete": "Delete accommodation"
@@ -2439,8 +2465,9 @@
 			"bookingRate": "{percent}% of each booking",
 			"paidUntil": "Paid until {date}",
 			"visible": "Your accommodation is visible in search.",
+			"payoutsRequired": "Your accommodation is hidden until you set up payouts in Host settings.",
 			"paused": "Your accommodation is paused.",
-			"hidden": "Your accommodation is hidden until you pay or switch to booking fees in Settings.",
+			"hidden": "Your accommodation needs payment or a switch to booking fees in Settings. Payout setup is also required.",
 			"free": "Free",
 			"noFees": "No flat fee or booking commission. This plan is managed by an administrator.",
 			"freeUntil": "Free until {date}. Afterwards, the booking-fee plan applies.",
@@ -2466,14 +2493,14 @@
 		"MyAccommodationTabSettingsFeesSwitchToFlatDialog": {
 			"switchToFlat": "Switch to flat fee",
 			"confirmationTitle": "Switch to flat fee?",
-			"confirmationHint": "Your accommodation will be hidden from search immediately until you pay {amount} for {months} months. You can switch back to booking fees at any time before payment.",
+			"confirmationHint": "Your accommodation will be hidden from search immediately until you pay {amount} for {months} months and complete payout setup. You can switch back to booking fees at any time before payment.",
 			"cancel": "Keep booking fees",
 			"confirm": "Switch and hide accommodation",
-			"updatedHidden": "Flat fee selected. Your accommodation is hidden until payment."
+			"updatedHidden": "Flat fee selected. Your accommodation needs payment and completed payout setup to appear to guests."
 		},
 		"MyAccommodationTabSettingsFeesSwitchToBookingButton": {
 			"switchToBooking": "Switch to booking fees",
-			"updatedVisible": "Booking fee selected. Your accommodation is visible again.",
+			"updatedVisible": "Booking fee selected. Your published accommodation appears once payout setup is complete.",
 			"updatedPaused": "Booking fee selected. Your accommodation remains paused."
 		}
 	},
@@ -2905,10 +2932,18 @@
 		"AdminAccommodationsRefundFeeDialog": {
 			"trigger": "Refund fee",
 			"title": "Refund the fee for {name}?",
-			"hint": "Refund the remaining amount of this recorded payment. Its paid period is removed only after a successful full refund. Later fee changes and existing bookings are preserved.",
+			"hint": "Refund the remaining amount of this payment. A full refund of the current paid period hides the accommodation until its flat fee is paid again. Newer paid periods and existing bookings are preserved.",
 			"cancel": "Cancel",
-			"saved": "Refund request submitted. Payment history shows the confirmed result."
+			"saved": "Fee refunded. The payment history has been updated."
 		}
+	},
+	"AccommodationPaymentCheckout": {
+		"pageTitle": "Accommodation payment",
+		"description": "Review your accommodation listing fee payment details.",
+		"loading": "Loading payment details",
+		"checkoutUnavailable": "Online checkout is not available yet. Please try again later.",
+		"result": "View payment status",
+		"period": "One-time payment for {months} months. No automatic renewal."
 	},
 	"AccommodationPaymentResult": {
 		"pageTitle": "Accommodation payment",
@@ -2924,9 +2959,27 @@
 		"status": "Payment status",
 		"paidOn": "Paid on (UTC)",
 		"paidThrough": "Paid through (UTC)",
-		"manualRenewal": "This was a one-time payment. Your listing visibility follows your publication setting. Renewal is manual; you will not be charged automatically.",
-		"verificationFailed": "We could not verify the latest payment status right now. Please check again shortly. Do not submit another payment.",
+		"manualRenewal": "This was a one-time payment. Your listing also needs payout setup and must be published to appear to guests. Renewal is manual; you will not be charged automatically.",
 		"accommodations": "Check my accommodations",
 		"refresh": "Check payment status"
+	},
+	"HostSettingsPage": {
+		"pageTitle": "Host settings",
+		"HostSettingsHeader": {
+			"description": "Manage your profile, account security, and payouts."
+		},
+		"HostSettingsTabs": {
+			"label": "Host settings tabs",
+			"payouts": "Payouts",
+			"profile": "Profile",
+			"security": "Security",
+			"dangerZone": "Danger zone"
+		},
+		"HostSettingsTabPayouts": {
+			"title": "Payout setup",
+			"description": "Set up payouts to receive payments for your accommodations. Listings stay hidden until payout setup is verified.",
+			"connect": "Set up payouts",
+			"pending": "Payout setup is not available yet. Please try again later."
+		}
 	}
 }

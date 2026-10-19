@@ -16,7 +16,6 @@
 	import AccommodationLocation from '@/features/accommodations/components/accommodation-location/accommodation-location.svelte';
 
 	// UTILS
-	import { isAccommodationVisible } from '@/shared/features/accommodations/utils/isAccommodationVisible.js';
 	import { cn } from '@/utils/utils.js';
 
 	// TYPES
@@ -30,7 +29,7 @@
 		>['items'][number];
 	} = $props();
 
-	const visible = $derived(isAccommodationVisible(accommodation));
+	const visible = $derived(accommodation.isVisible);
 	const expired = $derived(
 		accommodation.billingPlanId === 'flat_fee' &&
 			accommodation.billingPeriodEndsAt !== null &&
