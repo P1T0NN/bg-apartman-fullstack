@@ -55,6 +55,7 @@
 			kind: 'select',
 			name: 'type',
 			label: m['FeedbackPage.FeedbackForm.type'](),
+			class: 'sm:col-span-2',
 			options: [
 				{ value: 'bug', label: m['FeedbacksFeature.type.bug']() },
 				{ value: 'question', label: m['FeedbacksFeature.type.question']() }
@@ -64,6 +65,7 @@
 			kind: 'select',
 			name: 'category',
 			label: m['FeedbackPage.FeedbackForm.category'](),
+			class: 'sm:col-span-2',
 			options: [
 				{ value: 'booking', label: m['FeedbacksFeature.category.booking']() },
 				{ value: 'payment', label: m['FeedbacksFeature.category.payment']() },
@@ -77,6 +79,7 @@
 			name: 'title',
 			label: m['FeedbackPage.FeedbackForm.title'](),
 			placeholder: m['FeedbackPage.FeedbackForm.titlePlaceholder'](),
+			class: 'sm:col-span-2',
 			maxLength: 120,
 			required: true
 		},
@@ -85,69 +88,92 @@
 			name: 'message',
 			label: m['FeedbackPage.FeedbackForm.message'](),
 			placeholder: m['FeedbackPage.FeedbackForm.messagePlaceholder'](),
+			class: 'sm:col-span-2',
 			required: true
 		},
-		...(authenticated ? [] : [emailField])
+		...(authenticated ? [] : [{ ...emailField, class: 'sm:col-span-2' }])
 	]);
 </script>
 
 <SvelteHead title={m['FeedbackPage.pageTitle']()} noindex />
 
-<Section>
-	<div class="mx-auto flex w-full max-w-2xl flex-col gap-6">
-		<div class="flex flex-col gap-2 text-center">
-			<h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+<Section size="none" class="min-h-screen pt-24 pb-16 sm:pt-32">
+	<div class="grid items-start gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+		<header class="flex min-w-0 flex-col gap-5 lg:sticky lg:top-24">
+			<h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
 				{m['FeedbackPage.title']()}
 			</h1>
-			<p class="text-balance text-muted-foreground">{m['FeedbackPage.description']()}</p>
-		</div>
 
-		{#if submitted}
-			<Card.Root>
-				<Card.Content class="flex flex-col items-center gap-4 py-10 text-center">
+			<p class="max-w-prose text-lg leading-8 text-muted-foreground">
+				{m['FeedbackPage.description']()}
+			</p>
+
+			{#if authenticated && signedInEmail}
+				<p
+					class="flex max-w-prose items-start gap-2 text-sm leading-6 break-words text-muted-foreground"
+				>
 					<span
-						class="flex size-12 items-center justify-center rounded-full bg-success/10 text-success"
-					>
-						<span class="icon-[lucide--circle-check] size-6" aria-hidden="true"></span>
-					</span>
-					<div class="flex flex-col gap-1">
-						<h2 class="font-semibold">{m['FeedbackPage.successTitle']()}</h2>
-						<p class="text-sm text-muted-foreground">{m['FeedbackPage.successDescription']()}</p>
-					</div>
-					<Button variant="outline" onclick={() => (submitted = false)}>
-						{m['FeedbackPage.sendAnother']()}
-					</Button>
-				</Card.Content>
-			</Card.Root>
-		{:else}
-			<Card.Root>
-				<Card.Content>
-					<Form
-						function={createFeedback}
-						schema={createFeedbackSchema}
-						{fields}
-						bind:values
-						bind:submitting
-						onSuccess={() => {
-							submitted = true;
-						}}
-						errorMessage={m['FeedbackPage.error']()}
-					>
-						<Button type="submit" disabled={submitting} class="w-full">
-							{#if submitting}
-								<Spinner />
-							{/if}
-							{m['FeedbackPage.FeedbackForm.submit']()}
-						</Button>
+						class="mt-0.5 icon-[lucide--mail] size-4 shrink-0 text-primary"
+						aria-hidden="true"
+					></span>
+					{m['FeedbackPage.FeedbackForm.signedInHint']({ email: signedInEmail })}
+				</p>
+			{/if}
+		</header>
 
-						{#if authenticated && signedInEmail}
-							<p class="text-center text-xs text-muted-foreground">
-								{m['FeedbackPage.FeedbackForm.signedInHint']({ email: signedInEmail })}
+		<div class="min-w-0">
+			{#if submitted}
+				<Card.Root>
+					<Card.Content class="flex flex-col items-start gap-5 py-10 sm:py-12" role="status">
+						<span
+							class="flex size-14 items-center justify-center rounded-2xl bg-success/10 text-success"
+						>
+							<span class="icon-[lucide--circle-check] size-7" aria-hidden="true"></span>
+						</span>
+
+						<div class="flex flex-col gap-1">
+							<h2 class="text-xl font-semibold">{m['FeedbackPage.successTitle']()}</h2>
+							<p class="text-sm leading-6 text-muted-foreground">
+								{m['FeedbackPage.successDescription']()}
 							</p>
-						{/if}
-					</Form>
-				</Card.Content>
-			</Card.Root>
-		{/if}
+						</div>
+
+						<Button variant="outline" onclick={() => (submitted = false)}>
+							{m['FeedbackPage.sendAnother']()}
+						</Button>
+					</Card.Content>
+				</Card.Root>
+			{:else}
+				<Card.Root>
+					<Card.Content>
+						<Form
+							function={createFeedback}
+							schema={createFeedbackSchema}
+							{fields}
+							bind:values
+							bind:submitting
+							onSuccess={() => {
+								submitted = true;
+							}}
+							errorMessage={m['FeedbackPage.error']()}
+							class="grid gap-5 sm:grid-cols-2"
+						>
+							<Button
+								type="submit"
+								size="lg"
+								disabled={submitting}
+								class="w-full sm:col-span-2 sm:w-auto sm:justify-self-end"
+							>
+								{#if submitting}
+									<Spinner />
+								{/if}
+								{m['FeedbackPage.FeedbackForm.submit']()}
+								<span class="icon-[lucide--send] size-4" aria-hidden="true"></span>
+							</Button>
+						</Form>
+					</Card.Content>
+				</Card.Root>
+			{/if}
+		</div>
 	</div>
 </Section>

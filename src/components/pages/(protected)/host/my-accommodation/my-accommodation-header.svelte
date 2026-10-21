@@ -76,7 +76,7 @@
 		</div>
 
 		{#if requiresPayouts}
-			<Button href={`${PROTECTED_PAGE_ENDPOINTS.HOST_SETTINGS}?tab=payouts`}>
+			<Button href={`${PROTECTED_PAGE_ENDPOINTS.SETTINGS}?tab=payouts`}>
 				{m['MyAccommodationPage.MyAccommodationHeader.setUpPayouts']()}
 			</Button>
 		{:else if isPublished}

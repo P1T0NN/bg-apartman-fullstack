@@ -69,7 +69,7 @@
 				description={m['FavoritesPage.emptyDescription']()}
 				action={{
 					label: m['FavoritesPage.findStay'](),
-					href: UNPROTECTED_PAGE_ENDPOINTS.SEARCH
+					href: UNPROTECTED_PAGE_ENDPOINTS.ROOT
 				}}
 			>
 				{#snippet icon()}

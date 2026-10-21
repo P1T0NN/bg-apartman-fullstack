@@ -17,6 +17,9 @@
 	import BookSummary from '../book-summary/book-summary.svelte';
 	import BookCheckoutForm from './book-checkout-form/book-checkout-form.svelte';
 
+	// CONFIG
+	import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
+
 	// HOOKS
 	import { useSearchParams } from '@/hooks/useSearchParams.svelte.js';
 	import { useGuestLocal } from '@/features/guests/hooks/useGuestLocal.svelte.js';
@@ -61,7 +64,7 @@
 		email: page.data.currentUser?.email ?? '',
 		phone: '',
 		specialRequests: '',
-		paymentMethod: ''
+		paymentMethod: PAYMENTS_CONFIG.onlinePaymentsEnabled ? '' : 'cash'
 	});
 	let submitting = $state(false);
 	let errors = $state<Record<string, string>>({});
@@ -103,10 +106,11 @@
 
 				const parsed = schema.safeParse({
 					...$state.snapshot(values),
-					paymentMethod:
-						accommodation.supportedPaymentMethods === 'both'
+					paymentMethod: PAYMENTS_CONFIG.onlinePaymentsEnabled
+						? accommodation.supportedPaymentMethods === 'both'
 							? values.paymentMethod
-							: (accommodation.supportedPaymentMethods ?? 'cash'),
+							: (accommodation.supportedPaymentMethods ?? 'cash')
+						: 'cash',
 					accommodationId: accommodation._id,
 					expectedPricePerNightMinor: loyalty.quote.pricing.effectivePricePerNightMinor,
 					expectedTotalMinor: loyalty.quote.stayPricing.totalMinor,

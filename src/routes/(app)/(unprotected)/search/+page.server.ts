@@ -1,9 +1,13 @@
 // SVELTEKIT IMPORTS
 import { resolve } from '$app/paths';
+import { redirect } from '@sveltejs/kit';
 
 // LIBRARIES
 import { getLocale } from '@/lib/paraglide/runtime';
 import { z } from 'zod';
+
+// CONFIG
+import { UNPROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints.js';
 
 // SCHEMAS
 import { searchLocationSchema } from '@/shared/features/search/schemas/searchSchemas.js';
@@ -21,7 +25,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 	const parsedLocation = searchLocationSchema.safeParse({
 		placeId: url.searchParams.get('location')
 	});
-	if (!parsedLocation.success) return { placeDetails: null };
+	if (!parsedLocation.success) redirect(307, UNPROTECTED_PAGE_ENDPOINTS.ROOT);
 
 	const endpoint = resolve('/api/places/[placeId]', {
 		placeId: parsedLocation.data.placeId

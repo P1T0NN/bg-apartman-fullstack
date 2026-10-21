@@ -1382,7 +1382,8 @@
 		"AccommodationFlatFeePaymentButton": {
 			"pay": "Pay now",
 			"renew": "Renew now",
-			"success": "Payment status checked. See your accommodation fee details."
+			"success": "Payment status checked. See your accommodation fee details.",
+			"waitingForApproval": "Waiting for approval"
 		}
 	},
 	"BookingsFeature": {
@@ -1868,6 +1869,7 @@
 		"NativeSidebarUser": {
 			"user": "User",
 			"openAccountMenu": "Open account menu",
+			"settings": "Settings",
 			"logOut": "Log out"
 		},
 		"NativeSidebarPageHeader": {
@@ -1915,6 +1917,7 @@
 		"Header": {
 			"home": "Home",
 			"navigation": "Main navigation",
+			"closeMenu": "Close menu",
 			"contact": "Contact",
 			"feedback": "Feedback",
 			"signOut": "Sign out",
@@ -2672,7 +2675,7 @@
 	"GuestSettingsPage": {
 		"pageTitle": "Account settings",
 		"GuestSettingsHeader": {
-			"description": "Manage your profile and keep your account secure."
+			"description": "Manage your profile, account security, and payouts."
 		},
 		"GuestSettingsTabs": {
 			"label": "Account settings sections",

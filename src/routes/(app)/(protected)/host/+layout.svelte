@@ -47,10 +47,6 @@
 						<span class="icon-[lucide--layout-dashboard]" aria-hidden="true"></span>
 						<span>{m['Components.HostSidebar.dashboard']()}</span>
 					</NativeSidebarLink>
-					<NativeSidebarLink href={PROTECTED_PAGE_ENDPOINTS.HOST_SETTINGS}>
-						<span class="icon-[lucide--settings]" aria-hidden="true"></span>
-						<span>{m['HostSettingsPage.pageTitle']()}</span>
-					</NativeSidebarLink>
 				</NativeSidebarSection>
 				<NativeSidebarSection title={m['Components.HostSidebar.accommodations']()}>
 					<NativeSidebarLink href={PROTECTED_PAGE_ENDPOINTS.ADD_ACCOMMODATION}>

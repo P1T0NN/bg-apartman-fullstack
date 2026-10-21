@@ -1,5 +1,6 @@
 // CONFIG
 import { accommodationSectionSchemas } from '@/shared/features/accommodations/schemas/accommodationSchemas.js';
+import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
 
 // DATA
 import { EMPTY_ACCOMMODATION } from '@/shared/features/accommodations/data/accommodationsData.js';
@@ -29,6 +30,8 @@ export function createAccommodationForm() {
 		furthestStep: 0,
 		submitting: false
 	});
+
+	if (!PAYMENTS_CONFIG.onlinePaymentsEnabled) state.values.billingPlanId = 'booking_fee';
 
 	function goTo(step: number) {
 		state.step = step;

@@ -66,12 +66,6 @@
 						<span>{m['Components.GuestSidebar.saved']()}</span>
 					</NativeSidebarLink>
 				</NativeSidebarSection>
-				<NativeSidebarSection title={m['Components.GuestSidebar.account']()}>
-					<NativeSidebarLink href={PROTECTED_PAGE_ENDPOINTS.GUEST_SETTINGS}>
-						<span class="icon-[lucide--settings]" aria-hidden="true"></span>
-						<span>{m['Components.GuestSidebar.settings']()}</span>
-					</NativeSidebarLink>
-				</NativeSidebarSection>
 			</nav>
 			<div class="mt-auto">
 				<NativeSidebarLink href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}>

@@ -4,13 +4,16 @@ import { COMPANY_DATA } from '../../../shared/config.js';
 // DATA
 import { EMAIL_DATA } from '../data/emailData.js';
 
+// UTILS
+import { escapeHtml } from '../../../shared/utils/escapeHtml.js';
+
 export function renderFooterTemplate(): string {
 	const { BRAND, COLORS, LAYOUT, TYPOGRAPHY } = EMAIL_DATA;
 	const { EMAIL_COPY } = COMPANY_DATA;
 	const YEAR = new Date().getUTCFullYear();
 	const BRAND_LINK = BRAND.URL
-		? `<a href="${BRAND.URL}" style="color:${COLORS.MUTED_FOREGROUND};text-decoration:underline;">${BRAND.NAME}</a>`
-		: BRAND.NAME;
+		? `<a href="${escapeHtml(BRAND.URL)}" style="color:${COLORS.MUTED_FOREGROUND};text-decoration:underline;">${escapeHtml(BRAND.NAME)}</a>`
+		: escapeHtml(BRAND.NAME);
 
 	return `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${COLORS.BACKGROUND};">
@@ -19,6 +22,7 @@ export function renderFooterTemplate(): string {
 			<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:${LAYOUT.CONTENT_WIDTH};">
 			<tr>
 				<td style="border-top:1px solid ${COLORS.BORDER};padding-top:24px;text-align:center;font-family:${TYPOGRAPHY.FONT_FAMILY};font-size:12px;line-height:18px;color:${COLORS.MUTED_FOREGROUND};">
+					<p style="margin:0 0 16px;"><img src="${escapeHtml(BRAND.LOGO_URL)}" alt="${escapeHtml(BRAND.NAME)}" width="41" height="61" style="display:inline-block;width:41px;height:61px;border:0;"></p>
 					<p style="margin:0 0 8px;">${EMAIL_COPY.FOOTER_NOTICE}</p>
 					<p style="margin:0 0 8px;">${EMAIL_COPY.IGNORE_NOTICE}</p>
 					<p style="margin:0;">&copy; ${YEAR} ${BRAND_LINK}. All rights reserved.</p>

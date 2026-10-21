@@ -2,32 +2,34 @@
 import { COMPANY_DATA } from '../../../shared/config.js';
 
 const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN ?? `https://${COMPANY_DATA.DOMAIN}`;
-const BRAND_MARK = COMPANY_DATA.NAME.trim().charAt(0).toUpperCase();
 
 export const EMAIL_DATA = {
 	BRAND: {
 		NAME: COMPANY_DATA.NAME,
-		MARK: BRAND_MARK,
+		LOGO_URL: new URL('/logo/opt/logo-transparent-411w.webp', PUBLIC_ORIGIN).toString(),
 		URL: PUBLIC_ORIGIN
 	},
 	COLORS: {
-		// Light-theme equivalents of the tokens in src/routes/layout.css.
-		BACKGROUND: '#ffffff',
-		FOREGROUND: '#18181b',
+		// sRGB hex equivalents of src/routes/layout.css :root tokens for email clients.
+		BACKGROUND: '#fdfcf8',
+		FOREGROUND: '#110904',
+		HEADER: '#17100b',
+		HEADER_FOREGROUND: '#f2eee7',
 		CARD: '#ffffff',
-		CARD_FOREGROUND: '#18181b',
-		PRIMARY: '#27272a',
-		PRIMARY_FOREGROUND: '#fafafa',
-		SECONDARY: '#f4f4f5',
-		SECONDARY_FOREGROUND: '#27272a',
-		MUTED: '#f4f4f5',
-		MUTED_FOREGROUND: '#71717a',
-		ACCENT: '#f4f4f5',
-		ACCENT_FOREGROUND: '#27272a',
-		DESTRUCTIVE: '#dc2626',
-		BORDER: '#e4e4e7',
-		INPUT: '#e4e4e7',
-		RING: '#a1a1aa'
+		CARD_FOREGROUND: '#110904',
+		PRIMARY: '#e88100',
+		PRIMARY_FOREGROUND: '#110904',
+		SECONDARY: '#f5f1ea',
+		SECONDARY_FOREGROUND: '#291f18',
+		MUTED: '#f5f1ea',
+		MUTED_FOREGROUND: '#6c6158',
+		ACCENT: '#ef852e',
+		ACCENT_FOREGROUND: '#110904',
+		DESTRUCTIVE: '#df202e',
+		DESTRUCTIVE_FOREGROUND: '#ffffff',
+		BORDER: '#e1ddd7',
+		INPUT: '#e1ddd7',
+		RING: '#e88100'
 	},
 	TYPOGRAPHY: {
 		FONT_FAMILY: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",

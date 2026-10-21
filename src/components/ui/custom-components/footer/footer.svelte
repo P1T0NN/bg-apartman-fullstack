@@ -30,7 +30,7 @@
 		{
 			heading: m['Components.Footer.bookStay'](),
 			links: [
-				{ href: UNPROTECTED_PAGE_ENDPOINTS.SEARCH, label: m['Components.Footer.searchStays']() },
+				{ href: UNPROTECTED_PAGE_ENDPOINTS.ROOT, label: m['Components.Footer.searchStays']() },
 				{
 					href: UNPROTECTED_PAGE_ENDPOINTS.FIND_BOOKING,
 					label: m['Components.Footer.findBooking']()

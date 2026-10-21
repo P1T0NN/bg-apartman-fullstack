@@ -11,14 +11,6 @@
 	import SearchToolbar from '@/components/pages/(unprotected)/search/search-filters/search-toolbar/search-toolbar.svelte';
 	import SearchHeaderUserContent from './search-header-user-content.svelte';
 
-	// UTILS
-	import { m } from '@/lib/paraglide/messages';
-
-	const navItems = $derived([
-		{ href: '/' as const, label: m['Components.Header.home']() },
-		{ href: '/contact' as const, label: m['Components.Header.contact']() }
-	]);
-
 	let { initialLocation = '' }: { initialLocation?: string } = $props();
 
 	let expanded = $state(false);
@@ -54,18 +46,7 @@
 			<Logo />
 		</a>
 
-		{#if expanded}
-			<nav class="flex items-center gap-5">
-				{#each navItems as item (item.href)}
-					<a
-						href={resolve(item.href)}
-						class="rounded-sm text-sm font-medium text-header-foreground/80 transition-colors hover:text-header-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-					>
-						{item.label}
-					</a>
-				{/each}
-			</nav>
-		{:else}
+		{#if !expanded}
 			<div
 				class="order-last w-full min-[68.75rem]:order-0 min-[68.75rem]:min-w-0 min-[68.75rem]:flex-1"
 			>

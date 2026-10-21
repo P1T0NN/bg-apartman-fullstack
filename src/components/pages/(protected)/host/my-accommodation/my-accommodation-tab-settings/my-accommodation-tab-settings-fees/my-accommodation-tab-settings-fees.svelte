@@ -13,6 +13,9 @@
 	import MyAccommodationTabSettingsFeesSwitchToFlatDialog from './my-accommodation-tab-settings-fees-switch-to-flat-dialog.svelte';
 	import MyAccommodationTabSettingsFeesSwitchToBookingButton from './my-accommodation-tab-settings-fees-switch-to-booking-button.svelte';
 
+	// CONFIG
+	import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
+
 	// HOOKS
 	import { useClock } from '@/hooks/useClock.svelte.js';
 
@@ -113,12 +116,14 @@
 						<AccommodationFlatFeePaymentButton {accommodationId} {isExpired} bind:pending />
 					{/if}
 
-					<MyAccommodationTabSettingsFeesSwitchToBookingButton
-						{isLocked}
-						status={data.status}
-						bind:pending
-					/>
-				{:else if data.billingPlanId === 'booking_fee'}
+					{#if PAYMENTS_CONFIG.onlinePaymentsEnabled}
+						<MyAccommodationTabSettingsFeesSwitchToBookingButton
+							{isLocked}
+							status={data.status}
+							bind:pending
+						/>
+					{/if}
+				{:else if data.billingPlanId === 'booking_fee' && PAYMENTS_CONFIG.onlinePaymentsEnabled}
 					<MyAccommodationTabSettingsFeesSwitchToFlatDialog billingPlanId={data.billingPlanId} />
 				{/if}
 			</div>

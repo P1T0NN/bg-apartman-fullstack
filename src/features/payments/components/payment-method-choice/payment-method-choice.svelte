@@ -2,6 +2,9 @@
 	// COMPONENTS
 	import CardSwitch from '@/components/ui/custom-components/card-switch/card-switch.svelte';
 
+	// CONFIG
+	import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
+
 	// UTILS
 	import { m } from '@/lib/paraglide/messages';
 
@@ -20,7 +23,13 @@
 	} = $props();
 
 	const id = $props.id();
-	const methods = $derived(supported === 'both' ? (['cash', 'online'] as const) : [supported]);
+	const methods = $derived(
+		PAYMENTS_CONFIG.onlinePaymentsEnabled
+			? supported === 'both'
+				? (['cash', 'online'] as const)
+				: [supported]
+			: (['cash'] as const)
+	);
 </script>
 
 <fieldset
@@ -32,7 +41,7 @@
 >
 	<legend class="sr-only">{m['PaymentsFeature.method']()}</legend>
 	<p id={`${id}-hint`} class="mb-5 max-w-prose text-sm leading-6 text-muted-foreground">
-		{supported === 'both' ? m['PaymentsFeature.hint']() : m['PaymentsFeature.selectedHint']()}
+		{methods.length > 1 ? m['PaymentsFeature.hint']() : m['PaymentsFeature.selectedHint']()}
 	</p>
 	<div class="grid gap-3">
 		{#each methods as method (method)}
@@ -42,7 +51,7 @@
 				description={method === 'cash'
 					? m['PaymentsFeature.cashHint']()
 					: m['PaymentsFeature.onlineHint']()}
-				checked={supported !== 'both' || value === method}
+				checked={methods.length === 1 || value === method}
 				{disabled}
 				class={error ? 'border-destructive' : undefined}
 			>
@@ -52,7 +61,7 @@
 						type="radio"
 						name="paymentMethod"
 						value={method}
-						checked={supported !== 'both' || value === method}
+						checked={methods.length === 1 || value === method}
 						{disabled}
 						aria-labelledby={labelId}
 						aria-describedby={`${descriptionId}${error ? ` ${id}-error` : ''}`}

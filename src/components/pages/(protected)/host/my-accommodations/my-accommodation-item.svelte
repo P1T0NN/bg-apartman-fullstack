@@ -194,7 +194,7 @@
 			/>
 		{/if}
 		{#if requiresPayouts && !requiresPayment}
-			<Button href={`${PROTECTED_PAGE_ENDPOINTS.HOST_SETTINGS}?tab=payouts`} variant="outline">
+			<Button href={`${PROTECTED_PAGE_ENDPOINTS.SETTINGS}?tab=payouts`} variant="outline">
 				{m['MyAccommodationsPage.MyAccommodationItem.setUpPayouts']()}
 			</Button>
 		{/if}

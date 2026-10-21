@@ -9,14 +9,13 @@ export const PROTECTED_PAGE_ENDPOINTS = {
 		resolve(`/host/accommodation-payment-successful?fee_payment=${encodeURIComponent(id)}`),
 	MY_ACCOMMODATION: (id: string) => resolve(`/host/my-accommodations/${id}`),
 	HOST_BOOKINGS: resolve('/host/bookings'),
-	HOST_SETTINGS: resolve('/host/settings'),
+	SETTINGS: resolve('/settings'),
 	CLAIM_BOOKING: resolve('/guest/claim-booking'),
 	FAVORITES: resolve('/guest/favorites'),
 	MY_BOOKINGS: resolve('/guest/my-bookings'),
 	MY_REVIEWS: resolve('/guest/my-reviews'),
 	MY_BENEFITS: resolve('/guest/benefits'),
-	MY_BOOKING: (id: string) => resolve(`/guest/my-bookings/${id}`),
-	GUEST_SETTINGS: resolve('/guest/settings')
+	MY_BOOKING: (id: string) => resolve(`/guest/my-bookings/${id}`)
 };
 
 export const UNPROTECTED_PAGE_ENDPOINTS = {

@@ -111,7 +111,7 @@
 								? undefined
 								: {
 										label: m['MyBookingsPage.findAccommodation'](),
-										href: UNPROTECTED_PAGE_ENDPOINTS.SEARCH
+										href: UNPROTECTED_PAGE_ENDPOINTS.ROOT
 									}}
 						>
 							{#snippet icon()}

@@ -8,6 +8,9 @@
 	import NativePopover from '@/components/ui/native-components/native-popover/native-popover.svelte';
 	import { Separator } from '@/components/ui/separator/index.js';
 
+	// CONFIG
+	import { PROTECTED_PAGE_ENDPOINTS } from '@/shared/constants/pageEndpoints';
+
 	// UTILS
 	import { formatNameInitials } from '@/shared/utils/formatNameInitials';
 	import { m } from '@/lib/paraglide/messages';
@@ -18,6 +21,8 @@
 	const userEmail = $derived(user?.email ?? '');
 	const userImage = $derived(user?.image);
 	const userInitials = $derived(formatNameInitials(userName));
+	const menuItemClass =
+		'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none';
 </script>
 
 {#if user}
@@ -65,9 +70,14 @@
 
 		<Separator class="my-1" />
 
-		<LogoutButton
-			class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-		>
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
+		<a href={PROTECTED_PAGE_ENDPOINTS.SETTINGS} class={menuItemClass}>
+			<span class="icon-[lucide--settings] size-4" aria-hidden="true"></span>
+			<span>{m['Components.NativeSidebarUser.settings']()}</span>
+		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
+
+		<LogoutButton class={menuItemClass}>
 			<span class="icon-[lucide--log-out] size-4" aria-hidden="true"></span>
 			<span>{m['Components.NativeSidebarUser.logOut']()}</span>
 		</LogoutButton>

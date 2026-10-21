@@ -99,7 +99,9 @@
 			description={m['AccommodationPage.notFoundHint']()}
 			action={{
 				label: m['AccommodationPage.AccommodationHeader.back'](),
-				href: UNPROTECTED_PAGE_ENDPOINTS.SEARCH + page.url.search
+				href: page.url.searchParams.get('location')
+					? UNPROTECTED_PAGE_ENDPOINTS.SEARCH + page.url.search
+					: UNPROTECTED_PAGE_ENDPOINTS.ROOT
 			}}
 		/>
 	{/if}

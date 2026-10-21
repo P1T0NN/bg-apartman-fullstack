@@ -265,7 +265,7 @@ listing or admin-granted free listing stays hidden until the owner's Better Auth
 records do not store payout readiness. One verified host account enables all their
 current and future listings, subject to each listing's billing and publication choice.
 
-The owner list links to `/host/settings?tab=payouts` after any required listing payment.
+The owner list links to `/settings?tab=payouts` after any required listing payment.
 The payouts tab currently logs setup requests and cannot enable payout readiness. A
 future provider integration must verify the receiving account server-side before
 setting `user.payoutsEnabled`.

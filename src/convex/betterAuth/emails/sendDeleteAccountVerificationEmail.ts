@@ -33,7 +33,7 @@ export async function sendDeleteAccountVerificationEmail(
 			<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
 				<tr>
 					<td align="center" style="border-radius:8px;background-color:${COLORS.DESTRUCTIVE};">
-						<a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 28px;font-family:${TYPOGRAPHY.FONT_FAMILY};font-size:16px;line-height:20px;font-weight:600;color:${COLORS.PRIMARY_FOREGROUND};text-decoration:none;">Delete my account</a>
+						<a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 28px;font-family:${TYPOGRAPHY.FONT_FAMILY};font-size:16px;line-height:20px;font-weight:600;color:${COLORS.DESTRUCTIVE_FOREGROUND};text-decoration:none;">Delete my account</a>
 					</td>
 				</tr>
 			</table>

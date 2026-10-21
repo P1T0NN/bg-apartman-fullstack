@@ -99,7 +99,7 @@
 					{m['BenefitsPage.BenefitsSummary.availability']()}
 				</p>
 				<Button
-					href={UNPROTECTED_PAGE_ENDPOINTS.SEARCH}
+					href={UNPROTECTED_PAGE_ENDPOINTS.ROOT}
 					class="h-12 shrink-0 rounded-xl px-6 text-base font-semibold"
 				>
 					{m['BenefitsPage.BenefitsSummary.findStay']()}

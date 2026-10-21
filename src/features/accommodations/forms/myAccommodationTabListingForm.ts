@@ -7,6 +7,7 @@ import { getLocale } from '@/lib/paraglide/runtime';
 
 // CONFIG
 import { STORAGE_CONFIG } from '@/shared/features/storage/config.js';
+import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
 
 // UTILS
 import { getCountryOptions } from '@/shared/utils/countries.js';
@@ -216,7 +217,9 @@ export function createMyAccommodationTabListingForm(
 					accommodation.weekendPricePerNightMinor == null
 						? null
 						: accommodation.weekendPricePerNightMinor / 100,
-				supportedPaymentMethods: accommodation.supportedPaymentMethods ?? 'cash',
+				supportedPaymentMethods: PAYMENTS_CONFIG.onlinePaymentsEnabled
+					? (accommodation.supportedPaymentMethods ?? 'cash')
+					: 'cash',
 				minimumStay: accommodation.minimumStay,
 				maximumStay: accommodation.maximumStay
 			},
@@ -226,7 +229,10 @@ export function createMyAccommodationTabListingForm(
 					name: 'supportedPaymentMethods',
 					label: m['PaymentsFeature.supported'](),
 					required: true,
-					options: (['cash', 'online', 'both'] as const).map((value) => ({
+					options: (PAYMENTS_CONFIG.onlinePaymentsEnabled
+						? (['cash', 'online', 'both'] as const)
+						: (['cash'] as const)
+					).map((value) => ({
 						value,
 						label: m[`PaymentsFeature.supportedOptions.${value}`]()
 					}))

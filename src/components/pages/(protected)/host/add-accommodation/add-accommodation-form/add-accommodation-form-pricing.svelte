@@ -12,6 +12,7 @@
 
 	// CONFIG
 	import { ACCOMMODATION_BILLING_PLANS } from '@/shared/features/accommodations/config.js';
+	import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
 
 	// CONTEXT
 	import { getAccommodationFormContext } from '@/features/accommodations/context/accommodationFormContext.js';
@@ -88,7 +89,10 @@
 		name: 'supportedPaymentMethods',
 		label: m['PaymentsFeature.supported'](),
 		required: true,
-		options: (['cash', 'online', 'both'] as const).map((value) => ({
+		options: (PAYMENTS_CONFIG.onlinePaymentsEnabled
+			? (['cash', 'online', 'both'] as const)
+			: (['cash'] as const)
+		).map((value) => ({
 			value,
 			label: m[`PaymentsFeature.supportedOptions.${value}`]()
 		}))
@@ -101,74 +105,76 @@
 </script>
 
 <Field.Group>
-	<Field.Set
-		disabled={context.disabled}
-		aria-describedby={`${billingId}-hint`}
-		data-invalid={Boolean(context.errors.billingPlanId)}
-	>
-		<Field.Legend>
-			{m['AddAccommodationPage.AddAccommodationFormPricing.billingTitle']()}
-		</Field.Legend>
-		<p id={`${billingId}-hint`} class="text-sm text-muted-foreground">
-			{m['AddAccommodationPage.AddAccommodationFormPricing.billingHint']()}
-		</p>
-		<label
-			class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 has-checked:border-primary has-checked:bg-muted/40"
+	{#if PAYMENTS_CONFIG.onlinePaymentsEnabled}
+		<Field.Set
+			disabled={context.disabled}
+			aria-describedby={`${billingId}-hint`}
+			data-invalid={Boolean(context.errors.billingPlanId)}
 		>
-			<input
-				type="radio"
-				name="billingPlanId"
-				value="flat_fee"
-				required
-				checked={context.inputValue('billingPlanId') === 'flat_fee'}
-				aria-describedby={context.errors.billingPlanId ? `${billingId}-error` : undefined}
-				onchange={() => context.setValue('billingPlanId', 'flat_fee')}
-				class="mt-1 size-4 shrink-0 accent-primary"
-			/>
-			<span class="flex flex-col gap-1">
-				<span class="font-medium">
-					{m['AddAccommodationPage.AddAccommodationFormPricing.flatFee']({
-						amount: ACCOMMODATION_BILLING_PLANS.flat_fee.amountMinor / 100,
-						months: ACCOMMODATION_BILLING_PLANS.flat_fee.intervalMonths
-					})}
-				</span>
-				<span class="text-sm text-muted-foreground">
-					{m['AddAccommodationPage.AddAccommodationFormPricing.flatFeeHint']()}
-				</span>
-			</span>
-		</label>
-		<label
-			class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 has-checked:border-primary has-checked:bg-muted/40"
-		>
-			<input
-				type="radio"
-				name="billingPlanId"
-				value="booking_fee"
-				required
-				checked={context.inputValue('billingPlanId') === 'booking_fee'}
-				aria-describedby={context.errors.billingPlanId ? `${billingId}-error` : undefined}
-				onchange={() => context.setValue('billingPlanId', 'booking_fee')}
-				class="mt-1 size-4 shrink-0 accent-primary"
-			/>
-			<span class="flex flex-col gap-1">
-				<span class="font-medium">
-					{m['AddAccommodationPage.AddAccommodationFormPricing.bookingFee']()}
-				</span>
-
-				<span class="text-sm text-muted-foreground">
-					{m['AddAccommodationPage.AddAccommodationFormPricing.bookingFeeHint']({
-						percent: ACCOMMODATION_BILLING_PLANS.booking_fee.commissionBps / 100
-					})}
-				</span>
-			</span>
-		</label>
-
-		{#if context.errors.billingPlanId}
-			<p id={`${billingId}-error`} class="text-sm text-destructive" role="alert">
-				{context.errors.billingPlanId}
+			<Field.Legend>
+				{m['AddAccommodationPage.AddAccommodationFormPricing.billingTitle']()}
+			</Field.Legend>
+			<p id={`${billingId}-hint`} class="text-sm text-muted-foreground">
+				{m['AddAccommodationPage.AddAccommodationFormPricing.billingHint']()}
 			</p>
-		{/if}
-	</Field.Set>
+			<label
+				class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 has-checked:border-primary has-checked:bg-muted/40"
+			>
+				<input
+					type="radio"
+					name="billingPlanId"
+					value="flat_fee"
+					required
+					checked={context.inputValue('billingPlanId') === 'flat_fee'}
+					aria-describedby={context.errors.billingPlanId ? `${billingId}-error` : undefined}
+					onchange={() => context.setValue('billingPlanId', 'flat_fee')}
+					class="mt-1 size-4 shrink-0 accent-primary"
+				/>
+				<span class="flex flex-col gap-1">
+					<span class="font-medium">
+						{m['AddAccommodationPage.AddAccommodationFormPricing.flatFee']({
+							amount: ACCOMMODATION_BILLING_PLANS.flat_fee.amountMinor / 100,
+							months: ACCOMMODATION_BILLING_PLANS.flat_fee.intervalMonths
+						})}
+					</span>
+					<span class="text-sm text-muted-foreground">
+						{m['AddAccommodationPage.AddAccommodationFormPricing.flatFeeHint']()}
+					</span>
+				</span>
+			</label>
+			<label
+				class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 has-checked:border-primary has-checked:bg-muted/40"
+			>
+				<input
+					type="radio"
+					name="billingPlanId"
+					value="booking_fee"
+					required
+					checked={context.inputValue('billingPlanId') === 'booking_fee'}
+					aria-describedby={context.errors.billingPlanId ? `${billingId}-error` : undefined}
+					onchange={() => context.setValue('billingPlanId', 'booking_fee')}
+					class="mt-1 size-4 shrink-0 accent-primary"
+				/>
+				<span class="flex flex-col gap-1">
+					<span class="font-medium">
+						{m['AddAccommodationPage.AddAccommodationFormPricing.bookingFee']()}
+					</span>
+
+					<span class="text-sm text-muted-foreground">
+						{m['AddAccommodationPage.AddAccommodationFormPricing.bookingFeeHint']({
+							percent: ACCOMMODATION_BILLING_PLANS.booking_fee.commissionBps / 100
+						})}
+					</span>
+				</span>
+			</label>
+
+			{#if context.errors.billingPlanId}
+				<p id={`${billingId}-error`} class="text-sm text-destructive" role="alert">
+					{context.errors.billingPlanId}
+				</p>
+			{/if}
+		</Field.Set>
+	{/if}
 
 	<FormInput
 		field={nightlyPriceField}

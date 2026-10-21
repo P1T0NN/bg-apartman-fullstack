@@ -6,11 +6,11 @@
 	import { m } from '@/lib/paraglide/messages';
 
 	// COMPONENTS
-	import HostSettingsHeader from '@/components/pages/(protected)/host/settings/host-settings-header.svelte';
-	import HostSettingsTabPayouts from '@/components/pages/(protected)/host/settings/host-settings-tab-payouts.svelte';
+	import GuestSettingsHeader from '@/components/pages/(protected)/guest/settings/guest-settings-header.svelte';
+	import GuestSettingsTabDangerZone from '@/components/pages/(protected)/guest/settings/guest-settings-tab-danger-zone/guest-settings-tab-danger-zone.svelte';
 	import GuestSettingsTabProfile from '@/components/pages/(protected)/guest/settings/guest-settings-tab-profile/guest-settings-tab-profile.svelte';
 	import GuestSettingsTabSecurity from '@/components/pages/(protected)/guest/settings/guest-settings-tab-security/guest-settings-tab-security.svelte';
-	import GuestSettingsTabDangerZone from '@/components/pages/(protected)/guest/settings/guest-settings-tab-danger-zone/guest-settings-tab-danger-zone.svelte';
+	import HostSettingsTabPayouts from '@/components/pages/(protected)/host/settings/host-settings-tab-payouts.svelte';
 	import SvelteHead from '@/components/ui/custom-components/svelte-head/svelte-head.svelte';
 	import TabsUrl from '@/components/ui/custom-components/tabs-url/tabs-url.svelte';
 	import * as Tabs from '@/components/ui/tabs/index.js';
@@ -18,30 +18,30 @@
 	const user = $derived(page.data.currentUser);
 </script>
 
-<SvelteHead title={m['HostSettingsPage.pageTitle']()} noindex />
+<SvelteHead title={m['GuestSettingsPage.pageTitle']()} noindex />
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6">
+<div class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
 	{#if user}
-		<HostSettingsHeader {user} />
+		<GuestSettingsHeader {user} />
 		<TabsUrl param="tab" defaultValue="profile" class="gap-6">
 			{#snippet children(active)}
 				<div class="overflow-x-auto border-b">
 					<Tabs.List
 						variant="line"
 						class="h-10 w-max justify-start gap-3 sm:gap-8"
-						aria-label={m['HostSettingsPage.HostSettingsTabs.label']()}
+						aria-label={m['GuestSettingsPage.GuestSettingsTabs.label']()}
 					>
 						<Tabs.Trigger value="profile">
-							{m['HostSettingsPage.HostSettingsTabs.profile']()}
+							{m['GuestSettingsPage.GuestSettingsTabs.profile']()}
 						</Tabs.Trigger>
 						<Tabs.Trigger value="security">
-							{m['HostSettingsPage.HostSettingsTabs.security']()}
+							{m['GuestSettingsPage.GuestSettingsTabs.security']()}
 						</Tabs.Trigger>
 						<Tabs.Trigger value="payouts">
 							{m['HostSettingsPage.HostSettingsTabs.payouts']()}
 						</Tabs.Trigger>
 						<Tabs.Trigger value="danger">
-							{m['HostSettingsPage.HostSettingsTabs.dangerZone']()}
+							{m['GuestSettingsPage.GuestSettingsTabs.dangerZone']()}
 						</Tabs.Trigger>
 					</Tabs.List>
 				</div>

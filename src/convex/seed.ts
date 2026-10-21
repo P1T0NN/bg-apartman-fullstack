@@ -545,6 +545,52 @@ export const seedReviews = internalMutation({
 	}
 });
 
+/** Dev-only: delete every booking not created by a seeded guest, with its review and fee record. */
+export const clearNonSeededBookings = internalMutation({
+	args: {},
+	returns: v.number(),
+	handler: async (ctx) => {
+		if (env.CONVEX_CLOUD_URL !== 'https://grateful-otter-919.eu-west-1.convex.cloud') {
+			throw new Error('Clearing real-user bookings is restricted to the development deployment.');
+		}
+		// shortcut: reads the whole dev table; paginate if it exceeds the transaction read limit.
+		const bookings = await ctx.db.query('bookings').collect();
+		let deleted = 0;
+		const affectedAccommodations = new Set<Doc<'accommodations'>['_id']>();
+
+		for (const booking of bookings) {
+			if (booking.ownerId?.startsWith(SEED_GUEST_PREFIX)) continue;
+
+			const fee = await ctx.db
+				.query('bookingFeePayments')
+				.withIndex('by_booking_id', (q) => q.eq('bookingId', booking._id))
+				.unique();
+			if (fee?.paidAt !== undefined) throw new Error('Cannot delete collected booking fee history');
+			if (fee) {
+				await bookingFeePendingAggregate.deleteIfExists(ctx, fee);
+				await legacyBookingFeeAggregate.deleteIfExists(ctx, fee);
+				await ctx.db.delete('bookingFeePayments', fee._id);
+			}
+			const review = booking.reviewId ? await ctx.db.get('reviews', booking.reviewId) : null;
+			if (review) {
+				await reviewAggregate.delete(ctx, review);
+				await ctx.db.delete('reviews', review._id);
+				affectedAccommodations.add(review.accommodationId);
+			}
+			await bookingAdminAggregate.deleteIfExists(ctx, booking);
+			await bookingOwnerAggregate.deleteIfExists(ctx, booking);
+			await bookingHostAggregate.deleteIfExists(ctx, booking);
+			await ctx.db.delete('bookings', booking._id);
+			deleted += 1;
+		}
+		for (const accommodationId of affectedAccommodations) {
+			await updateAccommodationReviewSortKeys(ctx, accommodationId);
+		}
+
+		return deleted;
+	}
+});
+
 /** Dev-only: delete seeded reviews and their bookings. Repeat until this returns zero. */
 export const clearSeededReviews = internalMutation({
 	args: {},

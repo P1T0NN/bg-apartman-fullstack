@@ -30,7 +30,9 @@
 <header class="flex flex-col gap-2 pb-6">
 	<div class="flex items-center justify-between gap-4">
 		<Link
-			href={UNPROTECTED_PAGE_ENDPOINTS.SEARCH + page.url.search}
+			href={page.url.searchParams.get('location')
+				? UNPROTECTED_PAGE_ENDPOINTS.SEARCH + page.url.search
+				: UNPROTECTED_PAGE_ENDPOINTS.ROOT}
 			class="flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4"
 		>
 			<span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	// SVELTEKIT IMPORTS
+	import { beforeNavigate } from '$app/navigation';
+
 	// LIBRARIES
 	import * as Sheet from '@/components/ui/sheet/index.js';
 	import { IsMobile } from '@/hooks/is-mobile.svelte.js';
@@ -34,6 +37,10 @@
 	} = $props();
 
 	const isMobile = new IsMobile();
+
+	beforeNavigate(() => {
+		if (isMobile.current) openMobile = false;
+	});
 </script>
 
 {#if isMobile.current}

@@ -10,6 +10,9 @@
 	import { Button } from '@/components/ui/button/index.js';
 	import { Spinner } from '@/components/ui/spinner/index.js';
 
+	// CONFIG
+	import { PAYMENTS_CONFIG } from '@/shared/features/payments/config.js';
+
 	// UTILS
 	import { toastMessage } from '@/utils/toastMessage.js';
 
@@ -42,11 +45,17 @@
 	}
 </script>
 
-<Button type="button" disabled={pending} aria-busy={pending} onclick={payFlatFee}>
-	{#if pending}
-		<Spinner data-icon="inline-start" />
-	{/if}
-	{isExpired
-		? m['AccommodationsFeature.AccommodationFlatFeePaymentButton.renew']()
-		: m['AccommodationsFeature.AccommodationFlatFeePaymentButton.pay']()}
-</Button>
+{#if PAYMENTS_CONFIG.onlinePaymentsEnabled}
+	<Button type="button" disabled={pending} aria-busy={pending} onclick={payFlatFee}>
+		{#if pending}
+			<Spinner data-icon="inline-start" />
+		{/if}
+		{isExpired
+			? m['AccommodationsFeature.AccommodationFlatFeePaymentButton.renew']()
+			: m['AccommodationsFeature.AccommodationFlatFeePaymentButton.pay']()}
+	</Button>
+{:else}
+	<p class="text-sm font-medium text-muted-foreground">
+		{m['AccommodationsFeature.AccommodationFlatFeePaymentButton.waitingForApproval']()}
+	</p>
+{/if}
